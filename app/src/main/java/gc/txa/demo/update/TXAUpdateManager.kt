@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import gc.txa.demo.BuildConfig
 import gc.txa.demo.core.TXATranslation
-import gc.txa.demo.network.TXAHttp
+import gc.txa.demo.core.TXAHttp
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
@@ -220,6 +220,25 @@ object TXAUpdateManager {
         return BuildConfig.VERSION_CODE
     }
 
+    /**
+     * Update check response from server
+     */
+    data class UpdateCheckResponse(
+        @SerializedName("latestVersion")
+        val latestVersion: LatestVersion,
+        @SerializedName("downloadUrl")
+        val downloadUrl: String,
+        @SerializedName("forceUpdate")
+        val forceUpdate: Boolean
+    )
+    
+    data class LatestVersion(
+        @SerializedName("name")
+        val name: String,
+        @SerializedName("code")
+        val code: Int
+    )
+    
     /**
      * Update check result
      */

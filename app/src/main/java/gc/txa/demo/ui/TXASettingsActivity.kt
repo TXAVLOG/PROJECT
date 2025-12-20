@@ -138,7 +138,7 @@ class TXASettingsActivity : AppCompatActivity() {
                     is TXATranslation.SyncResult.Failed -> {
                         Toast.makeText(
                             this@TXASettingsActivity,
-                            "${TXATranslation.txa("txademo_error_network")}: ${result.error}",
+                            "${TXATranslation.txa("txademo_error_network")}: ${result.message}",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
