@@ -66,7 +66,7 @@ object TXAUpdateManager {
         
         for (attempt in 1..maxRetries) {
             try {
-                val result = performUpdateCheck(context, versionCode, versionName)
+                val result = performUpdateCheck(versionCode, versionName)
                 
                 // Cache successful result
                 if (result is UpdateCheckResult.UpdateAvailable || result is UpdateCheckResult.NoUpdate) {
@@ -95,7 +95,6 @@ object TXAUpdateManager {
      * Perform actual API call to check for updates
      */
     private suspend fun performUpdateCheck(
-        context: Context,
         versionCode: Int,
         versionName: String
     ): UpdateCheckResult {
