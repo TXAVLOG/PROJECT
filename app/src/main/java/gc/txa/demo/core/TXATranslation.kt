@@ -12,6 +12,9 @@ object TXATranslation {
 
     private const val API_BASE = "https://soft.nrotxa.online/txademo/api"
     private const val CACHE_DIR = "languages"
+    private const val PREFS_NAME = "txa_translation_prefs"
+    private const val KEY_API_MIGRATION_VERSION = "api_migration_version"
+    private const val CURRENT_API_VERSION = 2
     
     private var currentTranslations: Map<String, String> = emptyMap()
     private val gson = Gson()
@@ -418,7 +421,7 @@ object TXATranslation {
     )
     
     /**
-     * Clear invalid cache when app updates
+     * Clear invalid cache when app updates or API format changes
      */
     suspend fun clearInvalidCache(context: Context) {
         try {
@@ -426,13 +429,18 @@ object TXATranslation {
                 val cacheDir = File(context.filesDir, CACHE_DIR)
                 if (cacheDir.exists()) {
                     val currentVersionCode = gc.txa.demo.BuildConfig.VERSION_CODE
+                    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    val lastApiVersion = prefs.getInt(KEY_API_MIGRATION_VERSION, 1)
+                    
+                    // Force clear cache if API version changed
+                    val shouldClearAll = lastApiVersion != CURRENT_API_VERSION
                     
                     cacheDir.listFiles()?.forEach { file ->
                         if (file.name.endsWith(".meta.json")) {
                             try {
                                 val metadata = gson.fromJson(file.readText(), CachedMetadata::class.java)
-                                // Clear cache if it's from a different app version
-                                if (metadata.appVersionCode != currentVersionCode) {
+                                // Clear cache if it's from a different app version or API format changed
+                                if (metadata.appVersionCode != currentVersionCode || shouldClearAll) {
                                     val localeFile = File(cacheDir, "${metadata.locale}.json")
                                     localeFile.delete()
                                     file.delete()
@@ -442,6 +450,13 @@ object TXATranslation {
                                 file.delete()
                             }
                         }
+                    }
+                    
+                    // Update API migration version
+                    if (shouldClearAll) {
+                        prefs.edit()
+                            .putInt(KEY_API_MIGRATION_VERSION, CURRENT_API_VERSION)
+                            .apply()
                     }
                 }
             }
