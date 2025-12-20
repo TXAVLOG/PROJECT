@@ -1,8 +1,0 @@
-Gradle start parameters:
-  tasks = [wrapper, --gradle-version, 8.2]
-  excluded tasks = []
-  current dir = /home/txafile/PROJECT
-  project properties args = []
-  system properties args = []
-
-No Kotlin task was run
