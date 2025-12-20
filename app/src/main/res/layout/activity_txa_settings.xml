@@ -142,6 +142,44 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- File Manager Section -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="#252540"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tvFileManagerLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="File Manager"
+                    android:textColor="#00D9FF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:paddingBottom="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnOpenFileManager"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="Open File Manager"
+                    android:textSize="14sp"
+                    app:backgroundTint="#333355"
+                    app:cornerRadius="8dp"
+                    app:icon="@android:drawable/ic_menu_save"
+                    app:iconGravity="start" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Update Section -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"

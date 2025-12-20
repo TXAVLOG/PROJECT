@@ -48,6 +48,13 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.TXADemo.NoActionBar" />
 
+        <!-- File Manager Activity -->
+        <activity
+            android:name=".ui.TXAFileManagerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TXADemo.NoActionBar" />
+
         <!-- FileProvider for APK installation -->
         <provider
             android:name="androidx.core.content.FileProvider"

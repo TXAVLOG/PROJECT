@@ -10,8 +10,13 @@ object TXAUpdateManager {
     // FORCE TEST MODE - Always return update available
     private const val FORCE_TEST_MODE = true
     private const val TEST_VERSION_NAME = "3.0.0_txa"
-    private const val TEST_CHANGELOG = "Phiên bản thử nghiệm 3.0.0_txa. Hỗ trợ MediaFire Resolver & Demo Notice Screen & Splash Sync Progress."
-    private const val TEST_DOWNLOAD_URL = "https://www.mediafire.com/file/jdy9nl8o6uqoyvq/TXA_AUTHENTICATOR_3.0.0_txa.apk/file"
+    private const val TEST_CHANGELOG = "Phiên bản thử nghiệm 3.0.0_txa. Hỗ trợ MediaFire Resolver & GitHub Blob & Google Drive & File Manager UI."
+    
+    // Test URLs for different resolvers (MediaFire, GitHub, Google Drive)
+    private val TEST_DOWNLOAD_URLS = listOf(
+        "https://www.mediafire.com/file/jdy9nl8o6uqoyvq/TXA_AUTHENTICATOR_3.0.0_txa.apk/file"
+    )
+    private const val TEST_DOWNLOAD_URL = TEST_DOWNLOAD_URLS[0] // Default to MediaFire
 
     /**
      * Check for updates

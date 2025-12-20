@@ -49,6 +49,8 @@ class TXASettingsActivity : AppCompatActivity() {
             tvAppSetIdLabel.text = TXATranslation.txa("settings_app_set_id")
             tvLanguageLabel.text = TXATranslation.txa("settings_language")
             btnChangeLanguage.text = TXATranslation.txa("settings_change_language")
+            tvFileManagerLabel.text = TXATranslation.txa("settings_file_manager")
+            btnOpenFileManager.text = TXATranslation.txa("settings_open_file_manager")
             tvUpdateLabel.text = TXATranslation.txa("settings_update")
             btnCheckUpdate.text = TXATranslation.txa("settings_check_update")
 
@@ -60,10 +62,19 @@ class TXASettingsActivity : AppCompatActivity() {
                 showLanguageDialog()
             }
 
+            btnOpenFileManager.setOnClickListener {
+                openFileManager()
+            }
+
             btnCheckUpdate.setOnClickListener {
                 checkForUpdate()
             }
         }
+    }
+
+    private fun openFileManager() {
+        val intent = Intent(this, TXAFileManagerActivity::class.java)
+        startActivity(intent)
     }
 
     private fun loadAppSetId() {
