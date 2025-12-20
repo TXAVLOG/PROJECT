@@ -57,6 +57,11 @@ PROJECT-ANDROID/
    cd PROJECT-ANDROID
    copy build\.env.example build\.env   # điền thông tin keystore/Git
    ```
+   > **Nếu clone về mà chưa có `gradlew`**: cài Gradle rồi tạo wrapper một lần (chỉ cần chạy, không cần commit)
+   > ```powershell
+   > winget install Gradle.Gradle   # hoặc choco install gradle
+   > gradle wrapper                # sinh ra gradlew, gradlew.bat, gradle/wrapper/*
+   > ```
 3. **Chạy build nhanh** (mặc định debug):
    ```powershell
    .\build\TXAQuickBuild.ps1           # build debug
@@ -84,6 +89,11 @@ PROJECT-ANDROID/
    source ~/.bashrc
    cp build/.env.example build/.env     # cập nhật mật khẩu keystore, Git user
    ```
+   > **Nếu thiếu file `gradlew`** (chỉ cần tạo wrapper, không cần commit):
+   > ```bash
+   > sudo apt install gradle -y
+   > gradle wrapper
+   > ```
 3. **Build** (mặc định debug):
    ```bash
    ./build/TXAQuickBuild.sh            # build debug
