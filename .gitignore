@@ -92,3 +92,6 @@ build/.env
 
 # Build outputs
 TXABUILD/
+
+# Keystore backups (security)
+keystore-backups/
