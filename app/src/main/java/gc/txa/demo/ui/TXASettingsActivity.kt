@@ -3,6 +3,7 @@ package gc.txa.demo.ui
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -118,12 +119,12 @@ class TXASettingsActivity : AppCompatActivity() {
     private fun changeLanguage(locale: String) {
         lifecycleScope.launch {
             val progress = TXAProgressDialog(this@TXASettingsActivity)
-            progress.show(
-                message = TXATranslation.txa("txademo_splash_downloading_language"),
-                cancellable = false
-            )
-
             try {
+                progress.show(
+                    message = TXATranslation.txa("txademo_splash_downloading_language"),
+                    cancellable = false
+                )
+
                 val result = TXATranslation.syncIfNewer(this@TXASettingsActivity, locale)
                 
                 when (result) {
@@ -144,6 +145,13 @@ class TXASettingsActivity : AppCompatActivity() {
                         ).show()
                     }
                 }
+            } catch (e: Exception) {
+                Log.e("TXASettingsActivity", "Language change failed", e)
+                Toast.makeText(
+                    this@TXASettingsActivity,
+                    "Language change failed: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
             } finally {
                 progress.dismiss()
             }
@@ -153,12 +161,12 @@ class TXASettingsActivity : AppCompatActivity() {
     private fun checkForUpdate() {
         lifecycleScope.launch {
             val progress = TXAProgressDialog(this@TXASettingsActivity)
-            progress.show(
-                message = TXATranslation.txa("txademo_update_checking"),
-                cancellable = false
-            )
-
             try {
+                progress.show(
+                    message = TXATranslation.txa("txademo_update_checking"),
+                    cancellable = false
+                )
+
                 val result = TXAUpdateManager.checkForUpdate(this@TXASettingsActivity)
                 when (result) {
                     is TXAUpdateManager.UpdateCheckResult.UpdateAvailable -> {
@@ -180,10 +188,11 @@ class TXASettingsActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
+                Log.e("TXASettingsActivity", "Update check failed", e)
                 Toast.makeText(
                     this@TXASettingsActivity,
-                    TXATranslation.txa("txademo_error_network"),
-                    Toast.LENGTH_SHORT
+                    "Update check failed: ${e.message}",
+                    Toast.LENGTH_LONG
                 ).show()
             } finally {
                 progress.dismiss()
