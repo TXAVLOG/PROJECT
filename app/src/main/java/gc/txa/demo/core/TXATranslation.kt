@@ -137,7 +137,8 @@ object TXATranslation {
         "txademo_error_invalid_locale_file" to "Invalid language file format",
         "txademo_error_update_check_failed" to "Failed to check for updates",
         "txademo_error_network" to "Network error",
-        "txademo_error_server" to "Server error"
+        "txademo_error_server" to "Server error",
+        "txademo_error_cache_invalid" to "Cache data is invalid, please refresh"
     )
 
     /**
@@ -412,6 +413,40 @@ object TXATranslation {
     data class CachedMetadata(
         val locale: String,
         val updatedAt: String,
-        val cachedAt: Long
+        val cachedAt: Long,
+        val appVersionCode: Int = gc.txa.demo.BuildConfig.VERSION_CODE
     )
+    
+    /**
+     * Clear invalid cache when app updates
+     */
+    suspend fun clearInvalidCache(context: Context) {
+        try {
+            withContext(Dispatchers.IO) {
+                val cacheDir = File(context.filesDir, CACHE_DIR)
+                if (cacheDir.exists()) {
+                    val currentVersionCode = gc.txa.demo.BuildConfig.VERSION_CODE
+                    
+                    cacheDir.listFiles()?.forEach { file ->
+                        if (file.name.endsWith(".meta.json")) {
+                            try {
+                                val metadata = gson.fromJson(file.readText(), CachedMetadata::class.java)
+                                // Clear cache if it's from a different app version
+                                if (metadata.appVersionCode != currentVersionCode) {
+                                    val localeFile = File(cacheDir, "${metadata.locale}.json")
+                                    localeFile.delete()
+                                    file.delete()
+                                }
+                            } catch (e: Exception) {
+                                // Delete corrupted metadata files
+                                file.delete()
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }
