@@ -138,16 +138,29 @@ object TXAUpdateManager {
             TXALog.e(TAG, "Update check JSON parsing failed", e)
             throw IOException("Invalid JSON response: ${e.message}")
         }
-        
-        TXALog.i(TAG, "Parsed update response: latest=${updateResponse.latestVersion.name} (${updateResponse.latestVersion.code}), current=$versionName ($versionCode)")
+
+        val latestVersion = updateResponse.latestVersion ?: run {
+            TXALog.e(TAG, "Missing latestVersion in update response: $responseBody")
+            throw IOException("Invalid JSON response: missing latestVersion")
+        }
+
+        val downloadUrl = updateResponse.downloadUrl ?: run {
+            TXALog.e(TAG, "Missing downloadUrl in update response: $responseBody")
+            throw IOException("Invalid JSON response: missing downloadUrl")
+        }
+
+        TXALog.i(
+            TAG,
+            "Parsed update response: latest=${latestVersion.name} (${latestVersion.code}), current=$versionName ($versionCode)"
+        )
         
         // Check if update is available
         return if (updateResponse.latestVersion.code > versionCode) {
             UpdateCheckResult.UpdateAvailable(
                 UpdateInfo(
-                    versionName = updateResponse.latestVersion.name,
-                    versionCode = updateResponse.latestVersion.code,
-                    downloadUrl = updateResponse.downloadUrl,
+                    versionName = latestVersion.name,
+                    versionCode = latestVersion.code,
+                    downloadUrl = downloadUrl,
                     changelog = "", // Changelog can be fetched separately if needed
                     fileSize = 0L, // Unknown until resolved
                     isForced = updateResponse.forceUpdate
