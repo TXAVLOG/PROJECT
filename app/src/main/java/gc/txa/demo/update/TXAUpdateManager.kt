@@ -108,7 +108,7 @@ object TXAUpdateManager {
             .addHeader("User-Agent", "TXADemo-Android/${BuildConfig.VERSION_NAME}")
             .build()
         
-        val response = TXAHttp.getClient().newCall(request).execute()
+        val response = TXAHttp.client.newCall(request).execute()
         
         if (!response.isSuccessful) {
             throw IOException("HTTP ${response.code}: ${response.message}")

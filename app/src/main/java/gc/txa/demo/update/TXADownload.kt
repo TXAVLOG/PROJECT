@@ -23,7 +23,7 @@ object TXADownload {
                 .get()
                 .build()
 
-            val response = TXAHttp.getClient().newCall(request).execute()
+            val response = TXAHttp.client.newCall(request).execute()
             
             if (!response.isSuccessful) {
                 emit(DownloadProgress.Failed("HTTP ${response.code}: ${response.message}"))

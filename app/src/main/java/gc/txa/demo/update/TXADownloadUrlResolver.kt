@@ -18,7 +18,7 @@ object TXADownloadUrlResolver {
                 .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                 .build()
 
-            val response = TXAHttp.getClient().newCall(request).execute()
+            val response = TXAHttp.client.newCall(request).execute()
             if (!response.isSuccessful) {
                 return@withContext null
             }
@@ -55,7 +55,7 @@ object TXADownloadUrlResolver {
                 .head()
                 .build()
 
-            val response = TXAHttp.getClient().newCall(request).execute()
+            val response = TXAHttp.client.newCall(request).execute()
             return@withContext if (response.isSuccessful) rawUrl else null
         } catch (e: Exception) {
             e.printStackTrace()
@@ -82,7 +82,7 @@ object TXADownloadUrlResolver {
                 .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                 .build()
 
-            val response = TXAHttp.getClient().newCall(request).execute()
+            val response = TXAHttp.client.newCall(request).execute()
             
             if (response.isSuccessful) {
                 val contentType = response.header("Content-Type")

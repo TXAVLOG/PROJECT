@@ -12,15 +12,13 @@ import java.util.concurrent.TimeUnit
 
 object TXAHttp {
 
-    private val client: OkHttpClient by lazy {
+    val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
-
-    fun getClient(): OkHttpClient = client
 
     /**
      * Create a GET request
