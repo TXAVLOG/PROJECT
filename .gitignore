@@ -84,3 +84,11 @@ lint-results.xml
 
 # Temp file
 abc.txt
+
+# Build environment (security)
+build/.env
+*.keystore
+*.jks
+
+# Build outputs
+TXABUILD/
