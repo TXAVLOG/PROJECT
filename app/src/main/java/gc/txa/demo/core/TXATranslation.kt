@@ -348,6 +348,7 @@ object TXATranslation {
                     throw IOException("Invalid JSON response")
                 }
                 
+                @Suppress("UNCHECKED_CAST")
                 val serverUpdatedAt = responseMap["updated_at"] as? String
                     ?: throw IOException("Missing updated_at field")
                 

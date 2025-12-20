@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -80,6 +81,7 @@ class TXASplashActivity : AppCompatActivity() {
             updateStatus(TXATranslation.txa("txademo_splash_checking_language"))
             
             val locale = TXAApp.getLocale(this@TXASplashActivity)
+            Log.i("TXASplash", "Starting language sync for locale: $locale")
             
             updateStatus(TXATranslation.txa("txademo_splash_downloading_language"))
             
@@ -87,12 +89,15 @@ class TXASplashActivity : AppCompatActivity() {
             
             when (result) {
                 is TXATranslation.SyncResult.Success -> {
+                    Log.i("TXASplash", "Language sync successful for locale: $locale")
                     updateStatus(TXATranslation.txa("txademo_splash_language_updated"))
                 }
                 is TXATranslation.SyncResult.CachedUsed -> {
+                    Log.i("TXASplash", "Using cached translations for locale: $locale")
                     updateStatus(TXATranslation.txa("txademo_splash_initializing"))
                 }
                 is TXATranslation.SyncResult.Failed -> {
+                    Log.e("TXASplash", "Language sync failed for locale: $locale", result.error)
                     updateStatus(TXATranslation.txa("txademo_splash_language_failed"))
                 }
             }
