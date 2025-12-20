@@ -348,8 +348,8 @@ object TXATranslation {
                     throw IOException("Invalid JSON response")
                 }
                 
-                @Suppress("UNCHECKED_CAST", "UNUSED_VARIABLE")
-                val serverUpdatedAt = responseMap["updated_at"] as? String
+                @Suppress("UNUSED_VARIABLE")
+                val serverUpdatedAt = responseMap["updated_at"]?.toString()
                     ?: throw IOException("Missing updated_at field")
                 
                 // Check if translation is newer than cached version
