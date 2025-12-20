@@ -28,33 +28,6 @@ object TXAUpdateManager {
     
     private val gson = Gson()
     
-    // Data classes for API responses
-    data class UpdateCheckResponse(
-        @SerializedName("latest_version")
-        val latestVersion: LatestVersion,
-        @SerializedName("download_url")
-        val downloadUrl: String,
-        @SerializedName("force_update")
-        val forceUpdate: Boolean,
-        @SerializedName("min_version_code")
-        val minVersionCode: Int,
-        @SerializedName("updated_at")
-        val updatedAt: String
-    )
-    
-    data class LatestVersion(
-        @SerializedName("code")
-        val code: Int,
-        @SerializedName("name")
-        val name: String
-    )
-    
-    data class ErrorResponse(
-        @SerializedName("error")
-        val error: String,
-        @SerializedName("message")
-        val message: String
-    )
 
     /**
      * Check for updates with retry logic
