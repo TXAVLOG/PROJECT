@@ -18,7 +18,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_gravity="center_horizontal"
-            android:src="@android:drawable/ic_menu_download"
+            android:src="@android:drawable/stat_sys_download"
             android:tint="?attr/colorPrimary"
             android:background="@drawable/circle_background" />
 

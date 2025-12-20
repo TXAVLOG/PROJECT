@@ -3,6 +3,7 @@ package gc.txa.demo.ui.components
 import android.content.Context
 import android.view.LayoutInflater
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.isVisible
 import gc.txa.demo.databinding.DialogProgressBinding
 
 class TXAProgressDialog(private val context: Context) {
