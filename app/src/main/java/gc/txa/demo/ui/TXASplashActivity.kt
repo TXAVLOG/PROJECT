@@ -97,7 +97,8 @@ class TXASplashActivity : AppCompatActivity() {
                     updateStatus(TXATranslation.txa("txademo_splash_initializing"))
                 }
                 is TXATranslation.SyncResult.Failed -> {
-                    Log.e("TXASplash", "Language sync failed for locale: $locale", result.error)
+                    Log.e("TXASplash", "Language sync failed for locale: $locale", null)
+                    Log.e("TXASplash", "Error message: ${result.message}")
                     updateStatus(TXATranslation.txa("txademo_splash_language_failed"))
                 }
             }

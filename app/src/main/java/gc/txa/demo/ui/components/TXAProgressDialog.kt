@@ -11,17 +11,22 @@ class TXAProgressDialog(private val context: Context) {
     private var binding: DialogProgressBinding? = null
 
     fun show(
-        message: String,
+        title: String = "Loading...",
+        message: String = "Please wait...",
+        icon: Int? = null,
         cancellable: Boolean = false,
         indeterminate: Boolean = true
     ) {
         binding = DialogProgressBinding.inflate(LayoutInflater.from(context)).also { binding ->
+            binding.tvTitle.text = title
             binding.tvMessage.text = message
+            icon?.let { binding.ivIcon.setImageResource(it) }
             binding.progressBar.isIndeterminate = indeterminate
             if (!indeterminate) {
                 binding.progressBar.max = 100
                 binding.progressBar.progress = 0
             }
+            binding.tvProgress.isVisible = false
         }
 
         dialog?.dismiss()

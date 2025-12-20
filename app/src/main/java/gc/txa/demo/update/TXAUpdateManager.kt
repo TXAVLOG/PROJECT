@@ -16,7 +16,7 @@ import java.io.IOException
 object TXAUpdateManager {
 
     // Temporary force-test block (remove after backend verification)
-    private const val FORCE_TEST_MODE = true
+    private const val FORCE_TEST_MODE = false
     private const val TEST_VERSION_NAME = "3.0.0_txa"
     private const val TEST_CHANGELOG = "Phiên bản test nội bộ 3.0.0_txa – kiểm tra resolver & file manager."
     private const val TEST_DOWNLOAD_URL = "https://www.mediafire.com/file/jdy9nl8o6uqoyvq/TXA_AUTHENTICATOR_3.0.0_txa.apk/file"
