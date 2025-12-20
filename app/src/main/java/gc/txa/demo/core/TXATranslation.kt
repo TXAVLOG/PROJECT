@@ -295,6 +295,7 @@ object TXATranslation {
     /**
      * Fetch locale with retry logic and timestamp comparison
      */
+    @Suppress("UNUSED_PARAMETER", "UNREACHABLE_CODE")
     private suspend fun fetchLocaleWithRetry(
         locale: String,
         cachedUpdatedAt: String?,

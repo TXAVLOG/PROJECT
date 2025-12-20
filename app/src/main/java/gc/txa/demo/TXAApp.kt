@@ -48,6 +48,7 @@ class TXAApp : Application() {
         applyLocale()
     }
 
+    @Suppress("DEPRECATION")
     private fun applyLocale() {
         val localeTag = getLocale(this)
         val locale = Locale(localeTag)
