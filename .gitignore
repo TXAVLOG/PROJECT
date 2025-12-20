@@ -87,6 +87,12 @@ build/.env
 *.keystore
 *.jks
 
+# Build artifacts (keep TXABUILD/ for APK distribution)
+app/build/*
+build/reports/*
+build/tmp/*
+build/intermediates/*
+
 # Keystore backups (security)
 keystore-backups/
 

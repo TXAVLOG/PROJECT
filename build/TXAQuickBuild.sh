@@ -136,7 +136,9 @@ fi
 log_info "Configuring Git as: $GIT_NAME <$GIT_EMAIL>"
 git config user.email "$GIT_EMAIL"
 git config user.name "$GIT_NAME"
-git add "$OUTPUT_FILE"
+
+# Force add APK file bypassing gitignore
+git add -f "$OUTPUT_FILE"
 git commit -m "build: TXADEMO-$VERSION_NAME-$BUILD_TYPE" || true
 git push origin main || true
 
