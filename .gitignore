@@ -87,9 +87,6 @@ build/.env
 *.keystore
 *.jks
 
-# Build outputs
-TXABUILD/
-
 # Keystore backups (security)
 keystore-backups/
 
