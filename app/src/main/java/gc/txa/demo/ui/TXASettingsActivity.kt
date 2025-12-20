@@ -1,7 +1,6 @@
 package gc.txa.demo.ui
 
 import android.app.AlertDialog
-import android.app.ProgressDialog
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -15,6 +14,7 @@ import gc.txa.demo.core.TXAFormat
 import gc.txa.demo.core.TXAHttp
 import gc.txa.demo.core.TXATranslation
 import gc.txa.demo.databinding.ActivityTxaSettingsBinding
+import gc.txa.demo.ui.components.TXAProgressDialog
 import gc.txa.demo.update.TXADownload
 import gc.txa.demo.update.TXADownloadUrlResolver
 import gc.txa.demo.update.TXAInstall
@@ -27,7 +27,7 @@ class TXASettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityTxaSettingsBinding
     private lateinit var appSetIdClient: AppSetIdClient
-    private var progressDialog: ProgressDialog? = null
+    private var downloadProgressDialog: TXAProgressDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -117,10 +117,11 @@ class TXASettingsActivity : AppCompatActivity() {
 
     private fun changeLanguage(locale: String) {
         lifecycleScope.launch {
-            val progress = ProgressDialog(this@TXASettingsActivity)
-            progress.setMessage(TXATranslation.txa("txademo_splash_downloading_language"))
-            progress.setCancelable(false)
-            progress.show()
+            val progress = TXAProgressDialog(this@TXASettingsActivity)
+            progress.show(
+                message = TXATranslation.txa("txademo_splash_downloading_language"),
+                cancellable = false
+            )
 
             try {
                 val result = TXATranslation.syncIfNewer(this@TXASettingsActivity, locale)
@@ -151,15 +152,14 @@ class TXASettingsActivity : AppCompatActivity() {
 
     private fun checkForUpdate() {
         lifecycleScope.launch {
-            val progress = ProgressDialog(this@TXASettingsActivity)
-            progress.setMessage(TXATranslation.txa("txademo_update_checking"))
-            progress.setCancelable(false)
-            progress.show()
+            val progress = TXAProgressDialog(this@TXASettingsActivity)
+            progress.show(
+                message = TXATranslation.txa("txademo_update_checking"),
+                cancellable = false
+            )
 
             try {
                 val result = TXAUpdateManager.checkForUpdate(this@TXASettingsActivity)
-                progress.dismiss()
-
                 when (result) {
                     is TXAUpdateManager.UpdateCheckResult.UpdateAvailable -> {
                         showUpdateDialog(result.updateInfo)
@@ -180,12 +180,13 @@ class TXASettingsActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                progress.dismiss()
                 Toast.makeText(
                     this@TXASettingsActivity,
                     TXATranslation.txa("txademo_error_network"),
                     Toast.LENGTH_SHORT
                 ).show()
+            } finally {
+                progress.dismiss()
             }
         }
     }
@@ -233,40 +234,43 @@ class TXASettingsActivity : AppCompatActivity() {
                 }
                 val apkFile = File(downloadDir, "TXA_${updateInfo.versionName}.apk")
 
-                // Show progress dialog
-                progressDialog = ProgressDialog(this@TXASettingsActivity).apply {
-                    setTitle(TXATranslation.txa("txademo_update_downloading"))
-                    setMessage(TXATranslation.txa("txademo_msg_please_wait"))
-                    setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
-                    setCancelable(false)
-                    max = 100
-                    show()
+                downloadProgressDialog = TXAProgressDialog(this@TXASettingsActivity).also { dialog ->
+                    dialog.show(
+                        message = TXATranslation.txa("txademo_update_downloading"),
+                        cancellable = false,
+                        indeterminate = true
+                    )
                 }
 
                 // Start download
                 TXADownload.downloadFile(resolvedUrl, apkFile).collect { progress ->
                     when (progress) {
                         is TXADownload.DownloadProgress.Started -> {
-                            progressDialog?.setMessage(TXATranslation.txa("txademo_update_downloading"))
+                            downloadProgressDialog?.update(
+                                message = TXATranslation.txa("txademo_update_downloading"),
+                                indeterminate = true
+                            )
                         }
                         is TXADownload.DownloadProgress.Downloading -> {
                             val percent = (progress.downloadedBytes * 100 / progress.totalBytes).toInt()
-                            progressDialog?.progress = percent
-                            
                             val message = """
                                 ${TXAFormat.formatBytes(progress.downloadedBytes)} / ${TXAFormat.formatBytes(progress.totalBytes)}
                                 ${TXATranslation.txa("txademo_update_download_speed")}: ${TXAFormat.formatSpeed(progress.speed)}
                                 ${TXATranslation.txa("txademo_update_download_eta")}: ${TXAFormat.formatETA(progress.eta)}
                             """.trimIndent()
                             
-                            progressDialog?.setMessage(message)
+                            downloadProgressDialog?.update(
+                                message = message,
+                                progressPercent = percent,
+                                indeterminate = false
+                            )
                         }
                         is TXADownload.DownloadProgress.Completed -> {
-                            progressDialog?.dismiss()
+                            downloadProgressDialog?.dismiss()
                             showInstallDialog(progress.file)
                         }
                         is TXADownload.DownloadProgress.Failed -> {
-                            progressDialog?.dismiss()
+                            downloadProgressDialog?.dismiss()
                             Toast.makeText(
                                 this@TXASettingsActivity,
                                 "${TXATranslation.txa("txademo_error_download_failed")}: ${progress.error}",
@@ -276,7 +280,7 @@ class TXASettingsActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                progressDialog?.dismiss()
+                downloadProgressDialog?.dismiss()
                 TXAHttp.logError(this@TXASettingsActivity, "Download", e)
                 Toast.makeText(
                     this@TXASettingsActivity,
@@ -307,6 +311,6 @@ class TXASettingsActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        progressDialog?.dismiss()
+        downloadProgressDialog?.dismiss()
     }
 }
