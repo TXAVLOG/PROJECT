@@ -3,7 +3,8 @@
 # TXA Demo - Windows PowerShell Quick Build Script
 
 param(
-    [string]$BuildType = "debug"
+    [switch]$Release,
+    [switch]$Debug
 )
 
 # Error handling
@@ -23,10 +24,12 @@ function Write-Success { Write-ColorOutput Green $args }
 function Write-Info { Write-ColorOutput Cyan $args }
 function Write-Error { Write-ColorOutput Red $args }
 
-# Validate build type
-if ($BuildType -notin @("debug", "release")) {
-    Write-Error "Invalid build type: $BuildType. Use 'debug' or 'release'"
-    exit 1
+# Determine build type (default debug)
+$BuildType = "debug"
+if ($Release.IsPresent) {
+    $BuildType = "release"
+} elseif ($Debug.IsPresent) {
+    $BuildType = "debug"
 }
 
 # Configuration

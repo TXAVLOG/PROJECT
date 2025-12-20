@@ -17,8 +17,50 @@ log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-# Get build type from parameter or default to debug
-BUILD_TYPE="${1:-debug}"
+usage() {
+    cat <<EOF
+Usage: ./build/TXAQuickBuild.sh [--release|--debug]
+
+Options:
+  --release, -r      Build release APK (mặc định là debug nếu không truyền)
+  --debug, -d        Ép build debug (default)
+  -h, --help         Hiển thị hướng dẫn
+EOF
+}
+
+BUILD_TYPE="debug"
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --release|-r)
+            BUILD_TYPE="release"
+            shift
+            ;;
+        --debug|-d)
+            BUILD_TYPE="debug"
+            shift
+            ;;
+        --type|-t)
+            shift
+            if [[ -z "${1:-}" ]]; then
+                log_error "--type cần giá trị (debug hoặc release)"
+                usage
+                exit 1
+            fi
+            BUILD_TYPE="$1"
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            log_error "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+    esac
+done
+
 if [ "$BUILD_TYPE" != "debug" ] && [ "$BUILD_TYPE" != "release" ]; then
     log_error "Invalid build type: $BUILD_TYPE. Use 'debug' or 'release'"
     exit 1
@@ -27,6 +69,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 ENV_FILE="$SCRIPT_DIR/.env"
+GRADLEW="$PROJECT_ROOT/gradlew"
 
 # Load environment
 if [ ! -f "$ENV_FILE" ]; then
@@ -42,21 +85,28 @@ VERSION_CODE=$(grep "versionCode" "$VERSION_FILE" | cut -d'=' -f2 | tr -d ' ')
 
 log_info "Quick Build: TXA Demo v$VERSION_NAME ($VERSION_CODE) - $BUILD_TYPE"
 
+# Ensure gradlew exists
+if [ ! -f "$GRADLEW" ]; then
+    log_error "Gradle wrapper not found: $GRADLEW"
+    exit 1
+fi
+chmod +x "$GRADLEW" || true
+
 # Kill processes
 log_info "Stopping background processes..."
 pkill -9 java || true
 pkill -9 gradle || true
-cd "$PROJECT_ROOT" && ./gradlew --stop || true
+cd "$PROJECT_ROOT" && "$GRADLEW" --stop || true
 
 # Clean and build
 log_info "Building $BUILD_TYPE APK..."
 cd "$PROJECT_ROOT"
 
 if [ "$BUILD_TYPE" = "debug" ]; then
-    ./gradlew clean assembleDebug
+    "$GRADLEW" clean assembleDebug
     APK_FILE="$PROJECT_ROOT/app/build/outputs/apk/debug/app-debug.apk"
 else
-    ./gradlew clean assembleRelease
+    "$GRADLEW" clean assembleRelease
     APK_FILE="$PROJECT_ROOT/app/build/outputs/apk/release/app-release.apk"
 fi
 

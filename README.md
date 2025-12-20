@@ -57,10 +57,10 @@ PROJECT-ANDROID/
    cd PROJECT-ANDROID
    copy build\.env.example build\.env   # điền thông tin keystore/Git
    ```
-3. **Chạy build nhanh**:
+3. **Chạy build nhanh** (mặc định debug):
    ```powershell
-   .\build\TXAQuickBuild.ps1           # mặc định debug
-   .\build\TXAQuickBuild.ps1 -BuildType release
+   .\build\TXAQuickBuild.ps1           # build debug
+   .\build\TXAQuickBuild.ps1 -Release  # build release (thêm -Debug nếu muốn ép debug)
    ```
 4. **Build đầy đủ với upload**:
    ```powershell
@@ -79,13 +79,15 @@ PROJECT-ANDROID/
 2. **Thiết lập SDK & Tools**:
    ```bash
    chmod +x build/TXASetupEnvironment.sh
+   chmod +x build/*.sh                # cấp quyền cho toàn bộ script trong build/
    ./build/TXASetupEnvironment.sh
    source ~/.bashrc
    cp build/.env.example build/.env     # cập nhật mật khẩu keystore, Git user
    ```
-3. **Build**:
+3. **Build** (mặc định debug):
    ```bash
-   ./build/TXAQuickBuild.sh debug|release
+   ./build/TXAQuickBuild.sh            # build debug
+   ./build/TXAQuickBuild.sh --release   # build release (có thể dùng --debug để ép debug)
    ./build/TXABuild.sh                  # build + upload (nếu cấu hình)
    ```
 
