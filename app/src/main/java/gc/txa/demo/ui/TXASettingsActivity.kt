@@ -3,7 +3,6 @@ package gc.txa.demo.ui
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -14,6 +13,7 @@ import gc.txa.demo.TXAApp
 import gc.txa.demo.core.TXAFormat
 import gc.txa.demo.core.TXAHttp
 import gc.txa.demo.core.TXATranslation
+import gc.txa.demo.core.TXALog
 import gc.txa.demo.databinding.ActivityTxaSettingsBinding
 import gc.txa.demo.ui.components.TXAProgressDialog
 import gc.txa.demo.update.TXADownload
@@ -146,7 +146,7 @@ class TXASettingsActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("TXASettingsActivity", "Language change failed", e)
+                TXALog.e("SettingsActivity", "Language change failed", e)
                 Toast.makeText(
                     this@TXASettingsActivity,
                     "Language change failed: ${e.message}",
@@ -188,7 +188,7 @@ class TXASettingsActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("TXASettingsActivity", "Update check failed", e)
+                TXALog.e("SettingsActivity", "Update check failed", e)
                 Toast.makeText(
                     this@TXASettingsActivity,
                     "Update check failed: ${e.message}",

@@ -78,6 +78,10 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 source "$ENV_FILE"
 
+# Optimize Gradle memory usage (VPS has 16GB RAM)
+export GRADLE_OPTS="${GRADLE_OPTS:--Xmx8g -Xms4g -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError}"
+log_info "Gradle JVM options: $GRADLE_OPTS"
+
 # Get version
 VERSION_FILE="$PROJECT_ROOT/version.properties"
 VERSION_NAME=$(grep "versionName" "$VERSION_FILE" | cut -d'=' -f2 | tr -d ' ')

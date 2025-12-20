@@ -2,10 +2,10 @@ package gc.txa.demo.update
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import gc.txa.demo.BuildConfig
 import gc.txa.demo.core.TXATranslation
 import gc.txa.demo.core.TXAHttp
+import gc.txa.demo.core.TXALog
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +28,7 @@ object TXAUpdateManager {
     private const val KEY_CACHED_VERSION_CODE = "cached_version_code"
     
     private val gson = Gson()
+    private const val TAG = "UpdateManager"
     
 
     /**
@@ -67,10 +68,10 @@ object TXAUpdateManager {
         
         for (attempt in 1..maxRetries) {
             try {
-                Log.i("TXAUpdateManager", "Attempt $attempt: Checking for updates (v$versionName, code $versionCode)")
+                TXALog.i(TAG, "Attempt $attempt: Checking for updates (v$versionName, code $versionCode)")
                 val result = performUpdateCheck(versionCode, versionName)
                 
-                Log.i("TXAUpdateManager", "Update check result: $result")
+                TXALog.i(TAG, "Update check result: $result")
                 
                 // Cache successful result
                 if (result is UpdateCheckResult.UpdateAvailable || result is UpdateCheckResult.NoUpdate) {
@@ -80,16 +81,16 @@ object TXAUpdateManager {
                 return result
                 
             } catch (e: Exception) {
-                Log.e("TXAUpdateManager", "Update check failed on attempt $attempt", e)
+                TXALog.e(TAG, "Update check failed on attempt $attempt", e)
                 
                 if (attempt == maxRetries) {
                     // Final attempt failed, return error
                     val errorMessage = getErrorMessage(e) ?: TXATranslation.txa("txademo_error_update_check_failed")
-                    Log.e("TXAUpdateManager", "Final update check error: $errorMessage")
+                    TXALog.e(TAG, "Final update check error: $errorMessage")
                     return UpdateCheckResult.Error(errorMessage)
                 }
                 
-                Log.w("TXAUpdateManager", "Retrying after ${1000L * attempt}ms delay...")
+                TXALog.w(TAG, "Retrying after ${1000L * attempt}ms delay...")
                 // Wait before retry (exponential backoff: 1s, 2s, 4s)
                 delay(1000L * attempt)
             }
@@ -107,7 +108,7 @@ object TXAUpdateManager {
     ): UpdateCheckResult {
         
         val url = "$API_BASE/update/check?versionCode=$versionCode&versionName=$versionName"
-        Log.d("TXAUpdateManager", "Making update check request to: $url")
+        TXALog.d(TAG, "Making update check request to: $url")
         
         val request = Request.Builder()
             .url(url)
@@ -115,30 +116,30 @@ object TXAUpdateManager {
             .addHeader("User-Agent", "TXADemo-Android/${BuildConfig.VERSION_NAME}")
             .build()
         
-        Log.d("TXAUpdateManager", "Executing update check request...")
+        TXALog.d(TAG, "Executing update check request...")
         val response = TXAHttp.client.newCall(request).execute()
-        Log.d("TXAUpdateManager", "Update check response: ${response.code} - ${response.message}")
+        TXALog.d(TAG, "Update check response: ${response.code} - ${response.message}")
         
         if (!response.isSuccessful) {
-            Log.e("TXAUpdateManager", "Update check HTTP error: ${response.code} - ${response.message}")
+            TXALog.e(TAG, "Update check HTTP error: ${response.code} - ${response.message}")
             throw IOException("HTTP ${response.code}: ${response.message}")
         }
         
         val responseBody = response.body?.string()
             ?: throw IOException("Empty response body")
         
-        Log.d("TXAUpdateManager", "Update check response length: ${responseBody.length} chars")
-        Log.v("TXAUpdateManager", "Update check response preview: ${responseBody.take(200)}...")
+        TXALog.d(TAG, "Update check response length: ${responseBody.length} chars")
+        TXALog.v(TAG, "Update check response preview: ${responseBody.take(200)}...")
         
         // Parse response
         val updateResponse = try {
             gson.fromJson(responseBody, UpdateCheckResponse::class.java)
         } catch (e: Exception) {
-            Log.e("TXAUpdateManager", "Update check JSON parsing failed", e)
+            TXALog.e(TAG, "Update check JSON parsing failed", e)
             throw IOException("Invalid JSON response: ${e.message}")
         }
         
-        Log.i("TXAUpdateManager", "Parsed update response: latest=${updateResponse.latestVersion.name} (${updateResponse.latestVersion.code}), current=$versionName ($versionCode)")
+        TXALog.i(TAG, "Parsed update response: latest=${updateResponse.latestVersion.name} (${updateResponse.latestVersion.code}), current=$versionName ($versionCode)")
         
         // Check if update is available
         return if (updateResponse.latestVersion.code > versionCode) {

@@ -18,6 +18,7 @@ object TXATranslation {
     private const val PREFS_NAME = "txa_translation_prefs"
     private const val KEY_API_MIGRATION_VERSION = "api_migration_version"
     private const val CURRENT_API_VERSION = 2
+    private const val TAG = "Translation"
     
     private var currentTranslations: Map<String, String> = emptyMap()
     private val gson = Gson()
@@ -325,7 +326,7 @@ object TXATranslation {
         for (attempt in 1..maxRetries) {
             try {
                 val url = "$API_BASE/tXALocale/$locale"
-                Log.i("TXATranslation", "Attempt $attempt: Fetching locale from $url")
+                TXALog.i(TAG, "Attempt $attempt: Fetching locale from $url")
                 
                 val request = Request.Builder()
                     .url(url)
@@ -333,26 +334,26 @@ object TXATranslation {
                     .addHeader("User-Agent", "TXADemo-Android/${gc.txa.demo.BuildConfig.VERSION_NAME}")
                     .build()
 
-                Log.d("TXATranslation", "Making request to: $url")
+                TXALog.d(TAG, "Making request to: $url")
                 val response = TXAHttp.client.newCall(request).execute()
-                Log.d("TXATranslation", "Response code: ${response.code}, message: ${response.message}")
+                TXALog.d(TAG, "Response code: ${response.code}, message: ${response.message}")
                 
                 if (!response.isSuccessful) {
-                    Log.e("TXATranslation", "HTTP error: ${response.code} - ${response.message}")
+                    TXALog.e(TAG, "HTTP error: ${response.code} - ${response.message}")
                     throw IOException("HTTP ${response.code}: ${response.message}")
                 }
                 
                 val json = response.body?.string() 
                     ?: throw IOException("Empty response body")
                 
-                Log.d("TXATranslation", "Response JSON length: ${json.length} chars")
-                Log.v("TXATranslation", "Response JSON preview: ${json.take(200)}...")
+                TXALog.d(TAG, "Response JSON length: ${json.length} chars")
+                TXALog.v(TAG, "Response JSON preview: ${json.take(200)}...")
                 
                 // Parse response to get updated_at timestamp
                 val responseMap = try {
                     gson.fromJson(json, object : TypeToken<Map<String, Any>>() {}.type)
                 } catch (e: Exception) {
-                    Log.e("TXATranslation", "JSON parsing failed", e)
+                    TXALog.e(TAG, "JSON parsing failed", e)
                     throw IOException("Invalid JSON response: ${e.message}")
                 }
                 
@@ -360,7 +361,7 @@ object TXATranslation {
                 val serverUpdatedAt = responseMap["updated_at"]?.toString()
                     ?: throw IOException("Missing updated_at field")
                 
-                Log.i("TXATranslation", "Successfully parsed locale, updated_at: $serverUpdatedAt")
+                TXALog.i(TAG, "Successfully parsed locale, updated_at: $serverUpdatedAt")
                 
                 // Check if translation is newer than cached version
                 if (cachedUpdatedAt != null && cachedUpdatedAt == serverUpdatedAt) {
@@ -374,8 +375,8 @@ object TXATranslation {
                 )
                 
             } catch (e: Exception) {
-                Log.e("TXATranslation", "Network request failed on attempt $attempt", e)
-                Log.e("TXATranslation", "Exception type: ${e.javaClass.simpleName}, message: ${e.message}")
+                TXALog.e(TAG, "Network request failed on attempt $attempt", e)
+                TXALog.e(TAG, "Exception type: ${e.javaClass.simpleName}, message: ${e.message}")
                 
                 if (attempt == maxRetries) {
                     val errorMessage = when {
@@ -393,10 +394,10 @@ object TXATranslation {
                             "Connection timeout"
                         else -> e.message ?: "Unknown error: ${e.javaClass.simpleName}"
                     }
-                    Log.e("TXATranslation", "Final error message: $errorMessage")
+                    TXALog.e(TAG, "Final error message: $errorMessage")
                     return LocaleFetchResult.Error(errorMessage)
                 }
-                Log.w("TXATranslation", "Retrying after ${1000L * attempt}ms delay...")
+                TXALog.w(TAG, "Retrying after ${1000L * attempt}ms delay...")
                 delay(1000L * attempt) // Exponential backoff
             }
         }
