@@ -127,7 +127,17 @@ object TXATranslation {
         "txademo_format_bytes" to "%s",
         "txademo_format_speed" to "%s/s",
         "txademo_format_percent" to "%s%%",
-        "txademo_format_version" to "v%s"
+        "txademo_format_version" to "v%s",
+        
+        // API Error Messages
+        "txademo_error_metadata_unavailable" to "Update metadata not available",
+        "txademo_error_download_url_missing" to "Download URL not available",
+        "txademo_error_invalid_metadata" to "Invalid metadata format",
+        "txademo_error_locale_not_found" to "Language not found",
+        "txademo_error_invalid_locale_file" to "Invalid language file format",
+        "txademo_error_update_check_failed" to "Failed to check for updates",
+        "txademo_error_network" to "Network error",
+        "txademo_error_server" to "Server error"
     )
 
     /**
@@ -138,22 +148,12 @@ object TXATranslation {
     }
 
     /**
-     * Get available locales from API
+     * Get available locales from API (new format: simple array)
      */
     suspend fun getAvailableLocales(): List<LocaleInfo> = withContext(Dispatchers.IO) {
         try {
-            val request = Request.Builder()
-                .url("$API_BASE/locales")
-                .get()
-                .build()
-
-            val response = TXAHttp.getClient().newCall(request).execute()
-            if (response.isSuccessful) {
-                val json = response.body?.string() ?: return@withContext emptyList()
-                val type = object : TypeToken<LocalesResponse>() {}.type
-                val localesResponse: LocalesResponse = gson.fromJson(json, type)
-                return@withContext localesResponse.supported_locales
-            }
+            val result = getLocalesWithRetry()
+            return@withContext result
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -167,50 +167,194 @@ object TXATranslation {
             LocaleInfo("ko", "한국어")
         )
     }
+    
+    /**
+     * Get locales with retry logic
+     */
+    private suspend fun getLocalesWithRetry(maxRetries: Int = 3): List<LocaleInfo> {
+        for (attempt in 1..maxRetries) {
+            try {
+                val request = Request.Builder()
+                    .url("$API_BASE/locales")
+                    .get()
+                    .addHeader("User-Agent", "TXADemo-Android/${gc.txa.demo.BuildConfig.VERSION_NAME}")
+                    .build()
+
+                val response = TXAHttp.getClient().newCall(request).execute()
+                if (response.isSuccessful) {
+                    val json = response.body?.string() ?: throw IOException("Empty response")
+                    
+                    // Parse new format: simple array ["en", "vi"]
+                    val localeArray: List<String> = try {
+                        gson.fromJson(json, object : TypeToken<List<String>>() {}.type)
+                    } catch (e: Exception) {
+                        throw IOException("Invalid locales array format")
+                    }
+                    
+                    // Convert to LocaleInfo objects
+                    return localeArray.map { locale ->
+                        when (locale) {
+                            "vi" -> LocaleInfo("vi", "Tiếng Việt")
+                            "en" -> LocaleInfo("en", "English")
+                            "zh" -> LocaleInfo("zh", "中文")
+                            "ja" -> LocaleInfo("ja", "日本語")
+                            "ko" -> LocaleInfo("ko", "한국어")
+                            else -> LocaleInfo(locale, locale.uppercase())
+                        }
+                    }
+                } else {
+                    throw IOException("HTTP ${response.code}: ${response.message}")
+                }
+            } catch (e: Exception) {
+                if (attempt == maxRetries) {
+                    throw e
+                }
+                delay(1000L * attempt) // Exponential backoff
+            }
+        }
+        throw IOException("Failed to fetch locales after $maxRetries attempts")
+    }
 
     /**
-     * Sync translations if newer version available
+     * Sync translations if newer version available (with timestamp comparison)
      */
     suspend fun syncIfNewer(context: Context, locale: String = "vi"): SyncResult = withContext(Dispatchers.IO) {
         try {
-            // Get cached file
+            // Get cached file and metadata
             val cacheDir = File(context.filesDir, CACHE_DIR)
             if (!cacheDir.exists()) {
                 cacheDir.mkdirs()
             }
             val cacheFile = File(cacheDir, "$locale.json")
-
-            // Fetch from API
-            val request = Request.Builder()
-                .url("$API_BASE/tXALocale/$locale")
-                .get()
-                .build()
-
-            val response = TXAHttp.getClient().newCall(request).execute()
-            if (response.isSuccessful) {
-                val json = response.body?.string() ?: return@withContext SyncResult.Failed("Empty response")
-                
-                // Save to cache
-                cacheFile.writeText(json)
-                
-                // Load translations
-                loadFromCache(context, locale)
-                
-                return@withContext SyncResult.Success
-            } else {
-                // Load from cache if API fails
-                if (cacheFile.exists()) {
-                    loadFromCache(context, locale)
-                    return@withContext SyncResult.CachedUsed
+            val metadataFile = File(cacheDir, "$locale.meta.json")
+            
+            // Get cached timestamp
+            val cachedUpdatedAt = if (metadataFile.exists()) {
+                try {
+                    val metadata = gson.fromJson(metadataFile.readText(), CachedMetadata::class.java)
+                    metadata.updatedAt
+                } catch (e: Exception) {
+                    null
                 }
-                return@withContext SyncResult.Failed("HTTP ${response.code}")
+            } else {
+                null
             }
+            
+            // Fetch from API with retry
+            val apiResult = fetchLocaleWithRetry(locale, cachedUpdatedAt)
+            
+            when (apiResult) {
+                is LocaleFetchResult.NotModified -> {
+                    // Use cached version
+                    if (cacheFile.exists()) {
+                        loadFromCache(context, locale)
+                        return@withContext SyncResult.CachedUsed
+                    }
+                    return@withContext SyncResult.Failed("No cached data available")
+                }
+                
+                is LocaleFetchResult.Success -> {
+                    // Save new translations and metadata
+                    cacheFile.writeText(apiResult.translationsJson)
+                    
+                    val metadata = CachedMetadata(
+                        locale = locale,
+                        updatedAt = apiResult.updatedAt,
+                        cachedAt = System.currentTimeMillis()
+                    )
+                    metadataFile.writeText(gson.toJson(metadata))
+                    
+                    // Load translations
+                    loadFromCache(context, locale)
+                    
+                    return@withContext SyncResult.Success
+                }
+                
+                is LocaleFetchResult.Error -> {
+                    // Try to load from cache if API fails
+                    if (cacheFile.exists()) {
+                        loadFromCache(context, locale)
+                        return@withContext SyncResult.CachedUsed
+                    }
+                    return@withContext SyncResult.Failed(apiResult.message)
+                }
+            }
+            
         } catch (e: Exception) {
             e.printStackTrace()
             // Try to load from cache
             loadFromCache(context, locale)
             return@withContext SyncResult.Failed(e.message ?: "Unknown error")
         }
+    }
+    
+    /**
+     * Fetch locale with retry logic and timestamp comparison
+     */
+    private suspend fun fetchLocaleWithRetry(
+        locale: String,
+        cachedUpdatedAt: String?,
+        maxRetries: Int = 3
+    ): LocaleFetchResult {
+        
+        for (attempt in 1..maxRetries) {
+            try {
+                val url = "$API_BASE/tXALocale/$locale"
+                
+                val request = Request.Builder()
+                    .url(url)
+                    .get()
+                    .addHeader("User-Agent", "TXADemo-Android/${gc.txa.demo.BuildConfig.VERSION_NAME}")
+                    .build()
+
+                val response = TXAHttp.getClient().newCall(request).execute()
+                
+                if (!response.isSuccessful) {
+                    throw IOException("HTTP ${response.code}: ${response.message}")
+                }
+                
+                val json = response.body?.string() 
+                    ?: throw IOException("Empty response body")
+                
+                // Parse response to get updated_at timestamp
+                val responseMap = try {
+                    gson.fromJson(json, object : TypeToken<Map<String, Any>>() {}.type)
+                } catch (e: Exception) {
+                    throw IOException("Invalid JSON response")
+                }
+                
+                val serverUpdatedAt = responseMap["updated_at"] as? String
+                    ?: throw IOException("Missing updated_at field")
+                
+                // Check if translation is newer than cached version
+                if (cachedUpdatedAt != null && cachedUpdatedAt == serverUpdatedAt) {
+                    return LocaleFetchResult.NotModified
+                }
+                
+                // Return new translations
+                return LocaleFetchResult.Success(
+                    translationsJson = json,
+                    updatedAt = serverUpdatedAt
+                )
+                
+            } catch (e: Exception) {
+                if (attempt == maxRetries) {
+                    val errorMessage = when {
+                        e.message?.contains("HTTP 404") == true -> 
+                            txa("txademo_error_locale_not_found")
+                        e.message?.contains("JSON") == true -> 
+                            txa("txademo_error_invalid_locale_file")
+                        e.message?.contains("HTTP") == true -> 
+                            txa("txademo_error_network")
+                        else -> e.message ?: "Unknown error"
+                    }
+                    return LocaleFetchResult.Error(errorMessage)
+                }
+                delay(1000L * attempt) // Exponential backoff
+            }
+        }
+        
+        return LocaleFetchResult.Error("Failed after $maxRetries attempts")
     }
 
     /**
@@ -254,6 +398,20 @@ object TXATranslation {
     sealed class SyncResult {
         object Success : SyncResult()
         object CachedUsed : SyncResult()
-        data class Failed(val error: String) : SyncResult()
+        data class Failed(val message: String) : SyncResult()
     }
+    
+    // Locale fetch result for timestamp comparison
+    sealed class LocaleFetchResult {
+        data class Success(val translationsJson: String, val updatedAt: String) : LocaleFetchResult()
+        object NotModified : LocaleFetchResult()
+        data class Error(val message: String) : LocaleFetchResult()
+    }
+    
+    // Cached metadata for timestamp tracking
+    data class CachedMetadata(
+        val locale: String,
+        val updatedAt: String,
+        val cachedAt: Long
+    )
 }
