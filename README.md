@@ -39,7 +39,7 @@ PROJECT-ANDROID/
 |-------------------|-----------------------|
 | JDK               | 11                    |
 | Android SDK       | API 28 + Build Tools 28.0.3 |
-| Gradle Wrapper    | Đính kèm trong repo   |
+| Gradle Wrapper    | Gradle 7.6 (wrapper đi kèm) |
 | ImageMagick (optional) | Để resize icon chất lượng cao |
 
 ## 🪟 Build trên Windows
@@ -60,7 +60,7 @@ PROJECT-ANDROID/
    > **Nếu clone về mà chưa có `gradlew`**: cài Gradle rồi tạo wrapper một lần (chỉ cần chạy, không cần commit)
    > ```powershell
    > winget install Gradle.Gradle   # hoặc choco install gradle
-   > gradle wrapper                # sinh ra gradlew, gradlew.bat, gradle/wrapper/*
+   > gradle wrapper --gradle-version 7.6 --distribution-type all
    > ```
 3. **Chạy build nhanh** (mặc định debug):
    ```powershell
@@ -92,7 +92,7 @@ PROJECT-ANDROID/
    > **Nếu thiếu file `gradlew`** (chỉ cần tạo wrapper, không cần commit):
    > ```bash
    > sudo apt install gradle -y
-   > gradle wrapper
+   > gradle wrapper --gradle-version 7.6 --distribution-type all
    > ```
 3. **Build** (mặc định debug):
    ```bash
@@ -114,10 +114,13 @@ pwsh -File .\tools\TXAProcessImages.ps1 `
 
 Hoặc dùng `-SourceRoot "C:\Assets\TXA"` nếu tất cả file nằm chung thư mục. Script sẽ tạo đủ mipmap/drawable density trong `app/src/main/res/`.
 
+> **Yêu cầu ImageMagick**: để script resize chất lượng cao, cài ImageMagick trước khi chạy  
+> Windows: `winget install ImageMagick.ImageMagick` (hoặc tải từ imagemagick.org và thêm vào PATH)  
+> Ubuntu: `sudo apt install imagemagick -y`
+
 ## 🔐 Lưu ý bảo mật
 
 - `build/.env`, keystore (`*.jks`, `*.keystore`), thư mục `keystore-backups/` đã nằm trong `.gitignore`.
-- Không commit `README - IMPLE.md` (tài liệu nội bộ dev).
 - `TXABuild.sh` và `.ps1` có cơ chế tự tạo keystore, backup GPG và push GitHub Releases – cần điền chính xác thông tin trước khi chạy.
 
 ## 📞 Hỗ trợ
