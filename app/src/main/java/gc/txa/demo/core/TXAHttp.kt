@@ -35,7 +35,8 @@ object TXAHttp {
      */
     fun logToPublic(context: Context, type: String, message: String) {
         try {
-            val logDir = File("/storage/emulated/0/Download/TXADEMO/logs")
+            val baseDir = context.getExternalFilesDir(null) ?: File("/storage/emulated/0")
+            val logDir = File(baseDir, "TXADEMO/logs")
             if (!logDir.exists()) {
                 logDir.mkdirs()
             }

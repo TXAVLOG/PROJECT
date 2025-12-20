@@ -82,7 +82,6 @@ class TXAFileManagerActivity : AppCompatActivity() {
             binding.recyclerView.visibility = View.VISIBLE
             binding.emptyState.visibility = View.GONE
             
-            val totalSize = files.sumOf { it.length() }
             binding.tvFileCount.text = TXATranslation.txa("txademo_file_manager_files_count").format(files.size.toString())
             
             adapter.updateFiles(files)
