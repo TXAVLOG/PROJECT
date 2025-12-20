@@ -1,12 +1,15 @@
 package gc.txa.demo.core
 
 import android.content.Context
+import gc.txa.demo.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.io.File
+import java.io.IOException
 
 object TXATranslation {
 
@@ -178,7 +181,7 @@ object TXATranslation {
                 val request = Request.Builder()
                     .url("$API_BASE/locales")
                     .get()
-                    .addHeader("User-Agent", "TXADemo-Android/${gc.txa.demo.BuildConfig.VERSION_NAME}")
+                    .addHeader("User-Agent", "TXADemo-Android/${BuildConfig.VERSION_NAME}")
                     .build()
 
                 val response = TXAHttp.getClient().newCall(request).execute()
@@ -414,7 +417,7 @@ object TXATranslation {
         val locale: String,
         val updatedAt: String,
         val cachedAt: Long,
-        val appVersionCode: Int = gc.txa.demo.BuildConfig.VERSION_CODE
+        val appVersionCode: Int = BuildConfig.VERSION_CODE
     )
     
     /**
@@ -425,7 +428,7 @@ object TXATranslation {
             withContext(Dispatchers.IO) {
                 val cacheDir = File(context.filesDir, CACHE_DIR)
                 if (cacheDir.exists()) {
-                    val currentVersionCode = gc.txa.demo.BuildConfig.VERSION_CODE
+                    val currentVersionCode = BuildConfig.VERSION_CODE
                     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                     val lastApiVersion = prefs.getInt(KEY_API_MIGRATION_VERSION, 1)
                     

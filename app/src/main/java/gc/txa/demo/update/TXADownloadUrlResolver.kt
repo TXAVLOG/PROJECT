@@ -85,9 +85,10 @@ object TXADownloadUrlResolver {
             val response = TXAHttp.getClient().newCall(request).execute()
             
             if (response.isSuccessful) {
-                val contentType = response.header("Content-Type", "")
-                if (contentType.contains("application/vnd.android.package-archive") || 
-                    response.header("Content-Disposition")?.contains(".apk") == true) {
+                val contentType = response.header("Content-Type")
+                val hasApkContentType = contentType?.contains("application/vnd.android.package-archive") == true
+                val hasApkDisposition = response.header("Content-Disposition")?.contains(".apk") == true
+                if (hasApkContentType || hasApkDisposition) {
                     return@withContext directUrl
                 }
             }
