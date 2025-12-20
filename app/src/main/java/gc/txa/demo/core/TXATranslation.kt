@@ -144,7 +144,27 @@ object TXATranslation {
         "txademo_error_update_check_failed" to "Failed to check for updates",
         "txademo_error_network" to "Network error",
         "txademo_error_server" to "Server error",
-        "txademo_error_cache_invalid" to "Cache data is invalid, please refresh"
+        "txademo_error_cache_invalid" to "Cache data is invalid, please refresh",
+        
+        // File Manager
+        "txademo_file_manager_title" to "File Manager",
+        "txademo_file_manager_empty_title" to "No downloaded files",
+        "txademo_file_manager_empty_subtitle" to "Downloaded APKs will appear here",
+        "txademo_file_manager_refresh" to "Refresh",
+        "txademo_file_manager_cleanup" to "Clean Up",
+        "txademo_file_manager_install" to "Install",
+        "txademo_file_manager_delete" to "Delete",
+        "txademo_file_manager_storage_path" to "Storage Path",
+        "txademo_file_manager_files_count" to "%s files",
+        "txademo_file_manager_total_size" to "Total Size: %s",
+        "txademo_file_manager_delete_confirm" to "Delete File",
+        "txademo_file_manager_delete_message" to "Are you sure you want to delete %s?",
+        "txademo_file_manager_delete_success" to "File deleted successfully",
+        "txademo_file_manager_delete_failed" to "Failed to delete file",
+        "txademo_file_manager_install_success" to "Installation started",
+        "txademo_file_manager_install_failed" to "Failed to start installation",
+        "txademo_settings_file_manager" to "File Manager",
+        "txademo_settings_open_file_manager" to "Open File Manager"
     )
 
     /**
