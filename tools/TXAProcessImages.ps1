@@ -22,7 +22,9 @@ function Write-ColorOutput($ForegroundColor) {
     $fc = $host.UI.RawUI.ForegroundColor
     $host.UI.RawUI.ForegroundColor = $ForegroundColor
     if ($args) {
-        Write-Output $args
+        Write-Host $args
+    } else {
+        Write-Host ""
     }
     $host.UI.RawUI.ForegroundColor = $fc
 }
