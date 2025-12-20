@@ -228,9 +228,9 @@ object TXAUpdateManager {
      */
     data class UpdateCheckResponse(
         @SerializedName("latestVersion")
-        val latestVersion: LatestVersion,
+        val latestVersion: LatestVersion?,
         @SerializedName("downloadUrl")
-        val downloadUrl: String,
+        val downloadUrl: String?,
         @SerializedName("forceUpdate")
         val forceUpdate: Boolean
     )
