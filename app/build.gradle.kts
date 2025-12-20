@@ -22,7 +22,7 @@ android {
     defaultConfig {
         applicationId = "gc.txa.demo"
         minSdk = 26
-        targetSdk = 28
+        targetSdk = 34
         versionCode = appVersionCode
         versionName = appVersionName
 
