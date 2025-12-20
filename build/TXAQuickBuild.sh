@@ -123,6 +123,17 @@ OUTPUT_FILE="$BUILD_DIR/TXADEMO-$VERSION_NAME-$BUILD_TYPE.apk"
 cp "$APK_FILE" "$OUTPUT_FILE"
 
 # Git config and upload
+# Validate Git configuration
+if [ -z "$GIT_EMAIL" ] || [ -z "$GIT_NAME" ]; then
+    log_error "Git configuration missing in .env file"
+    log_error "Please set GIT_EMAIL and GIT_NAME in build/.env"
+    log_error "Example:"
+    log_error "GIT_EMAIL=your-email@example.com"
+    log_error "GIT_NAME=Your Name"
+    exit 1
+fi
+
+log_info "Configuring Git as: $GIT_NAME <$GIT_EMAIL>"
 git config user.email "$GIT_EMAIL"
 git config user.name "$GIT_NAME"
 git add "$OUTPUT_FILE"
