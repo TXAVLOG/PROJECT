@@ -32,14 +32,14 @@ class TXAFileManagerActivity : AppCompatActivity() {
 
     private fun setupUI() {
         binding.apply {
-            toolbar.title = TXATranslation.txa("file_manager_title")
+            toolbar.title = TXATranslation.txa("txademo_file_manager_title")
             toolbar.setNavigationOnClickListener {
                 finish()
             }
 
             tvStoragePath.text = downloadDir.absolutePath
-            btnRefresh.text = TXATranslation.txa("file_manager_refresh")
-            btnCleanUp.text = TXATranslation.txa("file_manager_cleanup")
+            btnRefresh.text = TXATranslation.txa("txademo_file_manager_refresh")
+            btnCleanUp.text = TXATranslation.txa("txademo_file_manager_cleanup")
 
             btnRefresh.setOnClickListener {
                 loadFiles()
@@ -77,13 +77,13 @@ class TXAFileManagerActivity : AppCompatActivity() {
         if (files.isEmpty()) {
             binding.recyclerView.visibility = View.GONE
             binding.emptyState.visibility = View.VISIBLE
-            binding.tvFileCount.text = TXATranslation.txa("file_manager_files_count").format("0")
+            binding.tvFileCount.text = TXATranslation.txa("txademo_file_manager_files_count").format("0")
         } else {
             binding.recyclerView.visibility = View.VISIBLE
             binding.emptyState.visibility = View.GONE
             
             val totalSize = files.sumOf { it.length() }
-            binding.tvFileCount.text = TXATranslation.txa("file_manager_files_count").format(files.size.toString())
+            binding.tvFileCount.text = TXATranslation.txa("txademo_file_manager_files_count").format(files.size.toString())
             
             adapter.updateFiles(files)
         }
@@ -92,34 +92,34 @@ class TXAFileManagerActivity : AppCompatActivity() {
     private fun installFile(file: File) {
         val success = TXAInstall.installApk(this, file)
         if (success) {
-            Toast.makeText(this, TXATranslation.txa("file_manager_install_success"), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, TXATranslation.txa("txademo_file_manager_install_success"), Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(this, TXATranslation.txa("file_manager_install_failed"), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, TXATranslation.txa("txademo_file_manager_install_failed"), Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun showDeleteDialog(file: File) {
         AlertDialog.Builder(this)
-            .setTitle(TXATranslation.txa("file_manager_delete_confirm"))
-            .setMessage(TXATranslation.txa("file_manager_delete_message").format(file.name))
-            .setPositiveButton(TXATranslation.txa("file_manager_delete")) { _, _ ->
+            .setTitle(TXATranslation.txa("txademo_file_manager_delete_confirm"))
+            .setMessage(TXATranslation.txa("txademo_file_manager_delete_message").format(file.name))
+            .setPositiveButton(TXATranslation.txa("txademo_file_manager_delete")) { _, _ ->
                 deleteFile(file)
             }
-            .setNegativeButton(TXATranslation.txa("action_cancel"), null)
+            .setNegativeButton(TXATranslation.txa("txademo_action_cancel"), null)
             .show()
     }
 
     private fun deleteFile(file: File) {
         try {
             if (file.delete()) {
-                Toast.makeText(this, TXATranslation.txa("file_manager_delete_success"), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, TXATranslation.txa("txademo_file_manager_delete_success"), Toast.LENGTH_SHORT).show()
                 loadFiles()
             } else {
-                Toast.makeText(this, TXATranslation.txa("file_manager_delete_failed"), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, TXATranslation.txa("txademo_file_manager_delete_failed"), Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(this, TXATranslation.txa("file_manager_delete_failed"), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, TXATranslation.txa("txademo_file_manager_delete_failed"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -152,7 +152,7 @@ class TXAFileManagerActivity : AppCompatActivity() {
                 Toast.makeText(this, "Deleted $deletedCount old files", Toast.LENGTH_SHORT).show()
                 loadFiles()
             }
-            .setNegativeButton(TXATranslation.txa("action_cancel"), null)
+            .setNegativeButton(TXATranslation.txa("txademo_action_cancel"), null)
             .show()
     }
 }

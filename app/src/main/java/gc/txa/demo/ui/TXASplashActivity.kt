@@ -47,7 +47,7 @@ class TXASplashActivity : AppCompatActivity() {
         }
 
         if (permissions.isNotEmpty()) {
-            updateStatus(TXATranslation.txa("splash_requesting_permissions"))
+            updateStatus(TXATranslation.txa("txademo_splash_requesting_permissions"))
             ActivityCompat.requestPermissions(
                 this,
                 permissions.toTypedArray(),
@@ -61,7 +61,7 @@ class TXASplashActivity : AppCompatActivity() {
     private fun checkInstallPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (!TXAInstall.canInstallPackages(this)) {
-                updateStatus(TXATranslation.txa("permission_install_message"))
+                updateStatus(TXATranslation.txa("txademo_permission_install_message"))
                 // For now, just continue - user can grant later when needed
                 lifecycleScope.launch {
                     delay(2000)
@@ -77,23 +77,23 @@ class TXASplashActivity : AppCompatActivity() {
 
     private fun startLanguageSync() {
         lifecycleScope.launch {
-            updateStatus(TXATranslation.txa("splash_checking_language"))
+            updateStatus(TXATranslation.txa("txademo_splash_checking_language"))
             
             val locale = TXAApp.getLocale(this@TXASplashActivity)
             
-            updateStatus(TXATranslation.txa("splash_downloading_language"))
+            updateStatus(TXATranslation.txa("txademo_splash_downloading_language"))
             
             val result = TXATranslation.syncIfNewer(this@TXASplashActivity, locale)
             
             when (result) {
                 is TXATranslation.SyncResult.Success -> {
-                    updateStatus(TXATranslation.txa("splash_language_updated"))
+                    updateStatus(TXATranslation.txa("txademo_splash_language_updated"))
                 }
                 is TXATranslation.SyncResult.CachedUsed -> {
-                    updateStatus(TXATranslation.txa("splash_initializing"))
+                    updateStatus(TXATranslation.txa("txademo_splash_initializing"))
                 }
                 is TXATranslation.SyncResult.Failed -> {
-                    updateStatus(TXATranslation.txa("splash_language_failed"))
+                    updateStatus(TXATranslation.txa("txademo_splash_language_failed"))
                 }
             }
             
@@ -126,7 +126,7 @@ class TXASplashActivity : AppCompatActivity() {
                 checkInstallPermission()
             } else {
                 // Show message and continue anyway
-                updateStatus(TXATranslation.txa("permission_denied"))
+                updateStatus(TXATranslation.txa("txademo_permission_denied"))
                 lifecycleScope.launch {
                     delay(2000)
                     checkInstallPermission()
