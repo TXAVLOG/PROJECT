@@ -162,13 +162,10 @@ object TXATranslation {
             e.printStackTrace()
         }
         
-        // Return default locales if API fails
+        // Return default locales (fallback: only vi + en) if API fails
         return@withContext listOf(
             LocaleInfo("vi", "Tiếng Việt"),
-            LocaleInfo("en", "English"),
-            LocaleInfo("zh", "中文"),
-            LocaleInfo("ja", "日本語"),
-            LocaleInfo("ko", "한국어")
+            LocaleInfo("en", "English")
         )
     }
     

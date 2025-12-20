@@ -9,6 +9,10 @@
 #   - ic_notification.png (96x96 monochrome)
 
 param(
+    [string]$SourceRoot,
+    [string]$LauncherPath,
+    [string]$SplashPath,
+    [string]$NotificationPath,
     [switch]$SkipResize = $false,
     [switch]$Verbose = $false
 )
@@ -28,10 +32,66 @@ function Write-Info { Write-ColorOutput Cyan $args }
 function Write-Warning { Write-ColorOutput Yellow $args }
 function Write-Error { Write-ColorOutput Red $args }
 
+# Path helpers
+function Resolve-AbsolutePath {
+    param(
+        [string]$PathValue,
+        [string]$BaseDirectory
+    )
+    if ([string]::IsNullOrWhiteSpace($PathValue)) {
+        return $null
+    }
+    try {
+        if (Test-Path $PathValue) {
+            return (Resolve-Path $PathValue).Path
+        }
+    } catch {
+        # swallow and try relative resolution
+    }
+    if ($BaseDirectory) {
+        $combinedPath = Join-Path $BaseDirectory $PathValue
+        if (Test-Path $combinedPath) {
+            return (Resolve-Path $combinedPath).Path
+        }
+    }
+    return $null
+}
+
+function Get-ImagePath {
+    param(
+        [string]$CustomPath,
+        [string]$DefaultFileName,
+        [string]$DefaultDirectory
+    )
+
+    if ($CustomPath) {
+        $resolvedCustom = Resolve-AbsolutePath -PathValue $CustomPath -BaseDirectory $ProjectRoot
+        if ($resolvedCustom -and (Test-Path $resolvedCustom)) {
+            Write-Info "Using custom file for ${DefaultFileName}: $resolvedCustom"
+            return $resolvedCustom
+        } else {
+            Write-Warning "Custom file not found (${CustomPath}). Falling back to default directory."
+        }
+    }
+    return Join-Path $DefaultDirectory $DefaultFileName
+}
+
 # Script configuration
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = Split-Path -Parent $ScriptDir
-$MasterDir = Join-Path $ProjectRoot "design\master"
+$DefaultMasterDir = Join-Path $ProjectRoot "design\master"
+
+if ($SourceRoot) {
+    $ResolvedSourceRoot = Resolve-AbsolutePath -PathValue $SourceRoot -BaseDirectory $ProjectRoot
+    if (-not $ResolvedSourceRoot) {
+        Write-Error "Specified SourceRoot not found: $SourceRoot"
+        exit 1
+    }
+    $MasterDir = $ResolvedSourceRoot
+} else {
+    $MasterDir = $DefaultMasterDir
+}
+
 $ResDir = Join-Path $ProjectRoot "app\src\main\res"
 
 Write-Info "=========================================="
@@ -39,14 +99,10 @@ Write-Info "  TXA Demo - Image Processing Script"
 Write-Info "=========================================="
 Write-Info ""
 
-# Check if master directory exists
+# Check if master directory exists (only warn if custom paths provided)
 if (-not (Test-Path $MasterDir)) {
-    Write-Error "Master images directory not found: $MasterDir"
-    Write-Warning "Please create the directory and place master images:"
-    Write-Warning "  - ic_launcher.png (512x512)"
-    Write-Warning "  - splash_logo.png (512x512)"
-    Write-Warning "  - ic_notification.png (96x96 monochrome)"
-    exit 1
+    Write-Warning "Master images directory not found: $MasterDir"
+    Write-Warning "Provide SourceRoot or explicit file paths to continue."
 }
 
 # Image size configurations
@@ -164,7 +220,7 @@ if ($UseImageMagick) {
 Write-Info ""
 
 # Process launcher icons
-$launcherMaster = Join-Path $MasterDir "ic_launcher.png"
+$launcherMaster = Get-ImagePath -CustomPath $LauncherPath -DefaultFileName "ic_launcher.png" -DefaultDirectory $MasterDir
 if (Test-Path $launcherMaster) {
     Write-Info "Processing launcher icons..."
     
@@ -212,7 +268,7 @@ if (Test-Path $launcherMaster) {
 }
 
 # Process splash logo
-$splashMaster = Join-Path $MasterDir "splash_logo.png"
+$splashMaster = Get-ImagePath -CustomPath $SplashPath -DefaultFileName "splash_logo.png" -DefaultDirectory $MasterDir
 if (Test-Path $splashMaster) {
     Write-Info "Processing splash logo..."
     
@@ -252,7 +308,7 @@ if (Test-Path $splashMaster) {
 }
 
 # Process notification icon
-$notificationMaster = Join-Path $MasterDir "ic_notification.png"
+$notificationMaster = Get-ImagePath -CustomPath $NotificationPath -DefaultFileName "ic_notification.png" -DefaultDirectory $MasterDir
 if (Test-Path $notificationMaster) {
     Write-Info "Processing notification icon..."
     

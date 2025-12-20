@@ -15,6 +15,12 @@ import java.io.IOException
 
 object TXAUpdateManager {
 
+    // Temporary force-test block (remove after backend verification)
+    private const val FORCE_TEST_MODE = true
+    private const val TEST_VERSION_NAME = "3.0.0_txa"
+    private const val TEST_CHANGELOG = "Phiên bản test nội bộ 3.0.0_txa – kiểm tra resolver & file manager."
+    private const val TEST_DOWNLOAD_URL = "https://www.mediafire.com/file/jdy9nl8o6uqoyvq/TXA_AUTHENTICATOR_3.0.0_txa.apk/file"
+
     private const val API_BASE = "https://soft.nrotxa.online/txademo/api"
     private const val PREFS_NAME = "txa_update_prefs"
     private const val KEY_LAST_UPDATE_CHECK = "last_update_check"
@@ -54,6 +60,20 @@ object TXAUpdateManager {
      * Check for updates with retry logic
      */
     suspend fun checkForUpdate(context: Context): UpdateCheckResult = withContext(Dispatchers.IO) {
+        // Force test mode: always return fake update
+        if (FORCE_TEST_MODE) {
+            return@withContext UpdateCheckResult.UpdateAvailable(
+                UpdateInfo(
+                    versionName = TEST_VERSION_NAME,
+                    versionCode = 300,
+                    downloadUrl = TEST_DOWNLOAD_URL,
+                    changelog = TEST_CHANGELOG,
+                    fileSize = 0L,
+                    isForced = false
+                )
+            )
+        }
+
         val currentVersionCode = BuildConfig.VERSION_CODE
         val currentVersionName = BuildConfig.VERSION_NAME
         

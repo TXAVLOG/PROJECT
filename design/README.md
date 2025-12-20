@@ -129,8 +129,17 @@ Text Dim:     #AAAAAA (Gray)
 
 ### Script Usage
 ```powershell
-# Basic usage
+# Basic usage (mặc định lấy ảnh trong design/master)
 .\tools\TXAProcessImages.ps1
+
+# Chỉ định thư mục nguồn khác (tương đối hoặc tuyệt đối)
+.\tools\TXAProcessImages.ps1 -SourceRoot "C:\Assets\TXA"
+
+# Chỉ định file riêng lẻ (ưu tiên hơn SourceRoot)
+.\tools\TXAProcessImages.ps1 `
+    -LauncherPath ".\logo.png" `
+    -SplashPath "D:\Design\splash.png" `
+    -NotificationPath "..\noti.png"
 
 # Show detailed output
 .\tools\TXAProcessImages.ps1 -Verbose
