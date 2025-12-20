@@ -18,7 +18,6 @@ release/
 
 # Gradle files
 .gradle/
-build/
 
 # Local configuration file (sdk path, etc)
 local.properties
@@ -79,5 +78,22 @@ lint-results.xml
 # Android Profiling
 *.hprof
 
+# IDE / Windsurf rules
+.windsurf/
+
 # Temp file
 abc.txt
+
+# Build environment (security)
+build/.env
+*.keystore
+*.jks
+
+# Build outputs
+TXABUILD/
+
+# Keystore backups (security)
+keystore-backups/
+
+# Developer-only docs (do not commit)
+README_DEV.md
