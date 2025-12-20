@@ -325,6 +325,7 @@ object TXATranslation {
         for (attempt in 1..maxRetries) {
             try {
                 val url = "$API_BASE/tXALocale/$locale"
+                Log.i("TXATranslation", "Attempt $attempt: Fetching locale from $url")
                 
                 val request = Request.Builder()
                     .url(url)
@@ -332,25 +333,34 @@ object TXATranslation {
                     .addHeader("User-Agent", "TXADemo-Android/${gc.txa.demo.BuildConfig.VERSION_NAME}")
                     .build()
 
+                Log.d("TXATranslation", "Making request to: $url")
                 val response = TXAHttp.client.newCall(request).execute()
+                Log.d("TXATranslation", "Response code: ${response.code}, message: ${response.message}")
                 
                 if (!response.isSuccessful) {
+                    Log.e("TXATranslation", "HTTP error: ${response.code} - ${response.message}")
                     throw IOException("HTTP ${response.code}: ${response.message}")
                 }
                 
                 val json = response.body?.string() 
                     ?: throw IOException("Empty response body")
                 
+                Log.d("TXATranslation", "Response JSON length: ${json.length} chars")
+                Log.v("TXATranslation", "Response JSON preview: ${json.take(200)}...")
+                
                 // Parse response to get updated_at timestamp
                 val responseMap = try {
                     gson.fromJson(json, object : TypeToken<Map<String, Any>>() {}.type)
                 } catch (e: Exception) {
-                    throw IOException("Invalid JSON response")
+                    Log.e("TXATranslation", "JSON parsing failed", e)
+                    throw IOException("Invalid JSON response: ${e.message}")
                 }
                 
                 @Suppress("UNUSED_VARIABLE")
                 val serverUpdatedAt = responseMap["updated_at"]?.toString()
                     ?: throw IOException("Missing updated_at field")
+                
+                Log.i("TXATranslation", "Successfully parsed locale, updated_at: $serverUpdatedAt")
                 
                 // Check if translation is newer than cached version
                 if (cachedUpdatedAt != null && cachedUpdatedAt == serverUpdatedAt) {
@@ -364,6 +374,9 @@ object TXATranslation {
                 )
                 
             } catch (e: Exception) {
+                Log.e("TXATranslation", "Network request failed on attempt $attempt", e)
+                Log.e("TXATranslation", "Exception type: ${e.javaClass.simpleName}, message: ${e.message}")
+                
                 if (attempt == maxRetries) {
                     val errorMessage = when {
                         e.message?.contains("HTTP 404") == true -> 
@@ -372,10 +385,18 @@ object TXATranslation {
                             txa("txademo_error_invalid_locale_file")
                         e.message?.contains("HTTP") == true -> 
                             txa("txademo_error_network")
-                        else -> e.message ?: "Unknown error"
+                        e.message?.contains("UnknownHost") == true ->
+                            "DNS resolution failed for $API_BASE"
+                        e.message?.contains("SSL") == true ->
+                            "SSL/TLS connection failed"
+                        e.message?.contains("timeout") == true ->
+                            "Connection timeout"
+                        else -> e.message ?: "Unknown error: ${e.javaClass.simpleName}"
                     }
+                    Log.e("TXATranslation", "Final error message: $errorMessage")
                     return LocaleFetchResult.Error(errorMessage)
                 }
+                Log.w("TXATranslation", "Retrying after ${1000L * attempt}ms delay...")
                 delay(1000L * attempt) // Exponential backoff
             }
         }
