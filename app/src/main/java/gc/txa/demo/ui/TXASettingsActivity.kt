@@ -262,9 +262,11 @@ class TXASettingsActivity : AppCompatActivity() {
 
         if (launchedFromNotification && updateInfo != null) {
             showUpdateDialog(updateInfo, forceAutoDownload = autoStartDownload)
-            intent?.removeExtra(EXTRA_LAUNCH_FROM_UPDATE_NOTIFICATION)
-            intent?.removeExtra(EXTRA_AUTO_START_DOWNLOAD)
-            intent?.removeExtra(EXTRA_UPDATE_INFO)
+            intent?.apply {
+                removeExtra(EXTRA_LAUNCH_FROM_UPDATE_NOTIFICATION)
+                removeExtra(EXTRA_AUTO_START_DOWNLOAD)
+                removeExtra(EXTRA_UPDATE_INFO)
+            }
         }
     }
 
