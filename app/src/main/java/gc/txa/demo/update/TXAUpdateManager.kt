@@ -186,7 +186,7 @@ object TXAUpdateManager {
 
         TXALog.i(
             TAG,
-            "Parsed update response: latest=$latestVersionName ($latestVersionCode), current=$versionName ($versionCode)"
+            "Parsed update responses: latest=$latestVersionName ($latestVersionCode), current=$versionName ($versionCode)"
         )
         
         val apiSignalsUpdate = updateResponse.updateAvailable
