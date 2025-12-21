@@ -1,11 +1,14 @@
 package gc.txa.demo.update
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.os.Build
 import gc.txa.demo.BuildConfig
 import gc.txa.demo.core.TXATranslation
 import gc.txa.demo.core.TXAHttp
 import gc.txa.demo.core.TXALog
+import gc.txa.demo.download.TXADownloadService
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
@@ -221,6 +224,40 @@ object TXAUpdateManager {
      */
     fun getCurrentVersionCode(): Int {
         return BuildConfig.VERSION_CODE
+    }
+
+    /**
+     * Start background download for update
+     */
+    fun startBackgroundDownload(context: Context, updateInfo: UpdateInfo) {
+        TXALog.i(TAG, "Starting background download for ${updateInfo.versionName}")
+        
+        val intent = Intent(context, TXADownloadService::class.java).apply {
+            putExtra("download_url", updateInfo.downloadUrl)
+            putExtra("version_name", updateInfo.versionName)
+        }
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+    }
+
+    /**
+     * Check if download is currently active
+     */
+    fun isDownloadActive(context: Context): Boolean {
+        val prefs = context.getSharedPreferences("txa_download_prefs", Context.MODE_PRIVATE)
+        return prefs.getBoolean("is_downloading", false)
+    }
+
+    /**
+     * Get current download progress
+     */
+    fun getDownloadProgress(context: Context): Int {
+        val prefs = context.getSharedPreferences("txa_download_prefs", Context.MODE_PRIVATE)
+        return prefs.getInt("download_progress", 0)
     }
 
     /**

@@ -2,10 +2,15 @@ package gc.txa.demo.ui
 
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.appset.AppSet
 import com.google.android.gms.appset.AppSetIdClient
 import gc.txa.demo.BuildConfig
@@ -20,15 +25,19 @@ import gc.txa.demo.update.TXADownload
 import gc.txa.demo.update.TXADownloadUrlResolver
 import gc.txa.demo.update.TXAInstall
 import gc.txa.demo.update.TXAUpdateManager
+import gc.txa.demo.download.TXADownloadService
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
 
 class TXASettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityTxaSettingsBinding
     private lateinit var appSetIdClient: AppSetIdClient
     private var downloadProgressDialog: TXAProgressDialog? = null
+    private val NOTIFICATION_PERMISSION_CODE = 1002
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,6 +48,17 @@ class TXASettingsActivity : AppCompatActivity() {
         
         setupUI()
         loadAppSetId()
+        
+        // Check if we should show download dialog (from notification return)
+        if (intent.getBooleanExtra("show_download_dialog", false)) {
+            checkAndShowDownloadDialog()
+        }
+        
+        // Register for download progress broadcasts
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            downloadProgressReceiver,
+            android.content.IntentFilter(TXADownloadService.BROADCAST_DOWNLOAD_PROGRESS)
+        )
     }
 
     private fun setupUI() {
@@ -220,35 +240,95 @@ class TXASettingsActivity : AppCompatActivity() {
     }
 
     private fun startDownload(updateInfo: TXAUpdateManager.UpdateInfo) {
-        lifecycleScope.launch {
-            try {
-                // Resolve URL first
-                val resolvedUrl = TXADownloadUrlResolver.resolveUrl(updateInfo.downloadUrl)
-                
-                if (resolvedUrl == null) {
-                    Toast.makeText(
-                        this@TXASettingsActivity,
-                        TXATranslation.txa("txademo_error_resolver_failed"),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return@launch
-                }
+        // Check notification permission for Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) 
+                != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    NOTIFICATION_PERMISSION_CODE
+                )
+                return
+            }
+        }
 
-                TXAHttp.logInfo(this@TXASettingsActivity, "Download", "Resolved URL: $resolvedUrl")
+        // Start background download
+        TXAUpdateManager.startBackgroundDownload(this, updateInfo)
+        
+        Toast.makeText(
+            this,
+            TXATranslation.txa("txademo_download_background_starting"),
+            Toast.LENGTH_SHORT
+        ).show()
+    }
 
-                // Prepare download location
-                val downloadDir = File("/storage/emulated/0/Download/TXADEMO")
-                if (!downloadDir.exists()) {
-                    downloadDir.mkdirs()
-                }
-                val apkFile = File(downloadDir, "TXA_${updateInfo.versionName}.apk")
+    private fun checkAndShowDownloadDialog() {
+        if (TXAUpdateManager.isDownloadActive(this)) {
+            val progress = TXAUpdateManager.getDownloadProgress(this)
+            showDownloadProgressDialog(progress)
+        }
+    }
 
-                downloadProgressDialog = TXAProgressDialog(this@TXASettingsActivity).also { dialog ->
-                    dialog.show(
-                        message = TXATranslation.txa("txademo_update_downloading"),
-                        cancellable = false,
-                        indeterminate = true
+    private fun showDownloadProgressDialog(initialProgress: Int) {
+        downloadProgressDialog = TXAProgressDialog(this).also { dialog ->
+            dialog.show(
+                message = TXATranslation.txa("txademo_update_downloading"),
+                cancellable = false,
+                progress = initialProgress,
+                indeterminate = initialProgress == 0
+            )
+        }
+    }
+
+    private val downloadProgressReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            val progress = intent?.getIntExtra(TXADownloadService.EXTRA_PROGRESS, 0) ?: 0
+            val downloadedBytes = intent?.getLongExtra(TXADownloadService.EXTRA_DOWNLOADED_BYTES, 0L) ?: 0L
+            val totalBytes = intent?.getLongExtra(TXADownloadService.EXTRA_TOTAL_BYTES, 0L) ?: 0L
+            
+            runOnUiThread {
+                downloadProgressDialog?.let { dialog ->
+                    dialog.updateProgress(
+                        progress = progress,
+                        message = "${TXATranslation.txa("txademo_update_downloading")} - $progress%"
                     )
+                }
+            }
+            
+            TXALog.i("SettingsActivity", "Download progress: $progress% ($downloadedBytes/$totalBytes bytes)")
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        
+        if (requestCode == NOTIFICATION_PERMISSION_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(
+                    this,
+                    "Notification permission granted",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(
+                    this,
+                    "Notification permission denied. Download progress won't be shown.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(downloadProgressReceiver)
+        downloadProgressDialog?.dismiss()
+    }
                 }
 
                 // Start download

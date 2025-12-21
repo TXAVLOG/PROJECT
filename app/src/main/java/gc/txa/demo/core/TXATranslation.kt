@@ -165,7 +165,22 @@ object TXATranslation {
         "txademo_file_manager_install_success" to "Installation started",
         "txademo_file_manager_install_failed" to "Failed to start installation",
         "txademo_settings_file_manager" to "File Manager",
-        "txademo_settings_open_file_manager" to "Open File Manager"
+        "txademo_settings_open_file_manager" to "Open File Manager",
+        
+        // Download Notifications
+        "txademo_download_background_title" to "TXA Demo Update",
+        "txademo_download_background_starting" to "Starting download...",
+        "txademo_download_background_progress" to "Downloading update...",
+        "txademo_download_cancel" to "Cancel",
+        "txademo_download_return_app" to "Return to App",
+        "txademo_download_cancelled" to "Download Cancelled",
+        "txademo_download_cancelled_message" to "The download has been cancelled",
+        "txademo_download_complete" to "Download Complete",
+        "txademo_download_complete_message" to "Update downloaded successfully",
+        "txademo_download_failed" to "Download Failed",
+        "txademo_download_failed_message" to "Failed to download update",
+        "txademo_download_channel_name" to "TXA Downloads",
+        "txademo_download_channel_description" to "Background download notifications"
     )
 
     /**

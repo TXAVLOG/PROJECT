@@ -8,6 +8,15 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    
+    <!-- Foreground Service Permission for Android 9+ -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    
+    <!-- Foreground Service Type for Android 14+ -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    
+    <!-- Notification Permission for Android 13+ -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".TXAApp"
@@ -55,6 +64,13 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.TXADemo.NoActionBar" />
+
+        <!-- Download Service -->
+        <service
+            android:name=".download.TXADownloadService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <!-- FileProvider for APK installation -->
         <provider
