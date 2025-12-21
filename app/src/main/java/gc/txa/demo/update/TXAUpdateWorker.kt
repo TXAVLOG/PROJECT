@@ -37,7 +37,6 @@ class TXAUpdateWorker(
                         "Update check failed: ${result.message}"
                     )
                 }
-                else -> Unit
             }
 
             return@withContext Result.success()

@@ -164,7 +164,7 @@ object TXAUpdateManager {
             throw IOException("Invalid JSON response: missing latest payload")
         }
 
-        val latestVersionCode = latestPayload?.versionCode ?: run {
+        val latestVersionCode = latestPayload.versionCode ?: run {
             TXALog.e(TAG, "Missing latest.versionCode in update response: $responseBody")
             throw IOException("Invalid JSON response: missing latest.versionCode")
         }
