@@ -31,14 +31,14 @@ class TXADownloadService : Service() {
         private const val NOTIFICATION_CHANNEL_ID = "txa_download_channel"
         private const val NOTIFICATION_ID = 1001
         private const val BACKGROUND_INFO_NOTIFICATION_ID = 1002
-        private const val PREFS_NAME = "txa_download_prefs"
-        private const val KEY_DOWNLOAD_URL = "download_url"
-        private const val KEY_DOWNLOAD_PROGRESS = "download_progress"
-        private const val KEY_DOWNLOAD_FILE_PATH = "download_file_path"
-        private const val KEY_DOWNLOAD_VERSION_NAME = "download_version_name"
-        private const val KEY_IS_DOWNLOADING = "is_downloading"
-        private const val KEY_LAST_UPDATE_TIME = "last_update_time"
-        private const val KEY_START_IN_FOREGROUND = "start_in_foreground"
+        const val PREFS_NAME = "txa_download_prefs"
+        const val KEY_DOWNLOAD_URL = "download_url"
+        const val KEY_DOWNLOAD_PROGRESS = "download_progress"
+        const val KEY_DOWNLOAD_FILE_PATH = "download_file_path"
+        const val KEY_DOWNLOAD_VERSION_NAME = "download_version_name"
+        const val KEY_IS_DOWNLOADING = "is_downloading"
+        const val KEY_LAST_UPDATE_TIME = "last_update_time"
+        const val KEY_START_IN_FOREGROUND = "start_in_foreground"
         
         // Throttle updates to every 100ms minimum & log every 1s
         private const val UPDATE_THROTTLE_MS = 100L
