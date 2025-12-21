@@ -264,6 +264,17 @@ class TXASettingsActivity : AppCompatActivity() {
             }
         }
 
+        // Hiển modal ngay lập tức để user thấy tiến trình trong app
+        if (downloadProgressDialog == null) {
+            showDownloadProgressDialog(initialProgress = 0)
+        } else {
+            downloadProgressDialog?.update(
+                message = TXATranslation.txa("txademo_update_downloading"),
+                indeterminate = true,
+                progressPercent = 0
+            )
+        }
+
         lifecycleScope.launch {
             try {
                 val resolvedUrl = TXADownloadUrlResolver.resolveUrl(updateInfo.downloadUrl)
