@@ -4,6 +4,7 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.webkit.WebView
 import androidx.appcompat.app.AlertDialog
+import gc.txa.demo.R
 import gc.txa.demo.databinding.DialogChangelogBinding
 import gc.txa.demo.core.TXATranslation
 import gc.txa.demo.core.TXAFormat
