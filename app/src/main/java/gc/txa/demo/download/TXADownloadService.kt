@@ -34,6 +34,10 @@ class TXADownloadService : Service() {
         private const val KEY_DOWNLOAD_FILE_PATH = "download_file_path"
         private const val KEY_DOWNLOAD_VERSION_NAME = "download_version_name"
         private const val KEY_IS_DOWNLOADING = "is_downloading"
+        private const val KEY_LAST_UPDATE_TIME = "last_update_time"
+        
+        // Throttle updates to every 100ms minimum
+        private const val UPDATE_THROTTLE_MS = 100L
         
         // Actions
         const val ACTION_CANCEL = "gc.txa.demo.download.CANCEL"
@@ -143,6 +147,7 @@ class TXADownloadService : Service() {
             var downloaded = 0L
             val buffer = ByteArray(8192)
             var bytesRead: Int
+            var lastUpdateTime = 0L
             
             outputFile.outputStream().use { outputStream ->
                 while (inputStream.read(buffer).also { bytesRead = it } != -1) {
@@ -158,19 +163,30 @@ class TXADownloadService : Service() {
                         ((downloaded * 100) / totalBytes).toInt()
                     } else 0
                     
-                    // Update progress in preferences
-                    prefs.edit().putInt(KEY_DOWNLOAD_PROGRESS, progress).apply()
+                    val currentTime = System.currentTimeMillis()
                     
-                    // Update notification
-                    updateNotification(
-                        title = TXATranslation.txa("txademo_download_background_title"),
-                        content = TXATranslation.txa("txademo_download_background_progress"),
-                        progress = progress,
-                        indeterminate = false
-                    )
-                    
-                    // Broadcast progress to UI
-                    broadcastProgress(progress, downloaded, totalBytes)
+                    // Throttle updates to every 100ms minimum for performance
+                    if (currentTime - lastUpdateTime >= UPDATE_THROTTLE_MS) {
+                        // Update progress in preferences
+                        prefs.edit().apply {
+                            putInt(KEY_DOWNLOAD_PROGRESS, progress)
+                            putLong(KEY_LAST_UPDATE_TIME, currentTime)
+                            apply()
+                        }
+                        
+                        // Update notification
+                        updateNotification(
+                            title = TXATranslation.txa("txademo_download_background_title"),
+                            content = TXATranslation.txa("txademo_download_background_progress"),
+                            progress = progress,
+                            indeterminate = false
+                        )
+                        
+                        // Broadcast progress to UI
+                        broadcastProgress(progress, downloaded, totalBytes)
+                        
+                        lastUpdateTime = currentTime
+                    }
                 }
             }
             
