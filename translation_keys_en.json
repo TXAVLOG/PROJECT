@@ -109,5 +109,19 @@
   "txademo_file_manager_install_success": "Installation started",
   "txademo_file_manager_install_failed": "Failed to start installation",
   "txademo_settings_file_manager": "File Manager",
-  "txademo_settings_open_file_manager": "Open File Manager"
+  "txademo_settings_open_file_manager": "Open File Manager",
+
+  "txademo_download_background_title": "TXA Demo Update",
+  "txademo_download_background_starting": "Starting download...",
+  "txademo_download_background_progress": "Downloading update...",
+  "txademo_download_cancel": "Cancel",
+  "txademo_download_return_app": "Return to App",
+  "txademo_download_cancelled": "Download Cancelled",
+  "txademo_download_cancelled_message": "The download has been cancelled",
+  "txademo_download_complete": "Download Complete",
+  "txademo_download_complete_message": "Update downloaded successfully",
+  "txademo_download_failed": "Download Failed",
+  "txademo_download_failed_message": "Failed to download update",
+  "txademo_download_channel_name": "TXA Downloads",
+  "txademo_download_channel_description": "Background download notifications"
 }

@@ -26,6 +26,7 @@ class TXADownloadService : Service() {
 
     companion object {
         private const val TAG = "DownloadService"
+        private const val LOG_TAG = "TXAAPK"
         private const val NOTIFICATION_CHANNEL_ID = "txa_download_channel"
         private const val NOTIFICATION_ID = 1001
         private const val PREFS_NAME = "txa_download_prefs"
@@ -36,8 +37,9 @@ class TXADownloadService : Service() {
         private const val KEY_IS_DOWNLOADING = "is_downloading"
         private const val KEY_LAST_UPDATE_TIME = "last_update_time"
         
-        // Throttle updates to every 100ms minimum
+        // Throttle updates to every 100ms minimum & log every 1s
         private const val UPDATE_THROTTLE_MS = 100L
+        private const val PROGRESS_LOG_INTERVAL_MS = 1000L
         
         // Actions
         const val ACTION_CANCEL = "gc.txa.demo.download.CANCEL"
@@ -61,7 +63,7 @@ class TXADownloadService : Service() {
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
-        TXALog.i(TAG, "DownloadService created")
+        TXALog.i(LOG_TAG, "Service created, ready for background downloads")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -82,8 +84,15 @@ class TXADownloadService : Service() {
     }
 
     private fun startDownload(intent: Intent?) {
-        val url = intent?.getStringExtra("download_url") ?: return
-        val versionName = intent.getStringExtra("version_name") ?: return
+        val url = intent?.getStringExtra("download_url") ?: run {
+            TXALog.w(LOG_TAG, "startDownload called without URL")
+            return
+        }
+        val versionName = intent.getStringExtra("version_name") ?: run {
+            TXALog.w(LOG_TAG, "startDownload called without version name")
+            return
+        }
+        TXALog.i(LOG_TAG, "Starting download for $versionName from $url")
         
         // Save download state
         prefs.edit().apply {
@@ -101,7 +110,7 @@ class TXADownloadService : Service() {
         val url = prefs.getString(KEY_DOWNLOAD_URL, null) ?: return
         val versionName = prefs.getString(KEY_DOWNLOAD_VERSION_NAME, null) ?: return
         
-        TXALog.i(TAG, "Resuming download for $versionName")
+        TXALog.i(LOG_TAG, "Resuming download for $versionName from $url")
         startDownloadJob(url, versionName)
     }
 
@@ -119,19 +128,22 @@ class TXADownloadService : Service() {
             try {
                 performDownload(url, versionName)
             } catch (e: Exception) {
-                TXALog.e(TAG, "Download failed", e)
+                TXALog.e(LOG_TAG, "Download failed", e)
                 handleDownloadError(e)
             }
         }
     }
 
     private suspend fun performDownload(url: String, versionName: String) {
+        TXALog.i(LOG_TAG, "Creating HTTP request for $url")
         val request = Request.Builder().url(url).build()
         val response = httpClient.newCall(request).execute()
         
         if (!response.isSuccessful) {
+            TXALog.e(LOG_TAG, "HTTP error ${response.code}: ${response.message}")
             throw IOException("HTTP ${response.code}: ${response.message}")
         }
+        TXALog.i(LOG_TAG, "Server response OK (${response.code}), contentLength=${response.body?.contentLength()}")
 
         val totalBytes = response.body?.contentLength() ?: 0L
         val downloadedBytes = response.body?.byteStream()?.use { inputStream ->
@@ -148,6 +160,7 @@ class TXADownloadService : Service() {
             val buffer = ByteArray(8192)
             var bytesRead: Int
             var lastUpdateTime = 0L
+            var lastLogTime = 0L
             
             outputFile.outputStream().use { outputStream ->
                 while (inputStream.read(buffer).also { bytesRead = it } != -1) {
@@ -186,6 +199,14 @@ class TXADownloadService : Service() {
                         broadcastProgress(progress, downloaded, totalBytes)
                         
                         lastUpdateTime = currentTime
+                    }
+
+                    if (currentTime - lastLogTime >= PROGRESS_LOG_INTERVAL_MS) {
+                        TXALog.i(
+                            LOG_TAG,
+                            "Progress $progress% (${TXAFormat.formatBytes(downloaded)}/${if (totalBytes > 0) TXAFormat.formatBytes(totalBytes) else "unknown"})"
+                        )
+                        lastLogTime = currentTime
                     }
                 }
             }
@@ -257,7 +278,7 @@ class TXADownloadService : Service() {
     }
 
     private fun cancelDownload() {
-        TXALog.i(TAG, "Download cancelled by user")
+        TXALog.i(LOG_TAG, "Download cancelled by user")
         prefs.edit().putBoolean(KEY_IS_DOWNLOADING, false).apply()
         downloadJob?.cancel()
         
@@ -291,11 +312,11 @@ class TXADownloadService : Service() {
         startActivity(intent)
         
         // Don't stop service - let it continue in background
-        TXALog.i(TAG, "Returning to app - download continues in background")
+        TXALog.i(LOG_TAG, "Return-to-app action tapped, keeping download in background")
     }
 
     private fun handleDownloadComplete(downloadedBytes: Long, totalBytes: Long) {
-        TXALog.i(TAG, "Download completed: $downloadedBytes/$totalBytes bytes")
+        TXALog.i(LOG_TAG, "Download completed: $downloadedBytes/$totalBytes bytes")
         
         // Clear downloading state but keep file info
         prefs.edit().putBoolean(KEY_IS_DOWNLOADING, false).apply()
@@ -314,7 +335,7 @@ class TXADownloadService : Service() {
     }
 
     private fun handleDownloadError(error: Exception) {
-        TXALog.e(TAG, "Download error", error)
+        TXALog.e(LOG_TAG, "Download error", error)
         
         // Delete partial file
         val filePath = prefs.getString(KEY_DOWNLOAD_FILE_PATH, null)
@@ -359,6 +380,6 @@ class TXADownloadService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         downloadJob?.cancel()
-        TXALog.i(TAG, "DownloadService destroyed")
+        TXALog.i(LOG_TAG, "Service destroyed, job cancelled=${downloadJob?.isCancelled}")
     }
 }

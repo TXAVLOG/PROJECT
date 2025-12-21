@@ -289,8 +289,8 @@ class TXASettingsActivity : AppCompatActivity() {
             
             runOnUiThread {
                 downloadProgressDialog?.let { dialog ->
-                    dialog.updateProgress(
-                        progress = progress,
+                    dialog.update(
+                        progressPercent = progress,
                         message = "${TXATranslation.txa("txademo_update_downloading")} - $progress%"
                     )
                 }
@@ -328,56 +328,6 @@ class TXASettingsActivity : AppCompatActivity() {
         super.onDestroy()
         LocalBroadcastManager.getInstance(this).unregisterReceiver(downloadProgressReceiver)
         downloadProgressDialog?.dismiss()
-    }
-                }
-
-                // Start download
-                TXADownload.downloadFile(resolvedUrl, apkFile).collect { progress ->
-                    when (progress) {
-                        is TXADownload.DownloadProgress.Started -> {
-                            downloadProgressDialog?.update(
-                                message = TXATranslation.txa("txademo_update_downloading"),
-                                indeterminate = true
-                            )
-                        }
-                        is TXADownload.DownloadProgress.Downloading -> {
-                            val percent = (progress.downloadedBytes * 100 / progress.totalBytes).toInt()
-                            val message = """
-                                ${TXAFormat.formatBytes(progress.downloadedBytes)} / ${TXAFormat.formatBytes(progress.totalBytes)}
-                                ${TXATranslation.txa("txademo_update_download_speed")}: ${TXAFormat.formatSpeed(progress.speed)}
-                                ${TXATranslation.txa("txademo_update_download_eta")}: ${TXAFormat.formatETA(progress.eta)}
-                            """.trimIndent()
-                            
-                            downloadProgressDialog?.update(
-                                message = message,
-                                progressPercent = percent,
-                                indeterminate = false
-                            )
-                        }
-                        is TXADownload.DownloadProgress.Completed -> {
-                            downloadProgressDialog?.dismiss()
-                            showInstallDialog(progress.file)
-                        }
-                        is TXADownload.DownloadProgress.Failed -> {
-                            downloadProgressDialog?.dismiss()
-                            Toast.makeText(
-                                this@TXASettingsActivity,
-                                "${TXATranslation.txa("txademo_error_download_failed")}: ${progress.error}",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                downloadProgressDialog?.dismiss()
-                TXAHttp.logError(this@TXASettingsActivity, "Download", e)
-                Toast.makeText(
-                    this@TXASettingsActivity,
-                    "${TXATranslation.txa("txademo_error_download_failed")}: ${e.message}",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
     }
 
     private fun showInstallDialog(apkFile: File) {
