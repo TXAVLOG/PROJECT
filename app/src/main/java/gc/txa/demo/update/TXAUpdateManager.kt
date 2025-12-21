@@ -153,37 +153,66 @@ object TXAUpdateManager {
             throw IOException("Invalid JSON response: ${e.message}")
         }
 
-        val latestVersion = updateResponse.latestVersion ?: run {
-            TXALog.e(TAG, "Missing latestVersion in update response: $responseBody")
-            throw IOException("Invalid JSON response: missing latestVersion")
+        updateResponse.apiVersion?.let {
+            TXALog.i(TAG, "Update API version: $it (source=${updateResponse.source.orEmpty()})")
         }
 
-        val downloadUrl = updateResponse.downloadUrl ?: run {
-            TXALog.e(TAG, "Missing downloadUrl in update response: $responseBody")
-            throw IOException("Invalid JSON response: missing downloadUrl")
+        val latestPayload = updateResponse.latest
+            ?: updateResponse.legacyLatestVersion?.let { legacy ->
+                LatestPayload(
+                    versionCode = legacy.code,
+                    versionName = legacy.name,
+                    downloadUrl = updateResponse.legacyDownloadUrl,
+                    releaseDate = updateResponse.legacyUpdatedAt,
+                    mandatory = updateResponse.legacyForceUpdate,
+                    changelog = updateResponse.legacyChangelog
+                )
+            }
+
+        val latestVersionCode = latestPayload?.versionCode ?: run {
+            TXALog.e(TAG, "Missing latest.versionCode in update response: $responseBody")
+            throw IOException("Invalid JSON response: missing latest.versionCode")
+        }
+
+        val latestVersionName = latestPayload.versionName ?: run {
+            TXALog.e(TAG, "Missing latest.versionName in update response: $responseBody")
+            throw IOException("Invalid JSON response: missing latest.versionName")
+        }
+
+        val downloadUrl = latestPayload.downloadUrl ?: run {
+            TXALog.e(TAG, "Missing latest.downloadUrl in update response: $responseBody")
+            throw IOException("Invalid JSON response: missing latest.downloadUrl")
         }
 
         TXALog.i(
             TAG,
-            "Parsed update response: latest=${latestVersion.name} (${latestVersion.code}), current=$versionName ($versionCode)"
+            "Parsed update response: latest=$latestVersionName ($latestVersionCode), current=$versionName ($versionCode)"
         )
         
-        // Check if update is available
-        return if (latestVersion.code > versionCode) {
-            val changelogContent = fetchChangelogContent(updateResponse)
-            val forced = updateResponse.forceUpdate || (
-                updateResponse.minVersionCode?.let { versionCode < it } ?: false
-            )
+        val apiSignalsUpdate = updateResponse.updateAvailable
+        val shouldUpdate = apiSignalsUpdate || latestVersionCode > versionCode
+
+        if (!shouldUpdate) {
+            return UpdateCheckResult.NoUpdate
+        }
+
+        val changelogContent = latestPayload.changelog?.takeIf { it.isNotBlank() }
+            ?: TXATranslation.txa("txademo_update_changelog")
+
+        val forced = latestPayload.mandatory || (
+            updateResponse.legacyMinVersionCode?.let { versionCode < it } ?: false
+        )
+
+        return if (latestVersionCode > versionCode) {
             UpdateCheckResult.UpdateAvailable(
                 UpdateInfo(
-                    versionName = latestVersion.name,
-                    versionCode = latestVersion.code,
+                    versionName = latestVersionName,
+                    versionCode = latestVersionCode,
                     downloadUrl = downloadUrl,
                     changelog = changelogContent,
                     fileSize = 0L, // Unknown until resolved
                     isForced = forced,
-                    updatedAt = updateResponse.updatedAt,
-                    changelogUrl = updateResponse.changelogUrl
+                    updatedAt = latestPayload.releaseDate ?: updateResponse.legacyUpdatedAt
                 )
             )
         } else {
@@ -276,39 +305,10 @@ object TXAUpdateManager {
         val prefs = context.getSharedPreferences("txa_download_prefs", Context.MODE_PRIVATE)
         return prefs.getInt("download_progress", 0)
     }
-
-    /**
-     * Update check response from server
-     */
-    data class UpdateCheckResponse(
-        @SerializedName(value = "latest_version", alternate = ["latestVersion"])
-        val latestVersion: LatestVersion?,
-        @SerializedName(value = "download_url", alternate = ["downloadUrl"])
-        val downloadUrl: String?,
-        @SerializedName(value = "force_update", alternate = ["forceUpdate"])
-        val forceUpdate: Boolean = false,
-        @SerializedName(value = "min_version_code", alternate = ["minVersionCode"])
-        val minVersionCode: Int? = null,
-        @SerializedName(value = "updated_at", alternate = ["updatedAt"])
-        val updatedAt: String? = null,
-        @SerializedName(value = "changelog", alternate = ["changeLog"])
-        val changelog: String? = null,
-        @SerializedName(value = "changelog_url", alternate = ["changelogUrl"])
-        val changelogUrl: String? = null
-    )
     
-    data class LatestVersion(
-        @SerializedName(value = "name", alternate = ["versionName"])
-        val name: String,
-        @SerializedName(value = "code", alternate = ["versionCode"])
-        val code: Int
-    )
-    
-    /**
-     * Update check result
-     */
-    sealed class UpdateCheckResult {
-        data class UpdateAvailable(val updateInfo: UpdateInfo) : UpdateCheckResult()
+    if (!response.isSuccessful) {
+        TXALog.e(TAG, "Update check HTTP error: ${response.code} - ${response.message}")
+        throw IOException("HTTP ${response.code}: ${response.message}")
         object NoUpdate : UpdateCheckResult()
         data class Error(val message: String) : UpdateCheckResult()
     }
@@ -323,8 +323,7 @@ object TXAUpdateManager {
         val changelog: String,
         val fileSize: Long,
         val isForced: Boolean,
-        val updatedAt: String? = null,
-        val changelogUrl: String? = null
+        val updatedAt: String? = null
     ) : Serializable
 
     fun showUpdateAvailableNotification(context: Context, updateInfo: UpdateInfo) {
@@ -376,30 +375,4 @@ object TXAUpdateManager {
         manager.createNotificationChannel(channel)
     }
 
-    private fun fetchChangelogContent(response: UpdateCheckResponse): String {
-        response.changelog?.takeIf { it.isNotBlank() }?.let { return it }
-
-        val url = response.changelogUrl ?: return TXATranslation.txa("txademo_update_changelog")
-
-        return try {
-            val request = Request.Builder()
-                .url(url)
-                .get()
-                .addHeader("User-Agent", "TXADemo-Android/${BuildConfig.VERSION_NAME}")
-                .build()
-
-            TXAHttp.client.newCall(request).execute().use { resp ->
-                if (!resp.isSuccessful) {
-                    TXALog.w(TAG, "Failed to fetch changelog from $url: ${resp.code}")
-                    return TXATranslation.txa("txademo_update_changelog")
-                }
-
-                resp.body?.string()?.takeIf { it.isNotBlank() }
-                    ?: TXATranslation.txa("txademo_update_changelog")
-            }
-        } catch (e: Exception) {
-            TXALog.e(TAG, "Error fetching changelog from $url", e)
-            TXATranslation.txa("txademo_update_changelog")
-        }
-    }
 }
