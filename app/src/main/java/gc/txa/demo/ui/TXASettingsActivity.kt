@@ -264,14 +264,28 @@ class TXASettingsActivity : AppCompatActivity() {
             }
         }
 
-        // Start background download
-        TXAUpdateManager.startBackgroundDownload(this, updateInfo)
-        
-        Toast.makeText(
-            this,
-            TXATranslation.txa("txademo_download_background_starting"),
-            Toast.LENGTH_SHORT
-        ).show()
+        lifecycleScope.launch {
+            try {
+                val resolvedUrl = TXADownloadUrlResolver.resolveUrl(updateInfo.downloadUrl)
+                    ?: updateInfo.downloadUrl
+                val resolvedInfo = updateInfo.copy(downloadUrl = resolvedUrl)
+
+                TXAUpdateManager.startBackgroundDownload(this@TXASettingsActivity, resolvedInfo)
+
+                Toast.makeText(
+                    this@TXASettingsActivity,
+                    TXATranslation.txa("txademo_download_background_starting"),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } catch (e: Exception) {
+                TXALog.e("SettingsActivity", "Failed to resolve download URL", e)
+                Toast.makeText(
+                    this@TXASettingsActivity,
+                    "Failed to resolve download URL: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
     }
 
     private fun checkAndShowDownloadDialog() {
