@@ -62,6 +62,7 @@
   "txademo_error_no_space": "Insufficient storage space",
   "txademo_error_invalid_apk": "Invalid APK file",
   "txademo_error_resolver_failed": "Failed to resolve download URL",
+  "txademo_error_download_url_unsupported": "Unsupported download source",
   "txademo_action_ok": "OK",
   "txademo_action_cancel": "Cancel",
   "txademo_action_yes": "Yes",

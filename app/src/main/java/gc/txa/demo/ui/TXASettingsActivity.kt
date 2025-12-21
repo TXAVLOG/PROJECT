@@ -1,44 +1,64 @@
 package gc.txa.demo.ui
 
 import android.app.AlertDialog
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.appset.AppSet
 import com.google.android.gms.appset.AppSetIdClient
 import gc.txa.demo.BuildConfig
+import gc.txa.demo.R
 import gc.txa.demo.TXAApp
 import gc.txa.demo.core.TXAFormat
 import gc.txa.demo.core.TXAHttp
 import gc.txa.demo.core.TXALog
 import gc.txa.demo.core.TXATranslation
 import gc.txa.demo.databinding.ActivityTxaSettingsBinding
-import gc.txa.demo.ui.components.TXAProgressDialog
+import gc.txa.demo.download.TXADownloadService
 import gc.txa.demo.ui.components.TXAChangelogDialog
+import gc.txa.demo.ui.components.TXAProgressDialog
 import gc.txa.demo.update.TXADownload
 import gc.txa.demo.update.TXADownloadUrlResolver
 import gc.txa.demo.update.TXAInstall
 import gc.txa.demo.update.TXAUpdateManager
-import gc.txa.demo.download.TXADownloadService
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
-import android.content.BroadcastReceiver
-import android.content.IntentFilter
 
 class TXASettingsActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_LAUNCH_FROM_UPDATE_NOTIFICATION = "extra_launch_from_update_notification"
         const val EXTRA_AUTO_START_DOWNLOAD = "extra_auto_start_download"
         const val EXTRA_UPDATE_INFO = "extra_update_info"
+
+        private const val DOWNLOAD_ERROR_CHANNEL_ID = "txa_download_error_channel"
+        private const val DOWNLOAD_ERROR_NOTIFICATION_ID = 3101
+    }
+
+    private val downloadErrorReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val message = intent?.getStringExtra(TXADownloadService.EXTRA_ERROR_MESSAGE)
+                ?: TXATranslation.txa("txademo_error_download_failed")
+            runOnUiThread {
+                downloadProgressDialog?.dismiss()
+                downloadProgressDialog = null
+                showDownloadErrorNotification(message)
+                Toast.makeText(this@TXASettingsActivity, message, Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private lateinit var binding: ActivityTxaSettingsBinding
@@ -66,6 +86,10 @@ class TXASettingsActivity : AppCompatActivity() {
         LocalBroadcastManager.getInstance(this).registerReceiver(
             downloadProgressReceiver,
             android.content.IntentFilter(TXADownloadService.BROADCAST_DOWNLOAD_PROGRESS)
+        )
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            downloadErrorReceiver,
+            android.content.IntentFilter(TXADownloadService.BROADCAST_DOWNLOAD_ERROR)
         )
         
         // Register for language change broadcasts
@@ -316,7 +340,9 @@ class TXASettingsActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val resolvedUrl = TXADownloadUrlResolver.resolveUrl(updateInfo.downloadUrl)
-                    ?: updateInfo.downloadUrl
+                    ?: throw IllegalArgumentException(
+                        TXATranslation.txa("txademo_error_download_url_unsupported")
+                    )
                 val resolvedInfo = updateInfo.copy(downloadUrl = resolvedUrl)
 
                 TXAUpdateManager.startBackgroundDownload(this@TXASettingsActivity, resolvedInfo)
@@ -327,12 +353,7 @@ class TXASettingsActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
             } catch (e: Exception) {
-                TXALog.e("SettingsActivity", "Failed to resolve download URL", e)
-                Toast.makeText(
-                    this@TXASettingsActivity,
-                    "Failed to resolve download URL: ${e.message}",
-                    Toast.LENGTH_LONG
-                ).show()
+                handleDownloadUrlFailure(e)
             }
         }
     }
@@ -373,6 +394,59 @@ class TXASettingsActivity : AppCompatActivity() {
         } else {
             startService(intent)
         }
+    }
+
+    private fun handleDownloadUrlFailure(error: Exception) {
+        TXALog.e("SettingsActivity", "Failed to resolve download URL", error)
+        downloadProgressDialog?.dismiss()
+        downloadProgressDialog = null
+
+        val rawMessage = error.message
+        val localizedMessage = when {
+            error is IllegalArgumentException -> rawMessage
+            rawMessage.isNullOrBlank() -> TXATranslation.txa("txademo_error_resolver_failed")
+            else -> rawMessage
+        } ?: TXATranslation.txa("txademo_error_resolver_failed")
+
+        showDownloadErrorNotification(localizedMessage)
+
+        Toast.makeText(
+            this,
+            localizedMessage,
+            Toast.LENGTH_LONG
+        ).show()
+    }
+
+    private fun showDownloadErrorNotification(message: String) {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        ensureDownloadErrorChannel(notificationManager)
+
+        val notification = NotificationCompat.Builder(this, DOWNLOAD_ERROR_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(TXATranslation.txa("txademo_download_failed"))
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        notificationManager.notify(DOWNLOAD_ERROR_NOTIFICATION_ID, notification)
+    }
+
+    private fun ensureDownloadErrorChannel(manager: NotificationManager) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+
+        if (manager.getNotificationChannel(DOWNLOAD_ERROR_CHANNEL_ID) != null) return
+
+        val channel = NotificationChannel(
+            DOWNLOAD_ERROR_CHANNEL_ID,
+            TXATranslation.txa("txademo_download_failed"),
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = TXATranslation.txa("txademo_error_resolver_failed")
+        }
+
+        manager.createNotificationChannel(channel)
     }
 
     private val languageChangeReceiver = object : BroadcastReceiver() {
@@ -546,6 +620,7 @@ class TXASettingsActivity : AppCompatActivity() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(downloadProgressReceiver)
         LocalBroadcastManager.getInstance(this).unregisterReceiver(downloadCompleteReceiver)
         LocalBroadcastManager.getInstance(this).unregisterReceiver(languageChangeReceiver)
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(downloadErrorReceiver)
         downloadProgressDialog?.dismiss()
     }
 }

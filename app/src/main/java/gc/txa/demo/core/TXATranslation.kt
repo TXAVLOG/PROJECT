@@ -113,6 +113,7 @@ object TXATranslation {
         "txademo_error_no_space" to "Insufficient storage space",
         "txademo_error_invalid_apk" to "Invalid APK file",
         "txademo_error_resolver_failed" to "Failed to resolve download URL",
+        "txademo_error_download_url_unsupported" to "Unsupported download source",
         
         // Common Actions
         "txademo_action_ok" to "OK",

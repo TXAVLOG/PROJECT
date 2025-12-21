@@ -53,6 +53,7 @@ class TXADownloadService : Service() {
         // Broadcast intents
         const val BROADCAST_DOWNLOAD_PROGRESS = "gc.txa.demo.DOWNLOAD_PROGRESS"
         const val BROADCAST_DOWNLOAD_COMPLETE = "gc.txa.demo.DOWNLOAD_COMPLETE"
+        const val BROADCAST_DOWNLOAD_ERROR = "gc.txa.demo.DOWNLOAD_ERROR"
         const val EXTRA_PROGRESS = "progress"
         const val EXTRA_DOWNLOADED_BYTES = "downloaded_bytes"
         const val EXTRA_TOTAL_BYTES = "total_bytes"
@@ -60,6 +61,7 @@ class TXADownloadService : Service() {
         const val EXTRA_ETA_SECONDS = "eta_seconds"
         const val EXTRA_FILE_PATH = "file_path"
         const val EXTRA_START_FOREGROUND = "start_foreground"
+        const val EXTRA_ERROR_MESSAGE = "error_message"
     }
 
     private var downloadJob: Job? = null
@@ -419,11 +421,20 @@ class TXADownloadService : Service() {
         prefs.edit().clear().apply()
         dismissBackgroundNotice()
         
-        // Show error notification
+        val message = error.message ?: TXATranslation.txa("txademo_download_failed_message")
+
+        // Notify UI layer about failure
+        val errorIntent = Intent(BROADCAST_DOWNLOAD_ERROR).apply {
+            putExtra(EXTRA_ERROR_MESSAGE, message)
+        }
+        LocalBroadcastManager.getInstance(this).sendBroadcast(errorIntent)
+
+        // Show error notification with app icon
         val errorNotification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_notify_error)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(TXATranslation.txa("txademo_download_failed"))
-            .setContentText(error.message ?: TXATranslation.txa("txademo_download_failed_message"))
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setAutoCancel(true)
             .build()
         

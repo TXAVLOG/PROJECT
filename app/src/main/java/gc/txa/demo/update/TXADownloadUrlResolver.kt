@@ -1,11 +1,21 @@
 package gc.txa.demo.update
 
+import android.net.Uri
 import gc.txa.demo.core.TXAHttp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Request
+import java.util.Locale
 
 object TXADownloadUrlResolver {
+
+    private val allowedHostSuffixes = listOf(
+        "github.com",
+        "raw.githubusercontent.com",
+        "mediafire.com",
+        "drive.google.com",
+        "googleusercontent.com"
+    )
 
     /**
      * Resolve MediaFire download URL from page URL
@@ -126,14 +136,27 @@ object TXADownloadUrlResolver {
      * Resolve download URL based on URL type
      */
     suspend fun resolveUrl(url: String): String? {
-        return when {
+        val normalizedUrl = when {
             url.contains("mediafire.com/file/") -> resolveMediaFireUrl(url)
             url.contains("github.com") && url.contains("/blob/") -> resolveGitHubUrl(url)
             url.contains("raw.githubusercontent.com") -> url // Direct raw GitHub URL
             url.contains("drive.google.com/file/") -> resolveGoogleDriveUrl(url)
             url.contains("drive.google.com/uc?export=download") -> url // Direct Google Drive URL
-            url.endsWith(".apk") -> url // Direct APK link
+            url.endsWith(".apk", ignoreCase = true) -> url // Direct APK link
             else -> null
+        } ?: return null
+
+        return normalizedUrl.takeIf { isSupportedSource(it) }
+    }
+
+    fun isSupportedSource(url: String): Boolean {
+        val host = runCatching { Uri.parse(url).host }
+            .getOrNull()
+            ?.lowercase(Locale.ROOT)
+            ?: return false
+
+        return allowedHostSuffixes.any { suffix ->
+            host == suffix || host.endsWith(".$suffix")
         }
     }
 }
