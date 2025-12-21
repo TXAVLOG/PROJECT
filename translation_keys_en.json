@@ -45,6 +45,8 @@
   "txademo_update_download_progress": "Progress",
   "txademo_update_download_speed": "Speed",
   "txademo_update_download_eta": "Time remaining",
+  "txademo_update_on": "UPDATE ON %s",
+  "txademo_powered_by": "POWER BY TXA!",
   "txademo_update_download_now": "Download Now",
   "txademo_update_install_now": "Install Now",
   "txademo_update_cancel": "Cancel",

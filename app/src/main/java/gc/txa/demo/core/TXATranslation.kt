@@ -207,7 +207,10 @@ object TXATranslation {
         "txademo_time_hours" to "%dh %dm %ds",
         "txademo_time_days" to "%dd %dh %dm",
         "txademo_time_months" to "%dM %dd %dh",
-        "txademo_time_years" to "%dy %dM %dd"
+        "txademo_time_years" to "%dy %dM %dd",
+        
+        "txademo_update_on" to "UPDATE ON %s",
+        "txademo_powered_by" to "©POWER BY TXA!"
     )
 
     /**

@@ -22,6 +22,7 @@ import gc.txa.demo.core.TXALog
 import gc.txa.demo.core.TXATranslation
 import gc.txa.demo.databinding.ActivityTxaSettingsBinding
 import gc.txa.demo.ui.components.TXAProgressDialog
+import gc.txa.demo.ui.components.TXAChangelogDialog
 import gc.txa.demo.update.TXADownload
 import gc.txa.demo.update.TXADownloadUrlResolver
 import gc.txa.demo.update.TXAInstall
@@ -233,22 +234,17 @@ class TXASettingsActivity : AppCompatActivity() {
     }
 
     private fun showUpdateDialog(updateInfo: TXAUpdateManager.UpdateInfo) {
-        val message = """
-            ${TXATranslation.txa("txademo_update_new_version")}: ${updateInfo.versionName}
-            ${TXATranslation.txa("txademo_update_current_version")}: ${TXAUpdateManager.getCurrentVersion()}
-            
-            ${TXATranslation.txa("txademo_update_changelog")}:
-            ${updateInfo.changelog}
-        """.trimIndent()
-
-        AlertDialog.Builder(this)
-            .setTitle(TXATranslation.txa("txademo_update_available"))
-            .setMessage(message)
-            .setPositiveButton(TXATranslation.txa("txademo_update_download_now")) { _, _ ->
-                startDownload(updateInfo)
-            }
-            .setNegativeButton(TXATranslation.txa("txademo_update_later"), null)
-            .show()
+        val changelogDialog = TXAChangelogDialog(this)
+        
+        // Show changelog with WebView and download button
+        changelogDialog.show(
+            title = TXATranslation.txa("txademo_update_available"),
+            changelog = updateInfo.changelog,
+            versionName = updateInfo.versionName,
+            updatedAt = updateInfo.updatedAt,
+            showDownloadButton = true,
+            onDownloadClick = { startDownload(updateInfo) }
+        )
     }
 
     private fun startDownload(updateInfo: TXAUpdateManager.UpdateInfo) {

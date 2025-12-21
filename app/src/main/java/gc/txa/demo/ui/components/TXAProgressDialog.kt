@@ -88,6 +88,9 @@ class TXAProgressDialog(private val context: Context) {
         binding.btnInstall.text = TXATranslation.txa("txademo_update_install")
         binding.btnInstall.isVisible = true
         onInstallClick = onInstall
+        
+        // Make dialog cancelable after completion
+        dialog?.setCancelable(true)
     }
 
     fun dismiss() {

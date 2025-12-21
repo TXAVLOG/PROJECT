@@ -1,5 +1,8 @@
 package gc.txa.demo.core
 
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import kotlin.math.pow
 
 object TXAFormat {
@@ -92,5 +95,26 @@ object TXAFormat {
         if (total <= 0) return "0.00%"
         val percent = (downloaded.toDouble() / total.toDouble()) * 100
         return formatPercent(percent)
+    }
+
+    /**
+     * Format ISO8601 update timestamp into localized readable string.
+     */
+    fun formatUpdateTime(isoString: String?): String {
+        if (isoString.isNullOrBlank()) return "--"
+
+        return try {
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
+            val date = inputFormat.parse(isoString) ?: return isoString
+
+            val outputFormat = SimpleDateFormat("HH:mm:ss dd/MM/yyyy", Locale.getDefault()).apply {
+                timeZone = TimeZone.getDefault()
+            }
+            outputFormat.format(date)
+        } catch (e: Exception) {
+            isoString
+        }
     }
 }
