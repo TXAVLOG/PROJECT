@@ -91,10 +91,13 @@ object TXATranslation {
         "txademo_update_new_version" to "New version",
         "txademo_update_current_version" to "Current version",
         "txademo_update_changelog" to "Changelog",
+        "txademo_update_changelog_empty" to "No changelog was provided for this version.",
         "txademo_update_file_size" to "File size",
         "txademo_update_download_progress" to "Progress",
         "txademo_update_download_speed" to "Speed",
         "txademo_update_download_eta" to "Time remaining",
+        "txademo_update_on_default" to "Updated on",
+        "txademo_update_time_unavailable" to "Release time not provided",
         
         // Update Flow - Actions
         "txademo_update_download_now" to "Download Now",
@@ -211,6 +214,8 @@ object TXATranslation {
         "txademo_time_years" to "%dy %dM %dd",
         
         "txademo_update_on" to "UPDATE ON %s",
+        "txademo_update_on_default" to "UPDATE ON",
+        "txademo_update_time_unavailable" to "Release time not provided",
         "txademo_powered_by" to "©POWER BY TXA!",
         "txademo_update_notification_body" to "Version %s is available to download",
         "txademo_update_notification_channel_name" to "TXA Update Alerts",

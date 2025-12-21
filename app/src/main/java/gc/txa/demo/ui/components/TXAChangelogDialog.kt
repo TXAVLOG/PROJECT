@@ -52,11 +52,8 @@ class TXAChangelogDialog(private val context: Context) {
         val webView = binding?.webView ?: return
         
         // Handle empty changelog
-        val changelogContent = if (changelog.isBlank()) {
-            "<p style='color: #666; font-style: italic;'>${TXATranslation.txa("txademo_msg_info")}: No changelog available</p>"
-        } else {
-            changelog
-        }
+        val changelogContent = changelog.takeIf { it.isNotBlank() }
+            ?: "<p style='color: #666; font-style: italic;'>${TXATranslation.txa("txademo_update_changelog_empty")}</p>"
         
         // Try to load custom CSS from resources first
         val customCss = loadCustomCss()
@@ -168,13 +165,16 @@ class TXAChangelogDialog(private val context: Context) {
 
     private fun setupFooter(versionName: String, updatedAt: String?) {
         val formattedTime = TXAFormat.formatUpdateTime(updatedAt)
-        val updateOnTemplate = TXATranslation.txa("txademo_update_on")
-        val updateOnText = if (updateOnTemplate.contains("%s")) {
-            String.format(updateOnTemplate, formattedTime)
+        val displayTime = formattedTime.takeIf { it.isNotBlank() && it != "--" }
+            ?: TXATranslation.txa("txademo_update_time_unavailable")
+
+        val template = TXATranslation.txa("txademo_update_on")
+        val updateOnText = if (template.contains("%s")) {
+            String.format(template, displayTime)
         } else {
-            "$updateOnTemplate $formattedTime"
+            "$template $displayTime"
         }
-        
+
         val footerText = "$updateOnText - v$versionName - ${TXATranslation.txa("txademo_powered_by")}"
         
         binding?.tvFooter?.text = footerText

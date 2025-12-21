@@ -31,6 +31,7 @@ class TXADownloadService : Service() {
         private const val NOTIFICATION_CHANNEL_ID = "txa_download_channel"
         private const val NOTIFICATION_ID = 1001
         private const val BACKGROUND_INFO_NOTIFICATION_ID = 1002
+        private const val COMPLETION_NOTIFICATION_ID = 1003
         const val PREFS_NAME = "txa_download_prefs"
         const val KEY_DOWNLOAD_URL = "download_url"
         const val KEY_DOWNLOAD_PROGRESS = "download_progress"
@@ -395,15 +396,31 @@ class TXADownloadService : Service() {
         }
         LocalBroadcastManager.getInstance(this).sendBroadcast(completeIntent)
         
-        // Show completion notification
+        // Show completion notification with install action
+        val installIntent = Intent(this, TXASettingsActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("install_file", filePath)
+        }
+        val installPendingIntent = PendingIntent.getActivity(
+            this, 0, installIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        
         val completionNotification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setContentTitle(TXATranslation.txa("txademo_download_complete"))
             .setContentText(TXATranslation.txa("txademo_download_complete_message"))
+            .setContentIntent(installPendingIntent)
+            .addAction(
+                android.R.drawable.ic_menu_save,
+                TXATranslation.txa("txademo_update_install"),
+                installPendingIntent
+            )
             .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
         
-        notificationManager.notify(NOTIFICATION_ID, completionNotification)
+        notificationManager.notify(COMPLETION_NOTIFICATION_ID, completionNotification)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -448,10 +465,10 @@ class TXADownloadService : Service() {
             val channel = NotificationChannel(
                 NOTIFICATION_CHANNEL_ID,
                 TXATranslation.txa("txademo_download_channel_name"),
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = TXATranslation.txa("txademo_download_channel_description")
-                setShowBadge(false)
+                setShowBadge(true)
                 enableVibration(false)
                 setSound(null, null)
             }
