@@ -248,21 +248,23 @@ class TXASettingsActivity : AppCompatActivity() {
     private fun handleNotificationLaunch(intent: Intent?) {
         val launchedFromNotification = intent?.getBooleanExtra(EXTRA_LAUNCH_FROM_UPDATE_NOTIFICATION, false) ?: false
         val autoStartDownload = intent?.getBooleanExtra(EXTRA_AUTO_START_DOWNLOAD, false) ?: false
-        val updateInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent?.getSerializableExtra(
-                EXTRA_UPDATE_INFO,
-                TXAUpdateManager.UpdateInfo::class.java
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            intent?.getSerializableExtra(EXTRA_UPDATE_INFO) as? TXAUpdateManager.UpdateInfo
+        val updateInfo = intent?.let {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                it.getSerializableExtra(
+                    EXTRA_UPDATE_INFO,
+                    TXAUpdateManager.UpdateInfo::class.java
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                it.getSerializableExtra(EXTRA_UPDATE_INFO) as? TXAUpdateManager.UpdateInfo
+            }
         }
 
         if (launchedFromNotification && updateInfo != null) {
             showUpdateDialog(updateInfo, forceAutoDownload = autoStartDownload)
-            intent.removeExtra(EXTRA_LAUNCH_FROM_UPDATE_NOTIFICATION)
-            intent.removeExtra(EXTRA_AUTO_START_DOWNLOAD)
-            intent.removeExtra(EXTRA_UPDATE_INFO)
+            intent?.removeExtra(EXTRA_LAUNCH_FROM_UPDATE_NOTIFICATION)
+            intent?.removeExtra(EXTRA_AUTO_START_DOWNLOAD)
+            intent?.removeExtra(EXTRA_UPDATE_INFO)
         }
     }
 
