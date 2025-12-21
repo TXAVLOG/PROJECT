@@ -8,17 +8,19 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import gc.txa.demo.BuildConfig
-import gc.txa.demo.core.TXATranslation
-import gc.txa.demo.core.TXAHttp
-import gc.txa.demo.core.TXALog
-import gc.txa.demo.download.TXADownloadService
-import gc.txa.demo.ui.TXASettingsActivity
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
+import gc.txa.demo.BuildConfig
+import gc.txa.demo.TXAApp
+import gc.txa.demo.core.TXAHttp
+import gc.txa.demo.core.TXALog
+import gc.txa.demo.core.TXATranslation
+import gc.txa.demo.download.TXADownloadService
+import gc.txa.demo.ui.TXASettingsActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Request
 import java.io.IOException
 import java.io.Serializable
@@ -119,7 +121,8 @@ object TXAUpdateManager {
         versionName: String
     ): UpdateCheckResult {
         
-        val url = "$API_BASE/update/check?versionCode=$versionCode&versionName=$versionName"
+        val locale = runCatching { TXAApp.getLocale(context) }.getOrNull().orEmpty()
+        val url = buildUpdateCheckUrl(versionCode, versionName, locale)
         TXALog.d(TAG, "Making update check request to: $url")
         TXAHttp.logInfo(context, TAG, "Update check URL: $url")
         
@@ -204,6 +207,30 @@ object TXAUpdateManager {
                 updatedAt = latestPayload.releaseDate
             )
         )
+    }
+
+    private fun buildUpdateCheckUrl(
+        versionCode: Int,
+        versionName: String,
+        locale: String
+    ): String {
+        val baseUrl = "$API_BASE/update/check"
+        val httpUrl = baseUrl.toHttpUrlOrNull()
+            ?: throw IllegalArgumentException("Invalid API base: $baseUrl")
+
+        val fullUrl = httpUrl.newBuilder()
+            .addQueryParameter("versionCode", versionCode.toString())
+            .addQueryParameter("versionName", versionName)
+            .apply {
+                if (locale.isNotBlank()) {
+                    addQueryParameter("locale", locale)
+                }
+            }
+            .build()
+            .toString()
+
+        TXALog.d(TAG, "Built update check URL: $fullUrl")
+        return fullUrl
     }
     
     /**
