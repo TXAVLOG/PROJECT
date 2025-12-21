@@ -35,6 +35,11 @@ import android.content.BroadcastReceiver
 import android.content.IntentFilter
 
 class TXASettingsActivity : AppCompatActivity() {
+    companion object {
+        const val EXTRA_LAUNCH_FROM_UPDATE_NOTIFICATION = "extra_launch_from_update_notification"
+        const val EXTRA_AUTO_START_DOWNLOAD = "extra_auto_start_download"
+        const val EXTRA_UPDATE_INFO = "extra_update_info"
+    }
 
     private lateinit var binding: ActivityTxaSettingsBinding
     private lateinit var appSetIdClient: AppSetIdClient
@@ -49,6 +54,7 @@ class TXASettingsActivity : AppCompatActivity() {
         appSetIdClient = AppSet.getClient(this)
         
         setupUI()
+        handleNotificationLaunch(intent)
         loadAppSetId()
         
         // Check if we should show download dialog (from notification return)
@@ -67,6 +73,12 @@ class TXASettingsActivity : AppCompatActivity() {
             languageChangeReceiver,
             android.content.IntentFilter(TXATranslation.ACTION_LANGUAGE_CHANGED)
         )
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleNotificationLaunch(intent)
     }
 
     override fun onStart() {
@@ -233,7 +245,20 @@ class TXASettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun showUpdateDialog(updateInfo: TXAUpdateManager.UpdateInfo) {
+    private fun handleNotificationLaunch(intent: Intent?) {
+        val launchedFromNotification = intent?.getBooleanExtra(EXTRA_LAUNCH_FROM_UPDATE_NOTIFICATION, false) ?: false
+        val autoStartDownload = intent?.getBooleanExtra(EXTRA_AUTO_START_DOWNLOAD, false) ?: false
+        val updateInfo = intent?.getSerializableExtra(EXTRA_UPDATE_INFO) as? TXAUpdateManager.UpdateInfo
+
+        if (launchedFromNotification && updateInfo != null) {
+            showUpdateDialog(updateInfo, forceAutoDownload = autoStartDownload)
+            intent.removeExtra(EXTRA_LAUNCH_FROM_UPDATE_NOTIFICATION)
+            intent.removeExtra(EXTRA_AUTO_START_DOWNLOAD)
+            intent.removeExtra(EXTRA_UPDATE_INFO)
+        }
+    }
+
+    private fun showUpdateDialog(updateInfo: TXAUpdateManager.UpdateInfo, forceAutoDownload: Boolean = false) {
         val changelogDialog = TXAChangelogDialog(this)
         
         // Show changelog with WebView and download button
@@ -245,6 +270,10 @@ class TXASettingsActivity : AppCompatActivity() {
             showDownloadButton = true,
             onDownloadClick = { startDownload(updateInfo) }
         )
+
+        if (forceAutoDownload) {
+            startDownload(updateInfo)
+        }
     }
 
     private fun startDownload(updateInfo: TXAUpdateManager.UpdateInfo) {

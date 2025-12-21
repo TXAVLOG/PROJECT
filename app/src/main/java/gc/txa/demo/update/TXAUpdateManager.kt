@@ -1,14 +1,19 @@
 package gc.txa.demo.update
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Build
+import androidx.core.app.NotificationCompat
 import gc.txa.demo.BuildConfig
 import gc.txa.demo.core.TXATranslation
 import gc.txa.demo.core.TXAHttp
 import gc.txa.demo.core.TXALog
 import gc.txa.demo.download.TXADownloadService
+import gc.txa.demo.ui.TXASettingsActivity
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +21,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.io.IOException
+import java.io.Serializable
 import java.util.regex.Pattern
 
 object TXAUpdateManager {
@@ -30,6 +36,8 @@ object TXAUpdateManager {
     private const val PREFS_NAME = "txa_update_prefs"
     private const val KEY_LAST_UPDATE_CHECK = "last_update_check"
     private const val KEY_CACHED_VERSION_CODE = "cached_version_code"
+    private const val UPDATE_NOTIFICATION_CHANNEL_ID = "txa_update_alerts"
+    private const val UPDATE_NOTIFICATION_ID = 2001
     
     private val gson = Gson()
     private const val TAG = "UpdateManager"
@@ -113,6 +121,7 @@ object TXAUpdateManager {
         
         val url = "$API_BASE/update/check?versionCode=$versionCode&versionName=$versionName"
         TXALog.d(TAG, "Making update check request to: $url")
+        TXAHttp.logInfo(applicationContext, TAG, "Update check URL: $url")
         
         val request = Request.Builder()
             .url(url)
@@ -271,26 +280,26 @@ object TXAUpdateManager {
      * Update check response from server
      */
     data class UpdateCheckResponse(
-        @SerializedName("latest_version")
+        @SerializedName(value = "latest_version", alternate = ["latestVersion"])
         val latestVersion: LatestVersion?,
-        @SerializedName("download_url")
+        @SerializedName(value = "download_url", alternate = ["downloadUrl"])
         val downloadUrl: String?,
-        @SerializedName("force_update")
+        @SerializedName(value = "force_update", alternate = ["forceUpdate"])
         val forceUpdate: Boolean = false,
-        @SerializedName("min_version_code")
+        @SerializedName(value = "min_version_code", alternate = ["minVersionCode"])
         val minVersionCode: Int? = null,
-        @SerializedName("updated_at")
+        @SerializedName(value = "updated_at", alternate = ["updatedAt"])
         val updatedAt: String? = null,
-        @SerializedName("changelog")
+        @SerializedName(value = "changelog", alternate = ["changeLog"])
         val changelog: String? = null,
-        @SerializedName("changelog_url")
+        @SerializedName(value = "changelog_url", alternate = ["changelogUrl"])
         val changelogUrl: String? = null
     )
     
     data class LatestVersion(
-        @SerializedName("name")
+        @SerializedName(value = "name", alternate = ["versionName"])
         val name: String,
-        @SerializedName("code")
+        @SerializedName(value = "code", alternate = ["versionCode"])
         val code: Int
     )
     
@@ -315,7 +324,56 @@ object TXAUpdateManager {
         val isForced: Boolean,
         val updatedAt: String? = null,
         val changelogUrl: String? = null
-    )
+    ) : Serializable
+
+    fun showUpdateAvailableNotification(context: Context, updateInfo: UpdateInfo) {
+        ensureUpdateNotificationChannel(context)
+
+        val content = String.format(
+            TXATranslation.txa("txademo_update_notification_body"),
+            updateInfo.versionName
+        )
+
+        val intent = Intent(context, TXASettingsActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(TXASettingsActivity.EXTRA_LAUNCH_FROM_UPDATE_NOTIFICATION, true)
+            putExtra(TXASettingsActivity.EXTRA_AUTO_START_DOWNLOAD, true)
+            putExtra(TXASettingsActivity.EXTRA_UPDATE_INFO, updateInfo)
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            UPDATE_NOTIFICATION_ID,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = NotificationCompat.Builder(context, UPDATE_NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setContentTitle(TXATranslation.txa("txademo_update_available"))
+            .setContentText(content)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(UPDATE_NOTIFICATION_ID, builder.build())
+    }
+
+    private fun ensureUpdateNotificationChannel(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (manager.getNotificationChannel(UPDATE_NOTIFICATION_CHANNEL_ID) != null) return
+
+        val channel = NotificationChannel(
+            UPDATE_NOTIFICATION_CHANNEL_ID,
+            TXATranslation.txa("txademo_update_notification_channel_name"),
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = TXATranslation.txa("txademo_update_notification_channel_description")
+        }
+        manager.createNotificationChannel(channel)
+    }
 
     private fun fetchChangelogContent(response: UpdateCheckResponse): String {
         response.changelog?.takeIf { it.isNotBlank() }?.let { return it }

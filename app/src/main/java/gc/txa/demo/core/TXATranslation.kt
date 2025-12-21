@@ -210,7 +210,10 @@ object TXATranslation {
         "txademo_time_years" to "%dy %dM %dd",
         
         "txademo_update_on" to "UPDATE ON %s",
-        "txademo_powered_by" to "©POWER BY TXA!"
+        "txademo_powered_by" to "©POWER BY TXA!",
+        "txademo_update_notification_body" to "Version %s is available to download",
+        "txademo_update_notification_channel_name" to "TXA Update Alerts",
+        "txademo_update_notification_channel_description" to "Receive notifications when a new version is ready"
     )
 
     /**
