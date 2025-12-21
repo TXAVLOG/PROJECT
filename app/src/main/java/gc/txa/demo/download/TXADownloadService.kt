@@ -30,6 +30,7 @@ class TXADownloadService : Service() {
         private const val LOG_TAG = "TXAAPK"
         private const val NOTIFICATION_CHANNEL_ID = "txa_download_channel"
         private const val NOTIFICATION_ID = 1001
+        private const val BACKGROUND_INFO_NOTIFICATION_ID = 1002
         private const val PREFS_NAME = "txa_download_prefs"
         private const val KEY_DOWNLOAD_URL = "download_url"
         private const val KEY_DOWNLOAD_PROGRESS = "download_progress"
@@ -45,7 +46,8 @@ class TXADownloadService : Service() {
         // Actions
         const val ACTION_CANCEL = "gc.txa.demo.download.CANCEL"
         const val ACTION_RETURN = "gc.txa.demo.download.RETURN"
-        const val ACTION_UPDATE_PROGRESS = "gc.txa.demo.download.UPDATE_PROGRESS"
+        const val ACTION_APP_FOREGROUND = "gc.txa.demo.download.APP_FOREGROUND"
+        const val ACTION_APP_BACKGROUND = "gc.txa.demo.download.APP_BACKGROUND"
         
         // Broadcast intents
         const val BROADCAST_DOWNLOAD_PROGRESS = "gc.txa.demo.DOWNLOAD_PROGRESS"
@@ -55,9 +57,14 @@ class TXADownloadService : Service() {
     }
 
     private var downloadJob: Job? = null
+    private var isAppInForeground = false
+    private var backgroundNoticeVisible = false
     private lateinit var prefs: SharedPreferences
     private lateinit var notificationManager: NotificationManager
     private val httpClient = OkHttpClient()
+    private var lastProgress = 0
+    private var lastDownloadedBytes = 0L
+    private var lastTotalBytes = 0L
 
     override fun onCreate() {
         super.onCreate()
@@ -71,6 +78,17 @@ class TXADownloadService : Service() {
         when (intent?.action) {
             ACTION_CANCEL -> cancelDownload()
             ACTION_RETURN -> returnToApp()
+            ACTION_APP_FOREGROUND -> {
+                TXALog.i(LOG_TAG, "App returned to foreground during download")
+                isAppInForeground = true
+                dismissBackgroundNotice()
+                refreshCurrentNotification()
+            }
+            ACTION_APP_BACKGROUND -> {
+                TXALog.i(LOG_TAG, "App moved to background during download")
+                isAppInForeground = false
+                showBackgroundNotice()
+            }
             else -> {
                 // Check if we should resume an interrupted download
                 if (prefs.getBoolean(KEY_IS_DOWNLOADING, false)) {
@@ -124,6 +142,8 @@ class TXADownloadService : Service() {
             indeterminate = true
         )
         startForeground(NOTIFICATION_ID, initialNotification)
+        dismissBackgroundNotice()
+        isAppInForeground = true
 
         downloadJob = CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -181,6 +201,10 @@ class TXADownloadService : Service() {
                     
                     // Throttle updates to every 100ms minimum for performance
                     if (currentTime - lastUpdateTime >= UPDATE_THROTTLE_MS) {
+                        lastProgress = progress
+                        lastDownloadedBytes = downloaded
+                        lastTotalBytes = totalBytes
+
                         // Update progress in preferences
                         prefs.edit().apply {
                             putInt(KEY_DOWNLOAD_PROGRESS, progress)
@@ -198,6 +222,10 @@ class TXADownloadService : Service() {
                         
                         // Broadcast progress to UI
                         broadcastProgress(progress, downloaded, totalBytes)
+
+                        if (!isAppInForeground) {
+                            showBackgroundNotice()
+                        }
                         
                         lastUpdateTime = currentTime
                     }
@@ -255,6 +283,8 @@ class TXADownloadService : Service() {
             .setProgress(100, progress, indeterminate)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .addAction(
                 android.R.drawable.ic_menu_close_clear_cancel,
                 TXATranslation.txa("txademo_download_cancel"),
@@ -282,6 +312,7 @@ class TXADownloadService : Service() {
         TXALog.i(LOG_TAG, "Download cancelled by user")
         prefs.edit().putBoolean(KEY_IS_DOWNLOADING, false).apply()
         downloadJob?.cancel()
+        dismissBackgroundNotice()
         
         // Delete partial file
         val filePath = prefs.getString(KEY_DOWNLOAD_FILE_PATH, null)
@@ -314,6 +345,9 @@ class TXADownloadService : Service() {
         
         // Don't stop service - let it continue in background
         TXALog.i(LOG_TAG, "Return-to-app action tapped, keeping download in background")
+        isAppInForeground = true
+        dismissBackgroundNotice()
+        refreshCurrentNotification()
     }
 
     private fun handleDownloadComplete(downloadedBytes: Long, totalBytes: Long) {
@@ -321,6 +355,7 @@ class TXADownloadService : Service() {
         
         // Clear downloading state but keep file info
         prefs.edit().putBoolean(KEY_IS_DOWNLOADING, false).apply()
+        dismissBackgroundNotice()
         
         // Show completion notification
         val completionNotification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
@@ -346,6 +381,7 @@ class TXADownloadService : Service() {
         
         // Clear state
         prefs.edit().clear().apply()
+        dismissBackgroundNotice()
         
         // Show error notification
         val errorNotification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
@@ -381,6 +417,36 @@ class TXADownloadService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         downloadJob?.cancel()
+        dismissBackgroundNotice()
         TXALog.i(LOG_TAG, "Service destroyed, job cancelled=${downloadJob?.isCancelled}")
+    }
+
+    private fun showBackgroundNotice() {
+        if (backgroundNoticeVisible) return
+        val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setContentTitle(TXATranslation.txa("txademo_download_background_title"))
+            .setContentText(TXATranslation.txa("txademo_download_background_progress"))
+            .setOngoing(true)
+            .setSilent(true)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .build()
+        notificationManager.notify(BACKGROUND_INFO_NOTIFICATION_ID, notification)
+        backgroundNoticeVisible = true
+    }
+
+    private fun dismissBackgroundNotice() {
+        if (!backgroundNoticeVisible) return
+        notificationManager.cancel(BACKGROUND_INFO_NOTIFICATION_ID)
+        backgroundNoticeVisible = false
+    }
+
+    private fun refreshCurrentNotification() {
+        updateNotification(
+            title = TXATranslation.txa("txademo_download_background_title"),
+            content = TXATranslation.txa("txademo_download_background_progress"),
+            progress = lastProgress,
+            indeterminate = lastTotalBytes <= 0
+        )
     }
 }

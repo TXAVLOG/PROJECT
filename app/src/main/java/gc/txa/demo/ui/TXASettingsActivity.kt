@@ -61,6 +61,16 @@ class TXASettingsActivity : AppCompatActivity() {
         )
     }
 
+    override fun onStart() {
+        super.onStart()
+        notifyDownloadServiceVisibility(isForeground = true)
+    }
+
+    override fun onStop() {
+        notifyDownloadServiceVisibility(isForeground = false)
+        super.onStop()
+    }
+
     private fun setupUI() {
         binding.apply {
             // Set texts
@@ -281,6 +291,23 @@ class TXASettingsActivity : AppCompatActivity() {
             if (initialProgress > 0) {
                 dialog.update(progressPercent = initialProgress)
             }
+        }
+    }
+
+    private fun notifyDownloadServiceVisibility(isForeground: Boolean) {
+        if (!TXAUpdateManager.isDownloadActive(this)) return
+        val action = if (isForeground) {
+            TXADownloadService.ACTION_APP_FOREGROUND
+        } else {
+            TXADownloadService.ACTION_APP_BACKGROUND
+        }
+        val intent = Intent(this, TXADownloadService::class.java).apply {
+            this.action = action
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
         }
     }
 
