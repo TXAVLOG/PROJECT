@@ -87,6 +87,8 @@ class TXADownloadService : Service() {
             ACTION_APP_BACKGROUND -> {
                 TXALog.i(LOG_TAG, "App moved to background during download")
                 isAppInForeground = false
+                // Upgrade to progress notification with buttons
+                refreshCurrentNotification()
                 showBackgroundNotice()
             }
             else -> {
@@ -134,16 +136,12 @@ class TXADownloadService : Service() {
     }
 
     private fun startDownloadJob(url: String, versionName: String) {
-        // Start foreground service with initial notification
-        val initialNotification = createNotification(
-            title = TXATranslation.txa("txademo_download_background_title"),
-            content = TXATranslation.txa("txademo_download_background_starting"),
-            progress = 0,
-            indeterminate = true
-        )
-        startForeground(NOTIFICATION_ID, initialNotification)
-        dismissBackgroundNotice()
+        // Start with silent foreground notification (Android requirement)
         isAppInForeground = true
+        dismissBackgroundNotice()
+        
+        val silentNotification = createSilentNotification()
+        startForeground(NOTIFICATION_ID, silentNotification)
 
         downloadJob = CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -439,6 +437,27 @@ class TXADownloadService : Service() {
         if (!backgroundNoticeVisible) return
         notificationManager.cancel(BACKGROUND_INFO_NOTIFICATION_ID)
         backgroundNoticeVisible = false
+    }
+
+    private fun createSilentNotification(): Notification {
+        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setContentTitle(TXATranslation.txa("txademo_download_background_title"))
+            .setContentText(TXATranslation.txa("txademo_download_background_starting"))
+            .setSilent(true)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setOngoing(true)
+            .build()
+    }
+
+    private fun startForegroundNotification() {
+        val notification = createNotification(
+            title = TXATranslation.txa("txademo_download_background_title"),
+            content = TXATranslation.txa("txademo_download_background_progress"),
+            progress = lastProgress,
+            indeterminate = lastTotalBytes <= 0
+        )
+        startForeground(NOTIFICATION_ID, notification)
     }
 
     private fun refreshCurrentNotification() {

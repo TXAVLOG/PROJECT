@@ -1,6 +1,8 @@
 package gc.txa.demo.core
 
 import android.content.Context
+import android.content.Intent
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import gc.txa.demo.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -19,6 +21,9 @@ object TXATranslation {
     private const val KEY_API_MIGRATION_VERSION = "api_migration_version"
     private const val CURRENT_API_VERSION = 2
     private const val TAG = "Translation"
+    
+    // Broadcast for language change
+    const val ACTION_LANGUAGE_CHANGED = "gc.txa.demo.LANGUAGE_CHANGED"
     
     private var currentTranslations: Map<String, String> = emptyMap()
     private val gson = Gson()
@@ -188,6 +193,28 @@ object TXATranslation {
      */
     fun txa(key: String): String {
         return currentTranslations[key] ?: fallbackTranslations[key] ?: key
+    }
+
+    /**
+     * Set language and notify all activities to refresh UI
+     */
+    suspend fun setLanguage(context: Context, locale: String = "vi") {
+        TXALog.i(TAG, "Setting language to: $locale")
+        
+        // Save locale preference
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString("selected_locale", locale).apply()
+        
+        // Load translations
+        val result = syncIfNewer(context, locale)
+        TXALog.i(TAG, "Language sync result: $result")
+        
+        // Broadcast language change to all activities
+        val intent = Intent(ACTION_LANGUAGE_CHANGED).apply {
+            putExtra("locale", locale)
+        }
+        LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
+        TXALog.i(TAG, "Broadcasted language change to: $locale")
     }
 
     /**

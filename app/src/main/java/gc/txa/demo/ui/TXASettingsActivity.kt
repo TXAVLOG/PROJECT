@@ -59,6 +59,12 @@ class TXASettingsActivity : AppCompatActivity() {
             downloadProgressReceiver,
             android.content.IntentFilter(TXADownloadService.BROADCAST_DOWNLOAD_PROGRESS)
         )
+        
+        // Register for language change broadcasts
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            languageChangeReceiver,
+            android.content.IntentFilter(TXATranslation.ACTION_LANGUAGE_CHANGED)
+        )
     }
 
     override fun onStart() {
@@ -155,26 +161,18 @@ class TXASettingsActivity : AppCompatActivity() {
                     cancellable = false
                 )
 
-                val result = TXATranslation.syncIfNewer(this@TXASettingsActivity, locale)
+                // Use new runtime language change without restart
+                TXATranslation.setLanguage(this@TXASettingsActivity, locale)
                 
-                when (result) {
-                    is TXATranslation.SyncResult.Success,
-                    is TXATranslation.SyncResult.CachedUsed -> {
-                        TXAApp.setLocale(this@TXASettingsActivity, locale)
-                        
-                        // Restart activity
-                        val intent = intent
-                        finish()
-                        startActivity(intent)
-                    }
-                    is TXATranslation.SyncResult.Failed -> {
-                        Toast.makeText(
-                            this@TXASettingsActivity,
-                            "${TXATranslation.txa("txademo_error_network")}: ${result.message}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
+                // Update app locale for future activities
+                TXAApp.setLocale(this@TXASettingsActivity, locale)
+                
+                Toast.makeText(
+                    this@TXASettingsActivity,
+                    "Language changed successfully",
+                    Toast.LENGTH_SHORT
+                ).show()
+                
             } catch (e: Exception) {
                 TXALog.e("SettingsActivity", "Language change failed", e)
                 Toast.makeText(
@@ -311,6 +309,22 @@ class TXASettingsActivity : AppCompatActivity() {
         }
     }
 
+    private val languageChangeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            val locale = intent?.getStringExtra("locale") ?: return
+            TXALog.i("SettingsActivity", "Language changed to: $locale")
+            
+            // Refresh all UI texts
+            runOnUiThread {
+                setupUI()
+                // Update dialog if it's showing
+                downloadProgressDialog?.let { dialog ->
+                    dialog.update(message = TXATranslation.txa("txademo_update_downloading"))
+                }
+            }
+        }
+    }
+
     private val downloadProgressReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
             val progress = intent?.getIntExtra(TXADownloadService.EXTRA_PROGRESS, 0) ?: 0
@@ -374,6 +388,7 @@ class TXASettingsActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         LocalBroadcastManager.getInstance(this).unregisterReceiver(downloadProgressReceiver)
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(languageChangeReceiver)
         downloadProgressDialog?.dismiss()
     }
 }
