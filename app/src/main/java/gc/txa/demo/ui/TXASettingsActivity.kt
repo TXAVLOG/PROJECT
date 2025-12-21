@@ -272,7 +272,8 @@ class TXASettingsActivity : AppCompatActivity() {
     private fun handleNotificationLaunch(intent: Intent?) {
         val launchedFromNotification = intent?.getBooleanExtra(EXTRA_LAUNCH_FROM_UPDATE_NOTIFICATION, false) ?: false
         val autoStartDownload = intent?.getBooleanExtra(EXTRA_AUTO_START_DOWNLOAD, false) ?: false
-        val updateInfo = intent?.let {
+        val updateIntent = intent
+        val updateInfo = updateIntent?.let {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 it.getSerializableExtra(
                     EXTRA_UPDATE_INFO,
@@ -284,9 +285,9 @@ class TXASettingsActivity : AppCompatActivity() {
             }
         }
 
-        if (launchedFromNotification && updateInfo != null) {
+        if (launchedFromNotification && updateInfo != null && updateIntent != null) {
             showUpdateDialog(updateInfo, forceAutoDownload = autoStartDownload)
-            intent?.apply {
+            updateIntent.apply {
                 removeExtra(EXTRA_LAUNCH_FROM_UPDATE_NOTIFICATION)
                 removeExtra(EXTRA_AUTO_START_DOWNLOAD)
                 removeExtra(EXTRA_UPDATE_INFO)
