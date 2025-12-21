@@ -123,5 +123,8 @@
   "txademo_download_failed": "Download Failed",
   "txademo_download_failed_message": "Failed to download update",
   "txademo_download_channel_name": "TXA Downloads",
-  "txademo_download_channel_description": "Background download notifications"
+  "txademo_download_channel_description": "Background download notifications",
+
+  "txademo_language_change_success": "Language changed successfully",
+  "txademo_language_change_failed": "Language change failed: %s"
 }

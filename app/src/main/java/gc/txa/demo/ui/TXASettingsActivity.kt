@@ -169,7 +169,7 @@ class TXASettingsActivity : AppCompatActivity() {
                 
                 Toast.makeText(
                     this@TXASettingsActivity,
-                    "Language changed successfully",
+                    TXATranslation.txa("txademo_language_change_success"),
                     Toast.LENGTH_SHORT
                 ).show()
                 
@@ -177,7 +177,10 @@ class TXASettingsActivity : AppCompatActivity() {
                 TXALog.e("SettingsActivity", "Language change failed", e)
                 Toast.makeText(
                     this@TXASettingsActivity,
-                    "Language change failed: ${e.message}",
+                    String.format(
+                        TXATranslation.txa("txademo_language_change_failed"),
+                        e.message ?: "unknown"
+                    ),
                     Toast.LENGTH_LONG
                 ).show()
             } finally {

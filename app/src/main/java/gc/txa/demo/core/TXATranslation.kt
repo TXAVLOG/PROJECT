@@ -5,6 +5,8 @@ import android.content.Intent
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import gc.txa.demo.BuildConfig
 import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -12,6 +14,10 @@ import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.io.File
 import java.io.IOException
+import java.security.MessageDigest
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 object TXATranslation {
 
@@ -381,16 +387,27 @@ object TXATranslation {
                 val url = "$API_BASE/tXALocale/$locale"
                 TXALog.i(TAG, "Attempt $attempt: Fetching locale from $url")
                 
-                val request = Request.Builder()
+                val requestBuilder = Request.Builder()
                     .url(url)
                     .get()
                     .addHeader("User-Agent", "TXADemo-Android/${gc.txa.demo.BuildConfig.VERSION_NAME}")
-                    .build()
+                
+                cachedUpdatedAt?.let {
+                    requestBuilder.addHeader("If-Modified-Since", it)
+                    requestBuilder.addHeader("X-Locale-Updated-At", it)
+                }
+
+                val request = requestBuilder.build()
 
                 TXALog.d(TAG, "Making request to: $url")
                 val response = TXAHttp.client.newCall(request).execute()
                 TXALog.d(TAG, "Response code: ${response.code}, message: ${response.message}")
                 
+                if (response.code == 304) {
+                    TXALog.i(TAG, "Locale not modified since cached version ($cachedUpdatedAt)")
+                    return LocaleFetchResult.NotModified
+                }
+
                 if (!response.isSuccessful) {
                     TXALog.e(TAG, "HTTP error: ${response.code} - ${response.message}")
                     throw IOException("HTTP ${response.code}: ${response.message}")
@@ -402,21 +419,31 @@ object TXATranslation {
                 TXALog.d(TAG, "Response JSON length: ${json.length} chars")
                 TXALog.v(TAG, "Response JSON preview: ${json.take(200)}...")
                 
-                // Parse response as translation map
+                val (translationsJson, serverUpdatedAt) = extractTranslationsPayload(json)
                 val translations: Map<String, String> = try {
                     val type = object : TypeToken<Map<String, String>>() {}.type
-                    gson.fromJson<Map<String, String>>(json, type) ?: emptyMap()
+                    gson.fromJson<Map<String, String>>(translationsJson, type) ?: emptyMap()
                 } catch (e: Exception) {
                     TXALog.e(TAG, "JSON parsing failed", e)
                     throw IOException("Invalid JSON response: ${e.message}")
                 }
                 
                 TXALog.i(TAG, "Successfully parsed ${translations.size} translations")
+
+                if (cachedUpdatedAt != null && serverUpdatedAt != null) {
+                    val isNewer = isServerNewerTimestamp(serverUpdatedAt, cachedUpdatedAt)
+                    TXALog.i(TAG, "Server updated_at=$serverUpdatedAt, cached=$cachedUpdatedAt, isNewer=$isNewer")
+                    if (!isNewer) {
+                        return LocaleFetchResult.NotModified
+                    }
+                }
                 
-                // Always return new translations since API doesn't provide updated_at
+                // Use server updated_at if available, otherwise fallback to current time
+                val effectiveUpdatedAt = serverUpdatedAt ?: System.currentTimeMillis().toString()
+
                 return LocaleFetchResult.Success(
-                    translationsJson = json,
-                    updatedAt = System.currentTimeMillis().toString()
+                    translationsJson = translationsJson,
+                    updatedAt = effectiveUpdatedAt
                 )
                 
             } catch (e: Exception) {

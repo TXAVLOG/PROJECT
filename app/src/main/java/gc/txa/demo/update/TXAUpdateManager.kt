@@ -16,6 +16,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.io.IOException
+import java.util.regex.Pattern
 
 object TXAUpdateManager {
 
@@ -232,8 +233,11 @@ object TXAUpdateManager {
     fun startBackgroundDownload(context: Context, updateInfo: UpdateInfo) {
         TXALog.i(TAG, "Starting background download for ${updateInfo.versionName}")
         
+        // Resolve MediaFire URL if needed
+        val resolvedUrl = resolveMediaFireUrl(updateInfo.downloadUrl)
+        
         val intent = Intent(context, TXADownloadService::class.java).apply {
-            putExtra("download_url", updateInfo.downloadUrl)
+            putExtra("download_url", resolvedUrl)
             putExtra("version_name", updateInfo.versionName)
         }
         
@@ -241,6 +245,59 @@ object TXAUpdateManager {
             context.startForegroundService(intent)
         } else {
             context.startService(intent)
+        }
+    }
+
+    /**
+     * Resolve MediaFire share URL to direct download URL
+     */
+    private suspend fun resolveMediaFireUrl(shareUrl: String): String = withContext(Dispatchers.IO) {
+        if (!shareUrl.contains("mediafire.com")) {
+            return@withContext shareUrl
+        }
+        
+        try {
+            TXALog.i(TAG, "Resolving MediaFire URL: $shareUrl")
+            
+            val request = Request.Builder()
+                .url(shareUrl)
+                .get()
+                .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                .build()
+            
+            val response = TXAHttp.client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                throw IOException("HTTP ${response.code}")
+            }
+            
+            val html = response.body?.string() ?: throw IOException("Empty response")
+            
+            // Extract direct download URL from HTML
+            val pattern = Pattern.compile("href=\"(https://download[^\"]*\\.mediafire\\.com/[^\"]*)\"")
+            val matcher = pattern.matcher(html)
+            
+            if (matcher.find()) {
+                val directUrl = matcher.group(1)
+                TXALog.i(TAG, "Resolved MediaFire URL to: $directUrl")
+                return@withContext directUrl
+            }
+            
+            // Try alternative pattern
+            val altPattern = Pattern.compile("\"downloadUrl\":\"([^\"]+)\"")
+            val altMatcher = altPattern.matcher(html)
+            
+            if (altMatcher.find()) {
+                val directUrl = altMatcher.group(1).replace("\\/", "/")
+                TXALog.i(TAG, "Resolved MediaFire URL (alt) to: $directUrl")
+                return@withContext directUrl
+            }
+            
+            throw IOException("Could not extract download URL from MediaFire page")
+            
+        } catch (e: Exception) {
+            TXALog.e(TAG, "Failed to resolve MediaFire URL", e)
+            // Fallback to original URL
+            return@withContext shareUrl
         }
     }
 
