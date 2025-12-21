@@ -188,10 +188,17 @@ object TXATranslation {
         "txademo_download_cancelled_message" to "The download has been cancelled",
         "txademo_download_complete" to "Download Complete",
         "txademo_download_complete_message" to "Update downloaded successfully",
+        "txademo_download_completed" to "Download completed",
         "txademo_download_failed" to "Download Failed",
         "txademo_download_failed_message" to "Failed to download update",
         "txademo_download_channel_name" to "TXA Downloads",
-        "txademo_download_channel_description" to "Background download notifications"
+        "txademo_download_channel_description" to "Background download notifications",
+        
+        // Update Install
+        "txademo_update_install" to "Install",
+        
+        // File Errors
+        "txademo_file_not_found" to "Downloaded file not found"
     )
 
     /**

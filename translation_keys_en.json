@@ -126,5 +126,9 @@
   "txademo_download_channel_description": "Background download notifications",
 
   "txademo_language_change_success": "Language changed successfully",
-  "txademo_language_change_failed": "Language change failed: %s"
+  "txademo_language_change_failed": "Language change failed: %s",
+  
+  "txademo_update_install": "Install",
+  "txademo_download_completed": "Download completed",
+  "txademo_file_not_found": "Downloaded file not found"
 }

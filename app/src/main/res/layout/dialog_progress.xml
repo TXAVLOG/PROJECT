@@ -52,15 +52,73 @@
             android:textSize="14sp"
             android:textColor="#757575" />
 
-        <TextView
-            android:id="@+id/tvProgress"
+        <!-- Detailed progress info container -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="0%"
-            android:textAlignment="center"
-            android:textSize="12sp"
-            android:textColor="#2196F3"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <!-- Size info (top-left) -->
+            <TextView
+                android:id="@+id/tvSize"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="0 MB / 0 MB"
+                android:textSize="12sp"
+                android:textColor="#757575"
+                android:gravity="start" />
+
+            <!-- Speed info (top-right) -->
+            <TextView
+                android:id="@+id/tvSpeed"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="0 KB/s"
+                android:textSize="12sp"
+                android:textColor="#757575"
+                android:gravity="end" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <!-- ETA info (bottom-left) -->
+            <TextView
+                android:id="@+id/tvEta"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="--:--"
+                android:textSize="12sp"
+                android:textColor="#757575"
+                android:gravity="start" />
+
+            <!-- Percent info (bottom-right) -->
+            <TextView
+                android:id="@+id/tvPercent"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="0%"
+                android:textSize="12sp"
+                android:textColor="#2196F3"
+                android:gravity="end" />
+
+        </LinearLayout>
+
+        <!-- Install button (visible only when download completes) -->
+        <Button
+            android:id="@+id/btnInstall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:visibility="gone" />
 
     </LinearLayout>

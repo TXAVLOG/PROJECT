@@ -5,11 +5,13 @@ import android.view.LayoutInflater
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import gc.txa.demo.databinding.DialogProgressBinding
+import gc.txa.demo.core.TXATranslation
 
 class TXAProgressDialog(private val context: Context) {
 
     private var dialog: AlertDialog? = null
     private var binding: DialogProgressBinding? = null
+    private var onInstallClick: (() -> Unit)? = null
 
     fun show(
         title: String = "Loading...",
@@ -27,7 +29,14 @@ class TXAProgressDialog(private val context: Context) {
                 binding.progressBar.max = 100
                 binding.progressBar.progress = 0
             }
-            binding.tvProgress.isVisible = false
+            
+            // Initialize detailed fields
+            binding.tvSize.text = "0 B / 0 B"
+            binding.tvSpeed.text = "0 B/s"
+            binding.tvEta.text = "--:--"
+            binding.tvPercent.text = "0%"
+            binding.btnInstall.isVisible = false
+            binding.btnInstall.setOnClickListener { onInstallClick?.invoke() }
         }
 
         dialog?.dismiss()
@@ -41,7 +50,11 @@ class TXAProgressDialog(private val context: Context) {
     fun update(
         message: String? = null,
         progressPercent: Int? = null,
-        indeterminate: Boolean? = null
+        indeterminate: Boolean? = null,
+        sizeText: String? = null,
+        speedText: String? = null,
+        etaText: String? = null,
+        percentText: String? = null
     ) {
         val binding = binding ?: return
 
@@ -58,6 +71,22 @@ class TXAProgressDialog(private val context: Context) {
             binding.progressBar.isIndeterminate = false
             binding.progressBar.progress = percent.coerceIn(0, 100)
         }
+
+        sizeText?.let { binding.tvSize.text = it }
+        speedText?.let { binding.tvSpeed.text = it }
+        etaText?.let { binding.tvEta.text = it }
+        percentText?.let { binding.tvPercent.text = it }
+    }
+
+    fun showCompleted(onInstall: () -> Unit) {
+        val binding = binding ?: return
+        binding.tvMessage.text = TXATranslation.txa("txademo_download_completed")
+        binding.progressBar.isIndeterminate = false
+        binding.progressBar.progress = 100
+        binding.tvPercent.text = "100%"
+        binding.btnInstall.text = TXATranslation.txa("txademo_update_install")
+        binding.btnInstall.isVisible = true
+        onInstallClick = onInstall
     }
 
     fun dismiss() {

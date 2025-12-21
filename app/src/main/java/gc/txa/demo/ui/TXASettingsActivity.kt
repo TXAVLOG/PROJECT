@@ -17,8 +17,8 @@ import gc.txa.demo.BuildConfig
 import gc.txa.demo.TXAApp
 import gc.txa.demo.core.TXAFormat
 import gc.txa.demo.core.TXAHttp
-import gc.txa.demo.core.TXATranslation
 import gc.txa.demo.core.TXALog
+import gc.txa.demo.core.TXATranslation
 import gc.txa.demo.databinding.ActivityTxaSettingsBinding
 import gc.txa.demo.ui.components.TXAProgressDialog
 import gc.txa.demo.update.TXADownload
@@ -358,17 +358,38 @@ class TXASettingsActivity : AppCompatActivity() {
             val progress = intent?.getIntExtra(TXADownloadService.EXTRA_PROGRESS, 0) ?: 0
             val downloadedBytes = intent?.getLongExtra(TXADownloadService.EXTRA_DOWNLOADED_BYTES, 0L) ?: 0L
             val totalBytes = intent?.getLongExtra(TXADownloadService.EXTRA_TOTAL_BYTES, 0L) ?: 0L
+            val speedBps = intent?.getLongExtra(TXADownloadService.EXTRA_SPEED_BPS, 0L) ?: 0L
+            val etaSeconds = intent?.getLongExtra(TXADownloadService.EXTRA_ETA_SECONDS, 0L) ?: 0L
             
             runOnUiThread {
                 downloadProgressDialog?.let { dialog ->
                     dialog.update(
                         progressPercent = progress,
-                        message = "${TXATranslation.txa("txademo_update_downloading")} - $progress%"
+                        message = TXATranslation.txa("txademo_update_downloading"),
+                        sizeText = "${TXAFormat.formatBytes(downloadedBytes)} / ${if (totalBytes > 0) TXAFormat.formatBytes(totalBytes) else "Unknown"}",
+                        speedText = TXAFormat.formatSpeed(speedBps),
+                        etaText = if (etaSeconds > 0) TXAFormat.formatETA(etaSeconds) else "--:--",
+                        percentText = "$progress%"
                     )
                 }
             }
             
             TXALog.i("SettingsActivity", "Download progress: $progress% ($downloadedBytes/$totalBytes bytes)")
+        }
+    }
+    
+    private val downloadCompleteReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            val filePath = intent?.getStringExtra(TXADownloadService.EXTRA_FILE_PATH) ?: return
+            
+            runOnUiThread {
+                downloadProgressDialog?.let { dialog ->
+                    dialog.showCompleted {
+                        // Install the downloaded APK
+                        installApk(filePath)
+                    }
+                }
+            }
         }
     }
 
@@ -413,9 +434,42 @@ class TXASettingsActivity : AppCompatActivity() {
             .setNegativeButton(TXATranslation.txa("txademo_update_later"), null)
             .show()
     }
+    
+    private fun installApk(filePath: String) {
+        val apkFile = File(filePath)
+        if (apkFile.exists()) {
+            val success = TXAInstall.installApk(this, apkFile)
+            if (!success) {
+                Toast.makeText(
+                    this,
+                    TXATranslation.txa("txademo_error_install_failed"),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            // Dismiss dialog after attempting install
+            downloadProgressDialog?.dismiss()
+            downloadProgressDialog = null
+        } else {
+            Toast.makeText(
+                this,
+                TXATranslation.txa("txademo_file_not_found"),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+    override fun onResume() {
+        super.onResume()
+        // Register download complete receiver
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            downloadCompleteReceiver,
+            android.content.IntentFilter(TXADownloadService.BROADCAST_DOWNLOAD_COMPLETE)
+        )
+    }
+    
     override fun onDestroy() {
         super.onDestroy()
         LocalBroadcastManager.getInstance(this).unregisterReceiver(downloadProgressReceiver)
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(downloadCompleteReceiver)
         LocalBroadcastManager.getInstance(this).unregisterReceiver(languageChangeReceiver)
         downloadProgressDialog?.dismiss()
     }

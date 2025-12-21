@@ -52,9 +52,13 @@ class TXADownloadService : Service() {
         
         // Broadcast intents
         const val BROADCAST_DOWNLOAD_PROGRESS = "gc.txa.demo.DOWNLOAD_PROGRESS"
+        const val BROADCAST_DOWNLOAD_COMPLETE = "gc.txa.demo.DOWNLOAD_COMPLETE"
         const val EXTRA_PROGRESS = "progress"
         const val EXTRA_DOWNLOADED_BYTES = "downloaded_bytes"
         const val EXTRA_TOTAL_BYTES = "total_bytes"
+        const val EXTRA_SPEED_BPS = "speed_bps"
+        const val EXTRA_ETA_SECONDS = "eta_seconds"
+        const val EXTRA_FILE_PATH = "file_path"
         const val EXTRA_START_FOREGROUND = "start_foreground"
     }
 
@@ -69,6 +73,8 @@ class TXADownloadService : Service() {
     private var lastTotalBytes = 0L
     private var shouldStartInForeground = true
     private var isForegroundActive = false
+    private var lastSpeedTime = 0L
+    private var lastSpeedBytes = 0L
 
     override fun onCreate() {
         super.onCreate()
@@ -182,6 +188,10 @@ class TXADownloadService : Service() {
             var lastUpdateTime = 0L
             var lastLogTime = 0L
             
+            // Initialize speed calculation
+            lastSpeedTime = System.currentTimeMillis()
+            lastSpeedBytes = 0L
+            
             outputFile.outputStream().use { outputStream ->
                 while (inputStream.read(buffer).also { bytesRead = it } != -1) {
                     // Check cancellation frequently (every 4KB chunk)
@@ -211,8 +221,23 @@ class TXADownloadService : Service() {
                             apply()
                         }
                         
+                        // Calculate speed and ETA
+                        val speedBps = if (currentTime - lastSpeedTime > 0) {
+                            ((downloaded - lastSpeedBytes) * 1000) / (currentTime - lastSpeedTime)
+                        } else 0L
+                        
+                        val etaSeconds = if (speedBps > 0 && totalBytes > 0) {
+                            (totalBytes - downloaded) / speedBps
+                        } else 0L
+                        
+                        // Update speed calculation for next interval
+                        if (currentTime - lastSpeedTime >= 1000) { // Update speed reference every second
+                            lastSpeedTime = currentTime
+                            lastSpeedBytes = downloaded
+                        }
+                        
                         // Broadcast progress to UI
-                        broadcastProgress(progress, downloaded, totalBytes)
+                        broadcastProgress(progress, downloaded, totalBytes, speedBps, etaSeconds)
 
                         // Only update notification when app is backgrounded
                         if (!isAppInForeground) {
@@ -297,11 +322,13 @@ class TXADownloadService : Service() {
         return builder.build()
     }
 
-    private fun broadcastProgress(progress: Int, downloadedBytes: Long, totalBytes: Long) {
+    private fun broadcastProgress(progress: Int, downloadedBytes: Long, totalBytes: Long, speedBps: Long, etaSeconds: Long) {
         val intent = Intent(BROADCAST_DOWNLOAD_PROGRESS).apply {
             putExtra(EXTRA_PROGRESS, progress)
             putExtra(EXTRA_DOWNLOADED_BYTES, downloadedBytes)
             putExtra(EXTRA_TOTAL_BYTES, totalBytes)
+            putExtra(EXTRA_SPEED_BPS, speedBps)
+            putExtra(EXTRA_ETA_SECONDS, etaSeconds)
         }
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
     }
@@ -354,6 +381,17 @@ class TXADownloadService : Service() {
         // Clear downloading state but keep file info
         prefs.edit().putBoolean(KEY_IS_DOWNLOADING, false).apply()
         dismissBackgroundNotice()
+        
+        // Get the downloaded file path
+        val filePath = prefs.getString(KEY_DOWNLOAD_FILE_PATH, "")
+        
+        // Broadcast completion event to UI
+        val completeIntent = Intent(BROADCAST_DOWNLOAD_COMPLETE).apply {
+            putExtra(EXTRA_FILE_PATH, filePath)
+            putExtra(EXTRA_DOWNLOADED_BYTES, downloadedBytes)
+            putExtra(EXTRA_TOTAL_BYTES, totalBytes)
+        }
+        LocalBroadcastManager.getInstance(this).sendBroadcast(completeIntent)
         
         // Show completion notification
         val completionNotification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
