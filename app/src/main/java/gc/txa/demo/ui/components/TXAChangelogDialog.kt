@@ -168,11 +168,14 @@ class TXAChangelogDialog(private val context: Context) {
 
     private fun setupFooter(versionName: String, updatedAt: String?) {
         val formattedTime = TXAFormat.formatUpdateTime(updatedAt)
+        val updateOnTemplate = TXATranslation.txa("txademo_update_on")
+        val updateOnText = if (updateOnTemplate.contains("%s")) {
+            String.format(updateOnTemplate, formattedTime)
+        } else {
+            "$updateOnTemplate $formattedTime"
+        }
         
-        val footerText = String.format(
-            TXATranslation.txa("txademo_update_on"),
-            formattedTime
-        ) + " - v$versionName - ${TXATranslation.txa("txademo_powered_by")}"
+        val footerText = "$updateOnText - v$versionName - ${TXATranslation.txa("txademo_powered_by")}"
         
         binding?.tvFooter?.text = footerText
     }

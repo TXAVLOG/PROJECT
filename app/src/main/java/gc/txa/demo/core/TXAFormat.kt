@@ -104,11 +104,7 @@ object TXAFormat {
         if (isoString.isNullOrBlank()) return "--"
 
         return try {
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).apply {
-                timeZone = TimeZone.getTimeZone("UTC")
-            }
-            val date = inputFormat.parse(isoString) ?: return isoString
-
+            val date = parseIso8601Date(isoString) ?: return isoString
             val outputFormat = SimpleDateFormat("HH:mm:ss dd/MM/yyyy", Locale.getDefault()).apply {
                 timeZone = TimeZone.getDefault()
             }
@@ -116,5 +112,28 @@ object TXAFormat {
         } catch (e: Exception) {
             isoString
         }
+    }
+
+    private fun parseIso8601Date(value: String): java.util.Date? {
+        val patterns = listOf(
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+            "yyyy-MM-dd'T'HH:mm:ssXXX",
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss"
+        )
+
+        for (pattern in patterns) {
+            try {
+                val parser = SimpleDateFormat(pattern, Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }
+                return parser.parse(value)
+            } catch (_: Exception) {
+                // Try next pattern
+            }
+        }
+
+        return null
     }
 }
