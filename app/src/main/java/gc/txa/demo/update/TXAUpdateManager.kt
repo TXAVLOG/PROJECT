@@ -22,7 +22,6 @@ import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.io.IOException
 import java.io.Serializable
-import java.util.regex.Pattern
 
 object TXAUpdateManager {
 
@@ -203,21 +202,17 @@ object TXAUpdateManager {
             updateResponse.legacyMinVersionCode?.let { versionCode < it } ?: false
         )
 
-        return if (latestVersionCode > versionCode) {
-            UpdateCheckResult.UpdateAvailable(
-                UpdateInfo(
-                    versionName = latestVersionName,
-                    versionCode = latestVersionCode,
-                    downloadUrl = downloadUrl,
-                    changelog = changelogContent,
-                    fileSize = 0L, // Unknown until resolved
-                    isForced = forced,
-                    updatedAt = latestPayload.releaseDate ?: updateResponse.legacyUpdatedAt
-                )
+        return UpdateCheckResult.UpdateAvailable(
+            UpdateInfo(
+                versionName = latestVersionName,
+                versionCode = latestVersionCode,
+                downloadUrl = downloadUrl,
+                changelog = changelogContent,
+                fileSize = 0L, // Unknown until resolved
+                isForced = forced,
+                updatedAt = latestPayload.releaseDate ?: updateResponse.legacyUpdatedAt
             )
-        } else {
-            UpdateCheckResult.NoUpdate
-        }
+        )
     }
     
     /**
@@ -305,13 +300,6 @@ object TXAUpdateManager {
         val prefs = context.getSharedPreferences("txa_download_prefs", Context.MODE_PRIVATE)
         return prefs.getInt("download_progress", 0)
     }
-    
-    if (!response.isSuccessful) {
-        TXALog.e(TAG, "Update check HTTP error: ${response.code} - ${response.message}")
-        throw IOException("HTTP ${response.code}: ${response.message}")
-        object NoUpdate : UpdateCheckResult()
-        data class Error(val message: String) : UpdateCheckResult()
-    }
 
     /**
      * Update information
@@ -325,6 +313,15 @@ object TXAUpdateManager {
         val isForced: Boolean,
         val updatedAt: String? = null
     ) : Serializable
+
+    /**
+     * Update check result
+     */
+    sealed class UpdateCheckResult {
+        data class UpdateAvailable(val updateInfo: UpdateInfo) : UpdateCheckResult()
+        object NoUpdate : UpdateCheckResult()
+        data class Error(val message: String) : UpdateCheckResult()
+    }
 
     fun showUpdateAvailableNotification(context: Context, updateInfo: UpdateInfo) {
         ensureUpdateNotificationChannel(context)
@@ -370,9 +367,249 @@ object TXAUpdateManager {
             TXATranslation.txa("txademo_update_notification_channel_name"),
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = TXATranslation.txa("txademo_update_notification_channel_description")
-        }
-        manager.createNotificationChannel(channel)
+}
+
+val downloadUrl = latestPayload.downloadUrl ?: run {
+    TXALog.e(TAG, "Missing latest.downloadUrl in update response: $responseBody")
+    throw IOException("Invalid JSON response: missing latest.downloadUrl")
+}
+
+TXALog.i(
+    TAG,
+    "Parsed update responses: latest=$latestVersionName ($latestVersionCode), current=$versionName ($versionCode)"
+)
+        
+val apiSignalsUpdate = updateResponse.updateAvailable
+val shouldUpdate = apiSignalsUpdate || latestVersionCode > versionCode
+
+if (!shouldUpdate) {
+    return UpdateCheckResult.NoUpdate
+}
+
+val changelogContent = latestPayload.changelog?.takeIf { it.isNotBlank() }
+    ?: TXATranslation.txa("txademo_update_changelog")
+
+val forced = latestPayload.mandatory || (
+    updateResponse.legacyMinVersionCode?.let { versionCode < it } ?: false
+)
+
+return UpdateCheckResult.UpdateAvailable(
+    UpdateInfo(
+        versionName = latestVersionName,
+        versionCode = latestVersionCode,
+        downloadUrl = downloadUrl,
+        changelog = changelogContent,
+        fileSize = 0L, // Unknown until resolved
+        isForced = forced,
+        updatedAt = latestPayload.releaseDate ?: updateResponse.legacyUpdatedAt
+    )
+)
+    
+/**
+ * Get user-friendly error message from exception
+ */
+private fun getErrorMessage(exception: Exception): String? {
+    return when {
+        exception is IOException && exception.message?.contains("HTTP 404") == true -> 
+            TXATranslation.txa("txademo_error_metadata_unavailable")
+        exception is IOException && exception.message?.contains("HTTP") == true -> 
+            TXATranslation.txa("txademo_error_network")
+        exception.message?.contains("JSON") == true -> 
+            TXATranslation.txa("txademo_error_invalid_metadata")
+        else -> exception.message
+    }
+}
+    
+/**
+ * Cache update check result to avoid frequent API calls
+ */
+private fun cacheUpdateCheck(context: Context, versionCode: Int) {
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    prefs.edit()
+        .putLong(KEY_LAST_UPDATE_CHECK, System.currentTimeMillis())
+        .putInt(KEY_CACHED_VERSION_CODE, versionCode)
+        .apply()
+}
+    
+/**
+ * Check if we should perform update check (throttling)
+ */
+fun shouldCheckForUpdates(context: Context): Boolean {
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    val lastCheck = prefs.getLong(KEY_LAST_UPDATE_CHECK, 0)
+    val currentTime = System.currentTimeMillis()
+        
+    // Don't check more than once per hour
+    return currentTime - lastCheck > 60 * 60 * 1000
+}
+
+/**
+ * Get current app version
+ */
+fun getCurrentVersion(): String {
+    return BuildConfig.VERSION_NAME
+}
+
+/**
+ * Get current version code
+ */
+fun getCurrentVersionCode(): Int {
+    return BuildConfig.VERSION_CODE
+}
+
+/**
+ * Start background download for update
+ */
+fun startBackgroundDownload(context: Context, updateInfo: UpdateInfo) {
+    TXALog.i(TAG, "Starting background download for ${updateInfo.versionName}")
+        
+    val intent = Intent(context, TXADownloadService::class.java).apply {
+        putExtra("download_url", updateInfo.downloadUrl)
+        putExtra("version_name", updateInfo.versionName)
+    }
+        
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        context.startForegroundService(intent)
+    } else {
+        context.startService(intent)
+    }
+}
+
+/**
+ * Check if download is currently active
+ */
+fun isDownloadActive(context: Context): Boolean {
+    val prefs = context.getSharedPreferences("txa_download_prefs", Context.MODE_PRIVATE)
+    return prefs.getBoolean("is_downloading", false)
+}
+
+/**
+ * Get current download progress
+ */
+fun getDownloadProgress(context: Context): Int {
+    val prefs = context.getSharedPreferences("txa_download_prefs", Context.MODE_PRIVATE)
+    return prefs.getInt("download_progress", 0)
+}
+
+/**
+ * Update information
+ */
+data class UpdateInfo(
+    val versionName: String,
+    val versionCode: Int,
+    val downloadUrl: String,
+    val changelog: String,
+    val fileSize: Long,
+    val isForced: Boolean,
+    val updatedAt: String? = null
+) : Serializable
+
+/**
+ * Update check result
+ */
+sealed class UpdateCheckResult {
+    data class UpdateAvailable(val updateInfo: UpdateInfo) : UpdateCheckResult()
+    object NoUpdate : UpdateCheckResult()
+    data class Error(val message: String) : UpdateCheckResult()
+}
+
+fun showUpdateAvailableNotification(context: Context, updateInfo: UpdateInfo) {
+    ensureUpdateNotificationChannel(context)
+
+    val content = String.format(
+        TXATranslation.txa("txademo_update_notification_body"),
+        updateInfo.versionName
+    )
+
+    val intent = Intent(context, TXASettingsActivity::class.java).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        putExtra(TXASettingsActivity.EXTRA_LAUNCH_FROM_UPDATE_NOTIFICATION, true)
+        putExtra(TXASettingsActivity.EXTRA_AUTO_START_DOWNLOAD, true)
+        putExtra(TXASettingsActivity.EXTRA_UPDATE_INFO, updateInfo)
     }
 
+    val pendingIntent = PendingIntent.getActivity(
+        context,
+        UPDATE_NOTIFICATION_ID,
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    val builder = NotificationCompat.Builder(context, UPDATE_NOTIFICATION_CHANNEL_ID)
+        .setSmallIcon(android.R.drawable.stat_sys_download_done)
+        .setContentTitle(TXATranslation.txa("txademo_update_available"))
+        .setContentText(content)
+        .setAutoCancel(true)
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setContentIntent(pendingIntent)
+
+    val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    manager.notify(UPDATE_NOTIFICATION_ID, builder.build())
 }
+
+private fun ensureUpdateNotificationChannel(context: Context) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+    val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    if (manager.getNotificationChannel(UPDATE_NOTIFICATION_CHANNEL_ID) != null) return
+
+    val channel = NotificationChannel(
+        UPDATE_NOTIFICATION_CHANNEL_ID,
+        TXATranslation.txa("txademo_update_notification_channel_name"),
+        NotificationManager.IMPORTANCE_HIGH
+    ).apply {
+        description = TXATranslation.txa("txademo_update_notification_channel_description")
+    }
+    manager.createNotificationChannel(channel)
+}
+
+data class UpdateCheckResponse(
+    val ok: Boolean = false,
+    val source: String? = null,
+    @SerializedName("update_available")
+    val updateAvailable: Boolean = false,
+    val client: ClientInfo? = null,
+    val latest: LatestPayload? = null,
+    @SerializedName("api_version")
+    val apiVersion: String? = null,
+
+    // Legacy fields for backward compatibility
+    @SerializedName(value = "latest_version", alternate = ["latestVersion"])
+    val legacyLatestVersion: LatestVersion? = null,
+    @SerializedName(value = "download_url", alternate = ["downloadUrl"])
+    val legacyDownloadUrl: String? = null,
+    @SerializedName(value = "force_update", alternate = ["forceUpdate"])
+    val legacyForceUpdate: Boolean = false,
+    @SerializedName(value = "min_version_code", alternate = ["minVersionCode"])
+    val legacyMinVersionCode: Int? = null,
+    @SerializedName(value = "updated_at", alternate = ["updatedAt"])
+    val legacyUpdatedAt: String? = null,
+    @SerializedName(value = "changelog", alternate = ["changeLog"])
+    val legacyChangelog: String? = null
+)
+
+data class ClientInfo(
+    @SerializedName(value = "version_code", alternate = ["versionCode"])
+    val versionCode: Int? = null,
+    @SerializedName(value = "version_name", alternate = ["versionName"])
+    val versionName: String? = null
+)
+
+data class LatestPayload(
+    @SerializedName(value = "version_code", alternate = ["versionCode"])
+    val versionCode: Int?,
+    @SerializedName(value = "version_name", alternate = ["versionName"])
+    val versionName: String?,
+    @SerializedName(value = "download_url", alternate = ["downloadUrl"])
+    val downloadUrl: String?,
+    @SerializedName(value = "release_date", alternate = ["releaseDate"])
+    val releaseDate: String? = null,
+    val mandatory: Boolean = false,
+    val changelog: String? = null
+)
+
+data class LatestVersion(
+    @SerializedName(value = "name", alternate = ["versionName"])
+    val name: String,
+    @SerializedName(value = "code", alternate = ["versionCode"])
+    val code: Int
+)
