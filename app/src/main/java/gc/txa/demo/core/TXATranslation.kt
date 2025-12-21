@@ -349,29 +349,20 @@ object TXATranslation {
                 TXALog.d(TAG, "Response JSON length: ${json.length} chars")
                 TXALog.v(TAG, "Response JSON preview: ${json.take(200)}...")
                 
-                // Parse response to get updated_at timestamp
-                val responseMap = try {
-                    gson.fromJson(json, object : TypeToken<Map<String, Any>>() {}.type)
+                // Parse response as translation map
+                val translations = try {
+                    gson.fromJson(json, object : TypeToken<Map<String, String>>() {}.type)
                 } catch (e: Exception) {
                     TXALog.e(TAG, "JSON parsing failed", e)
                     throw IOException("Invalid JSON response: ${e.message}")
                 }
                 
-                @Suppress("UNUSED_VARIABLE")
-                val serverUpdatedAt = responseMap["updated_at"]?.toString()
-                    ?: throw IOException("Missing updated_at field")
+                TXALog.i(TAG, "Successfully parsed ${translations.size} translations")
                 
-                TXALog.i(TAG, "Successfully parsed locale, updated_at: $serverUpdatedAt")
-                
-                // Check if translation is newer than cached version
-                if (cachedUpdatedAt != null && cachedUpdatedAt == serverUpdatedAt) {
-                    return LocaleFetchResult.NotModified
-                }
-                
-                // Return new translations
+                // Always return new translations since API doesn't provide updated_at
                 return LocaleFetchResult.Success(
                     translationsJson = json,
-                    updatedAt = serverUpdatedAt
+                    updatedAt = System.currentTimeMillis().toString()
                 )
                 
             } catch (e: Exception) {
