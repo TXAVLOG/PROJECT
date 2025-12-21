@@ -12,6 +12,7 @@ object TXADownloadUrlResolver {
     private val allowedHostSuffixes = listOf(
         "github.com",
         "raw.githubusercontent.com",
+        "githubusercontent.com",
         "mediafire.com",
         "drive.google.com",
         "googleusercontent.com"
