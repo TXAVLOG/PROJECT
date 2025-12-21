@@ -327,12 +327,6 @@ class TXASettingsActivity : AppCompatActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(downloadProgressReceiver)
-        downloadProgressDialog?.dismiss()
-    }
-
     private fun showInstallDialog(apkFile: File) {
         AlertDialog.Builder(this)
             .setTitle(TXATranslation.txa("txademo_update_download_complete"))
@@ -350,9 +344,9 @@ class TXASettingsActivity : AppCompatActivity() {
             .setNegativeButton(TXATranslation.txa("txademo_update_later"), null)
             .show()
     }
-
     override fun onDestroy() {
         super.onDestroy()
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(downloadProgressReceiver)
         downloadProgressDialog?.dismiss()
     }
 }

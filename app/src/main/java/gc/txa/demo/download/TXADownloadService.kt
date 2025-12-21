@@ -13,6 +13,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import gc.txa.demo.R
+import gc.txa.demo.core.TXAFormat
 import gc.txa.demo.core.TXALog
 import gc.txa.demo.core.TXATranslation
 import gc.txa.demo.ui.TXASettingsActivity
