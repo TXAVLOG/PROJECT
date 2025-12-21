@@ -153,28 +153,24 @@ class TXADownloadService : Service() {
                     
                     outputStream.write(buffer, 0, bytesRead)
                     downloaded += bytesRead
-                
-                val progress = if (totalBytes > 0) {
-                    ((downloaded * 100) / totalBytes).toInt()
-                } else 0
-                
-                // Update progress in preferences
-                prefs.edit().putInt(KEY_DOWNLOAD_PROGRESS, progress).apply()
-                
-                // Update notification
-                updateNotification(
-                    title = TXATranslation.txa("txademo_download_background_title"),
-                    content = TXATranslation.txa("txademo_download_background_progress"),
-                    progress = progress,
-                    indeterminate = false
-                )
-                
-                // Broadcast progress to UI
-                broadcastProgress(progress, downloaded, totalBytes)
-                
-                // Check if cancelled
-                if (!prefs.getBoolean(KEY_IS_DOWNLOADING, false)) {
-                    throw IOException("Download cancelled")
+                    
+                    val progress = if (totalBytes > 0) {
+                        ((downloaded * 100) / totalBytes).toInt()
+                    } else 0
+                    
+                    // Update progress in preferences
+                    prefs.edit().putInt(KEY_DOWNLOAD_PROGRESS, progress).apply()
+                    
+                    // Update notification
+                    updateNotification(
+                        title = TXATranslation.txa("txademo_download_background_title"),
+                        content = TXATranslation.txa("txademo_download_background_progress"),
+                        progress = progress,
+                        indeterminate = false
+                    )
+                    
+                    // Broadcast progress to UI
+                    broadcastProgress(progress, downloaded, totalBytes)
                 }
             }
             
@@ -215,19 +211,19 @@ class TXADownloadService : Service() {
         )
 
         val builder = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_download)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
             .setContentTitle(title)
             .setContentText(content)
             .setProgress(100, progress, indeterminate)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .addAction(
-                R.drawable.ic_cancel,
+                android.R.drawable.ic_menu_close_clear_cancel,
                 TXATranslation.txa("txademo_download_cancel"),
                 cancelPendingIntent
             )
             .addAction(
-                R.drawable.ic_open_app,
+                android.R.drawable.ic_menu_more,
                 TXATranslation.txa("txademo_download_return_app"),
                 returnPendingIntent
             )
@@ -260,7 +256,7 @@ class TXADownloadService : Service() {
         
         // Show cancelled notification
         val cancelledNotification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_cancel)
+            .setSmallIcon(android.R.drawable.stat_notify_error)
             .setContentTitle(TXATranslation.txa("txademo_download_cancelled"))
             .setContentText(TXATranslation.txa("txademo_download_cancelled_message"))
             .setAutoCancel(true)
@@ -290,7 +286,7 @@ class TXADownloadService : Service() {
         
         // Show completion notification
         val completionNotification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_download_complete)
+            .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setContentTitle(TXATranslation.txa("txademo_download_complete"))
             .setContentText(TXATranslation.txa("txademo_download_complete_message"))
             .setAutoCancel(true)
@@ -315,7 +311,7 @@ class TXADownloadService : Service() {
         
         // Show error notification
         val errorNotification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_error)
+            .setSmallIcon(android.R.drawable.stat_notify_error)
             .setContentTitle(TXATranslation.txa("txademo_download_failed"))
             .setContentText(error.message ?: TXATranslation.txa("txademo_download_failed_message"))
             .setAutoCancel(true)
