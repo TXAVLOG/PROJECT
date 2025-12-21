@@ -275,9 +275,12 @@ class TXASettingsActivity : AppCompatActivity() {
             dialog.show(
                 message = TXATranslation.txa("txademo_update_downloading"),
                 cancellable = false,
-                progress = initialProgress,
                 indeterminate = initialProgress == 0
             )
+            // Set initial progress if not indeterminate
+            if (initialProgress > 0) {
+                dialog.update(progressPercent = initialProgress)
+            }
         }
     }
 
