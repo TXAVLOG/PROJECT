@@ -198,7 +198,16 @@ object TXATranslation {
         "txademo_update_install" to "Install",
         
         // File Errors
-        "txademo_file_not_found" to "Downloaded file not found"
+        "txademo_file_not_found" to "Downloaded file not found",
+        
+        // Time Units for ETA
+        "txademo_time_now" to "now",
+        "txademo_time_seconds" to "%ds",
+        "txademo_time_minutes" to "%dm %ds",
+        "txademo_time_hours" to "%dh %dm %ds",
+        "txademo_time_days" to "%dd %dh %dm",
+        "txademo_time_months" to "%dM %dd %dh",
+        "txademo_time_years" to "%dy %dM %dd"
     )
 
     /**

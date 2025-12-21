@@ -33,6 +33,7 @@ class TXAProgressDialog(private val context: Context) {
             // Initialize detailed fields
             binding.tvSize.text = "0 B / 0 B"
             binding.tvSpeed.text = "0 B/s"
+            binding.tvEtaLabel.text = TXATranslation.txa("txademo_update_download_eta")
             binding.tvEta.text = "--:--"
             binding.tvPercent.text = "0%"
             binding.btnInstall.isVisible = false
@@ -94,4 +95,6 @@ class TXAProgressDialog(private val context: Context) {
         dialog = null
         binding = null
     }
+    
+    fun getBinding(): DialogProgressBinding? = binding
 }

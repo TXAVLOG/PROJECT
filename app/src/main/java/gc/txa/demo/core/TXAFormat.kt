@@ -46,16 +46,36 @@ object TXAFormat {
     }
 
     /**
-     * Format ETA (Estimated Time of Arrival) in seconds to hh:mm:ss
+     * Format ETA (Estimated Time of Arrival) in seconds to dynamic format
+     * Uses adaptive time units: s, m s, h m s, d h m, M d h, y M d
      */
     fun formatETA(seconds: Long): String {
-        if (seconds < 0) return "00:00:00"
+        if (seconds <= 0) return TXATranslation.txa("txademo_time_now")
+        if (seconds < 60) return String.format(TXATranslation.txa("txademo_time_seconds"), seconds)
+        
+        val minutes = seconds / 60
+        val secs = seconds % 60
+        if (seconds < 3600) return String.format(TXATranslation.txa("txademo_time_minutes"), minutes, secs)
         
         val hours = seconds / 3600
-        val minutes = (seconds % 3600) / 60
-        val secs = seconds % 60
+        val remainingMinutes = (seconds % 3600) / 60
+        if (seconds < 86400) return String.format(TXATranslation.txa("txademo_time_hours"), hours, remainingMinutes, secs)
         
-        return "%02d:%02d:%02d".format(hours, minutes, secs)
+        val days = seconds / 86400
+        val remainingHours = (seconds % 86400) / 3600
+        val remainingMinutesFromDays = ((seconds % 86400) % 3600) / 60
+        if (seconds < 2592000) return String.format(TXATranslation.txa("txademo_time_days"), days, remainingHours, remainingMinutesFromDays)
+        
+        val months = seconds / 2592000 // ~30 days
+        val remainingDays = (seconds % 2592000) / 86400
+        val remainingHoursFromMonths = ((seconds % 2592000) % 86400) / 3600
+        if (seconds < 31536000) return String.format(TXATranslation.txa("txademo_time_months"), months, remainingDays, remainingHoursFromMonths)
+        
+        // For very long periods (years+)
+        val years = seconds / 31536000
+        val remainingMonths = (seconds % 31536000) / 2592000
+        val remainingDaysFromYears = ((seconds % 31536000) % 2592000) / 86400
+        return String.format(TXATranslation.txa("txademo_time_years"), years, remainingMonths, remainingDaysFromYears)
     }
 
     /**

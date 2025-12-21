@@ -347,7 +347,10 @@ class TXASettingsActivity : AppCompatActivity() {
                 setupUI()
                 // Update dialog if it's showing
                 downloadProgressDialog?.let { dialog ->
-                    dialog.update(message = TXATranslation.txa("txademo_update_downloading"))
+                    dialog.update(
+                        message = TXATranslation.txa("txademo_update_downloading"),
+                        etaText = dialog.getBinding()?.tvEta?.text?.toString() ?: "--:--"
+                    )
                 }
             }
         }
@@ -457,8 +460,42 @@ class TXASettingsActivity : AppCompatActivity() {
             ).show()
         }
     }
+    
+    private fun checkDownloadCompletionState() {
+        val prefs = getSharedPreferences(TXADownloadService.PREFS_NAME, Context.MODE_PRIVATE)
+        val isDownloading = prefs.getBoolean(TXADownloadService.KEY_IS_DOWNLOADING, false)
+        val filePath = prefs.getString(TXADownloadService.KEY_DOWNLOAD_FILE_PATH, null)
+        
+        // If download is not active but we have a file path, it means download completed
+        if (!isDownloading && filePath != null) {
+            val file = File(filePath)
+            if (file.exists()) {
+                // Show modal with install button if not already showing
+                if (downloadProgressDialog == null) {
+                    showDownloadProgressDialog(100) // Show at 100% completion
+                    downloadProgressDialog?.showCompleted {
+                        installApk(filePath)
+                    }
+                } else {
+                    downloadProgressDialog?.showCompleted {
+                        installApk(filePath)
+                    }
+                }
+            }
+        } else if (isDownloading) {
+            // If download is still active, ensure modal is showing
+            val progress = prefs.getInt(TXADownloadService.KEY_DOWNLOAD_PROGRESS, 0)
+            if (downloadProgressDialog == null) {
+                showDownloadProgressDialog(progress)
+            }
+        }
+    }
     override fun onResume() {
         super.onResume()
+        
+        // Check if download completed while app was backgrounded
+        checkDownloadCompletionState()
+        
         // Register download complete receiver
         LocalBroadcastManager.getInstance(this).registerReceiver(
             downloadCompleteReceiver,

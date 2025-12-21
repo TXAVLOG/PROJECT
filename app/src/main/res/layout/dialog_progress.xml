@@ -90,15 +90,29 @@
             android:orientation="horizontal">
 
             <!-- ETA info (bottom-left) -->
-            <TextView
-                android:id="@+id/tvEta"
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="--:--"
-                android:textSize="12sp"
-                android:textColor="#757575"
-                android:gravity="start" />
+                android:orientation="vertical"
+                android:gravity="start">
+                
+                <TextView
+                    android:id="@+id/tvEtaLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="10sp"
+                    android:textColor="#9E9E9E" />
+                
+                <TextView
+                    android:id="@+id/tvEta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="--:--"
+                    android:textSize="12sp"
+                    android:textColor="#757575" />
+                    
+            </LinearLayout>
 
             <!-- Percent info (bottom-right) -->
             <TextView
