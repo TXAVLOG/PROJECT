@@ -81,7 +81,7 @@ object TXAUpdateManager {
         for (attempt in 1..maxRetries) {
             try {
                 TXALog.i(TAG, "Attempt $attempt: Checking for updates (v$versionName, code $versionCode)")
-                val result = performUpdateCheck(versionCode, versionName)
+                val result = performUpdateCheck(context, versionCode, versionName)
                 
                 TXALog.i(TAG, "Update check result: $result")
                 
@@ -115,13 +115,14 @@ object TXAUpdateManager {
      * Perform actual API call to check for updates
      */
     private suspend fun performUpdateCheck(
+        context: Context,
         versionCode: Int,
         versionName: String
     ): UpdateCheckResult {
         
         val url = "$API_BASE/update/check?versionCode=$versionCode&versionName=$versionName"
         TXALog.d(TAG, "Making update check request to: $url")
-        TXAHttp.logInfo(applicationContext, TAG, "Update check URL: $url")
+        TXAHttp.logInfo(context, TAG, "Update check URL: $url")
         
         val request = Request.Builder()
             .url(url)
