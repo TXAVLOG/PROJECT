@@ -255,6 +255,7 @@ class TXASettingsActivity : AppCompatActivity() {
                             Toast.LENGTH_SHORT
                         ).show()
                     }
+                    else -> Unit
                 }
             } catch (e: Exception) {
                 TXALog.e("SettingsActivity", "Update check failed", e)

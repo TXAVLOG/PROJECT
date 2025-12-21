@@ -292,28 +292,6 @@ object TXAUpdateManager {
         return prefs.getInt("download_progress", 0)
     }
 
-    /**
-     * Update information
-     */
-    data class UpdateInfo(
-        val versionName: String,
-        val versionCode: Int,
-        val downloadUrl: String,
-        val changelog: String,
-        val fileSize: Long,
-        val isForced: Boolean,
-        val updatedAt: String? = null
-    ) : Serializable
-
-    /**
-     * Update check result
-     */
-    sealed class UpdateCheckResult {
-        data class UpdateAvailable(val updateInfo: UpdateInfo) : UpdateCheckResult()
-        object NoUpdate : UpdateCheckResult()
-        data class Error(val message: String) : UpdateCheckResult()
-    }
-
     fun showUpdateAvailableNotification(context: Context, updateInfo: UpdateInfo) {
         ensureUpdateNotificationChannel(context)
 
