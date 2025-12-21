@@ -350,8 +350,9 @@ object TXATranslation {
                 TXALog.v(TAG, "Response JSON preview: ${json.take(200)}...")
                 
                 // Parse response as translation map
-                val translations = try {
-                    gson.fromJson(json, object : TypeToken<Map<String, String>>() {}.type)
+                val translations: Map<String, String> = try {
+                    val type = object : TypeToken<Map<String, String>>() {}.type
+                    gson.fromJson<Map<String, String>>(json, type) ?: emptyMap()
                 } catch (e: Exception) {
                     TXALog.e(TAG, "JSON parsing failed", e)
                     throw IOException("Invalid JSON response: ${e.message}")
