@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import gc.txa.demo.TXAApp
 import gc.txa.demo.core.TXATranslation
+import gc.txa.demo.core.TXALog
 import gc.txa.demo.databinding.ActivityTxaSplashBinding
 import gc.txa.demo.update.TXAInstall
 import kotlinx.coroutines.delay
@@ -81,7 +82,7 @@ class TXASplashActivity : AppCompatActivity() {
             updateStatus(TXATranslation.txa("txademo_splash_checking_language"))
             
             val locale = TXAApp.getLocale(this@TXASplashActivity)
-            Log.i("TXASplash", "Starting language sync for locale: $locale")
+            TXALog.i("SplashActivity", "Starting language sync for locale: $locale")
             
             updateStatus(TXATranslation.txa("txademo_splash_downloading_language"))
             
@@ -89,16 +90,16 @@ class TXASplashActivity : AppCompatActivity() {
             
             when (result) {
                 is TXATranslation.SyncResult.Success -> {
-                    Log.i("TXASplash", "Language sync successful for locale: $locale")
+                    TXALog.i("SplashActivity", "Language sync successful for locale: $locale")
                     updateStatus(TXATranslation.txa("txademo_splash_language_updated"))
                 }
                 is TXATranslation.SyncResult.CachedUsed -> {
-                    Log.i("TXASplash", "Using cached translations for locale: $locale")
+                    TXALog.i("SplashActivity", "Using cached translations for locale: $locale")
                     updateStatus(TXATranslation.txa("txademo_splash_initializing"))
                 }
                 is TXATranslation.SyncResult.Failed -> {
-                    Log.e("TXASplash", "Language sync failed for locale: $locale", null)
-                    Log.e("TXASplash", "Error message: ${result.message}")
+                    TXALog.e("SplashActivity", "Language sync failed for locale: $locale")
+                    TXALog.e("SplashActivity", "Error message: ${result.message}")
                     updateStatus(TXATranslation.txa("txademo_splash_language_failed"))
                 }
             }
