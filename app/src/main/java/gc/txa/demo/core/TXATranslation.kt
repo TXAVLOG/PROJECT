@@ -180,13 +180,16 @@ object TXATranslation {
      */
     suspend fun getAvailableLocales(): List<LocaleInfo> = withContext(Dispatchers.IO) {
         try {
+            TXALog.i(TAG, "Fetching available locales from API")
             val result = getLocalesWithRetry()
+            TXALog.i(TAG, "Loaded ${result.size} locales from API: ${result.joinToString { it.tag }}")
             return@withContext result
         } catch (e: Exception) {
-            e.printStackTrace()
+            TXALog.e(TAG, "Failed to load locales from API", e)
         }
         
         // Return default locales (fallback: only vi + en) if API fails
+        TXALog.w(TAG, "Using fallback locale list (API unavailable)")
         return@withContext listOf(
             LocaleInfo("vi", "Tiếng Việt"),
             LocaleInfo("en", "English")
@@ -205,19 +208,23 @@ object TXATranslation {
                     .addHeader("User-Agent", "TXADemo-Android/${BuildConfig.VERSION_NAME}")
                     .build()
 
+                TXALog.d(TAG, "Fetching locale list: $API_BASE/locales (attempt $attempt)")
                 val response = TXAHttp.client.newCall(request).execute()
+                TXALog.d(TAG, "Locales response code: ${response.code}, message: ${response.message}")
                 if (response.isSuccessful) {
                     val json = response.body?.string() ?: throw IOException("Empty response")
+                    TXALog.v(TAG, "Locales response JSON: ${json.take(200)}")
                     
                     // Parse new format: simple array ["en", "vi"]
                     val localeArray: List<String> = try {
                         gson.fromJson(json, object : TypeToken<List<String>>() {}.type)
                     } catch (e: Exception) {
+                        TXALog.e(TAG, "Locales JSON parsing failed", e)
                         throw IOException("Invalid locales array format")
                     }
                     
                     // Convert to LocaleInfo objects
-                    return localeArray.map { locale ->
+                    val locales = localeArray.map { locale ->
                         when (locale) {
                             "vi" -> LocaleInfo("vi", "Tiếng Việt")
                             "en" -> LocaleInfo("en", "English")
@@ -227,13 +234,17 @@ object TXATranslation {
                             else -> LocaleInfo(locale, locale.uppercase())
                         }
                     }
+                    TXALog.i(TAG, "Locale API returned: ${locales.joinToString { it.tag }}")
+                    return locales
                 } else {
                     throw IOException("HTTP ${response.code}: ${response.message}")
                 }
             } catch (e: Exception) {
+                TXALog.e(TAG, "Locale fetch failed on attempt $attempt", e)
                 if (attempt == maxRetries) {
                     throw e
                 }
+                TXALog.w(TAG, "Retrying locale fetch after ${1000L * attempt}ms")
                 delay(1000L * attempt) // Exponential backoff
             }
         }
