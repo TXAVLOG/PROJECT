@@ -345,7 +345,7 @@ class TXADownloadService : Service() {
         TXALog.i(LOG_TAG, "Return-to-app action tapped, keeping download in background")
         isAppInForeground = true
         dismissBackgroundNotice()
-        refreshCurrentNotification()
+        refreshForegroundState()
     }
 
     private fun handleDownloadComplete(downloadedBytes: Long, totalBytes: Long) {
@@ -437,6 +437,16 @@ class TXADownloadService : Service() {
         if (!backgroundNoticeVisible) return
         notificationManager.cancel(BACKGROUND_INFO_NOTIFICATION_ID)
         backgroundNoticeVisible = false
+    }
+
+    private fun showBackgroundProgress() {
+        updateNotification(
+            title = TXATranslation.txa("txademo_download_background_title"),
+            content = buildProgressContent(lastDownloadedBytes, lastTotalBytes),
+            progress = lastProgress,
+            indeterminate = lastTotalBytes <= 0
+        )
+        showBackgroundNotice()
     }
 
     private fun createSilentNotification(): Notification {
