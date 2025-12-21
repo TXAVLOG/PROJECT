@@ -499,6 +499,81 @@ object TXATranslation {
     }
 
     /**
+     * Extract translations payload and updated_at metadata from server response.
+     * The API may return either a bare translations map or an object that wraps it.
+     */
+    private fun extractTranslationsPayload(rawJson: String): Pair<String, String?> {
+        return try {
+            val rootElement = gson.fromJson(rawJson, JsonElement::class.java)
+            if (rootElement is JsonObject) {
+                val translationsElement: JsonElement = when {
+                    rootElement.has("translations") -> rootElement.get("translations")
+                    rootElement.has("data") -> rootElement.get("data")
+                    rootElement.has("payload") -> rootElement.get("payload")
+                    else -> rootElement
+                }
+
+                val updatedAt: String? = when {
+                    rootElement.has("updated_at") -> rootElement.get("updated_at").asString
+                    rootElement.has("updatedAt") -> rootElement.get("updatedAt").asString
+                    rootElement.has("meta") && rootElement.get("meta").isJsonObject -> {
+                        rootElement.getAsJsonObject("meta").get("updated_at")?.asString
+                    }
+                    else -> null
+                }
+
+                gson.toJson(translationsElement) to updatedAt
+            } else {
+                rawJson to null
+            }
+        } catch (e: Exception) {
+            TXALog.e(TAG, "Failed to parse translation payload", e)
+            rawJson to null
+        }
+    }
+
+    /**
+     * Compare timestamp strings (epoch millis or HTTP-date) to determine if server is newer.
+     */
+    private fun isServerNewerTimestamp(serverTimestamp: String, cachedTimestamp: String): Boolean {
+        val serverMillis = parseTimestamp(serverTimestamp)
+        val cachedMillis = parseTimestamp(cachedTimestamp)
+
+        if (serverMillis != null && cachedMillis != null) {
+            return serverMillis > cachedMillis
+        }
+
+        // Fallback: if parsing fails, assume server is newer to avoid missing updates
+        return true
+    }
+
+    private fun parseTimestamp(value: String): Long? {
+        value.toLongOrNull()?.let { return it }
+
+        val formats = listOf(
+            "EEE, dd MMM yyyy HH:mm:ss z",
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "yyyy-MM-dd HH:mm:ss"
+        )
+
+        for (pattern in formats) {
+            try {
+                val formatter = SimpleDateFormat(pattern, Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }
+                val date = formatter.parse(value)
+                if (date != null) {
+                    return date.time
+                }
+            } catch (_: Exception) {
+            }
+        }
+
+        return null
+    }
+
+    /**
      * Force load translations (for initial load)
      */
     suspend fun forceLoad(context: Context, locale: String = "vi") {
