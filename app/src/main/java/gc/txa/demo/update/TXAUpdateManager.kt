@@ -156,17 +156,10 @@ object TXAUpdateManager {
             TXALog.i(TAG, "Update API version: $it (source=${updateResponse.source.orEmpty()})")
         }
 
-        val latestPayload = updateResponse.latest
-            ?: updateResponse.legacyLatestVersion?.let { legacy ->
-                LatestPayload(
-                    versionCode = legacy.code,
-                    versionName = legacy.name,
-                    downloadUrl = updateResponse.legacyDownloadUrl,
-                    releaseDate = updateResponse.legacyUpdatedAt,
-                    mandatory = updateResponse.legacyForceUpdate,
-                    changelog = updateResponse.legacyChangelog
-                )
-            }
+        val latestPayload = updateResponse.latest ?: run {
+            TXALog.e(TAG, "Missing latest block in update response: $responseBody")
+            throw IOException("Invalid JSON response: missing latest payload")
+        }
 
         val latestVersionCode = latestPayload?.versionCode ?: run {
             TXALog.e(TAG, "Missing latest.versionCode in update response: $responseBody")
@@ -198,9 +191,7 @@ object TXAUpdateManager {
         val changelogContent = latestPayload.changelog?.takeIf { it.isNotBlank() }
             ?: TXATranslation.txa("txademo_update_changelog")
 
-        val forced = latestPayload.mandatory || (
-            updateResponse.legacyMinVersionCode?.let { versionCode < it } ?: false
-        )
+        val forced = latestPayload.mandatory
 
         return UpdateCheckResult.UpdateAvailable(
             UpdateInfo(
@@ -210,7 +201,7 @@ object TXAUpdateManager {
                 changelog = changelogContent,
                 fileSize = 0L, // Unknown until resolved
                 isForced = forced,
-                updatedAt = latestPayload.releaseDate ?: updateResponse.legacyUpdatedAt
+                updatedAt = latestPayload.releaseDate
             )
         )
     }
