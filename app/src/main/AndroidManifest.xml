@@ -24,10 +24,10 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="TXA Demo"
+        android:label="TXA Music"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.TXADemo"
+        android:theme="@style/Theme.TXAMusic"
         android:requestLegacyExternalStorage="true"
         android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="31">
@@ -37,7 +37,7 @@
             android:name=".ui.TXASplashActivity"
             android:exported="true"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.TXADemo.NoActionBar">
+            android:theme="@style/Theme.TXAMusic.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -49,21 +49,21 @@
             android:name=".ui.TXADemoNoticeActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.TXADemo.NoActionBar" />
+            android:theme="@style/Theme.TXAMusic.NoActionBar" />
 
         <!-- Settings Activity -->
         <activity
             android:name=".ui.TXASettingsActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.TXADemo.NoActionBar" />
+            android:theme="@style/Theme.TXAMusic.NoActionBar" />
 
         <!-- File Manager Activity -->
         <activity
             android:name=".ui.TXAFileManagerActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.TXADemo.NoActionBar" />
+            android:theme="@style/Theme.TXAMusic.NoActionBar" />
 
         <!-- Music Service -->
         <service
