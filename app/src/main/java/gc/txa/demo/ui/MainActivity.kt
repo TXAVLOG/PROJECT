@@ -1,8 +1,6 @@
 package gc.txa.demo.ui
 
 import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
@@ -11,12 +9,11 @@ import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.dynamiccolors.DynamicColors
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
-import androidx.media3.session.MediaBrowser
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -24,14 +21,11 @@ import com.google.common.util.concurrent.ListenableFuture
 import gc.txa.demo.R
 import gc.txa.demo.data.database.SongEntity
 import gc.txa.demo.service.MusicService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.google.android.material.color.DynamicColors
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var mediaBrowser: MediaBrowser
+    private var mediaControllerFuture: ListenableFuture<MediaController>? = null
     private var mediaController: MediaController? = null
 
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
@@ -57,29 +51,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnShuffle: ImageButton
     private lateinit var btnRepeat: ImageButton
 
-    private val browserCallback = object : MediaBrowser.Listener {
-        override fun onConnected(mediaBrowser: MediaBrowser, sessionToken: SessionToken) {
-            // Build MediaController when connected
-            val controllerFuture = MediaController.Builder(this@MainActivity, sessionToken).buildAsync()
-            controllerFuture.addListener({
-                try {
-                    mediaController = controllerFuture.get()
-                    setupMediaController()
-                } catch (e: Exception) {
-                    // Handle error
-                }
-            }, ContextCompat.getMainExecutor(this@MainActivity))
-        }
-
-        override fun onDisconnected(mediaBrowser: MediaBrowser) {
-            mediaController = null
-        }
-
-        override fun onConnectionFailed(mediaBrowser: MediaBrowser) {
-            // Handle connection failure
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -93,15 +64,29 @@ class MainActivity : AppCompatActivity() {
         setupBottomSheet()
         setupClickListeners()
         
-        // Initialize MediaBrowser
-        initializeMediaBrowser()
+        // Initialize Media Controller
+        initializeMediaController()
     }
 
-    private fun initializeMediaBrowser() {
+    private fun initializeMediaController() {
+        // Ensure service is started so MediaController can connect
+        ContextCompat.startForegroundService(
+            this,
+            android.content.Intent(this, MusicService::class.java).apply {
+                action = MusicService.ACTION_START
+            }
+        )
+
         val sessionToken = SessionToken(this, ComponentName(this, MusicService::class.java))
-        mediaBrowser = MediaBrowser.Builder(this, sessionToken)
-            .setListener(browserCallback)
-            .buildAsync()
+        mediaControllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
+        mediaControllerFuture?.addListener({
+            try {
+                mediaController = mediaControllerFuture?.get()
+                setupMediaController()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }, ContextCompat.getMainExecutor(this))
     }
 
     private fun setupMediaController() {
@@ -230,8 +215,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toggleShuffle() {
-        // Implement shuffle mode
-        mediaController?.shuffleModeEnabled = !mediaController?.shuffleModeEnabled ?: false
+        mediaController?.let { controller ->
+            controller.shuffleModeEnabled = !(controller.shuffleModeEnabled)
+        }
     }
 
     private fun toggleRepeat() {
@@ -275,7 +261,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        mediaBrowser.release()
+        mediaController?.release()
+        mediaController = null
+        mediaControllerFuture?.cancel(true)
+        mediaControllerFuture = null
     }
 
     companion object {

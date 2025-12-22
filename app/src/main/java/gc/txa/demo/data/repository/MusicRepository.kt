@@ -4,7 +4,6 @@ import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
-import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
 import gc.txa.demo.data.database.SongDao
 import gc.txa.demo.data.database.SongEntity
@@ -41,13 +40,8 @@ class MusicRepository @Inject constructor(
     suspend fun scanMusicLibrary(): Int = withContext(Dispatchers.IO) {
         val songs = scanMediaStore()
         
-        database.withTransaction {
-            // Clear existing songs
-            songDao.deleteAllSongs()
-            
-            // Insert new songs
-            songDao.insertSongs(songs)
-        }
+        songDao.deleteAllSongs()
+        songDao.insertSongs(songs)
         
         songs.size
     }

@@ -192,23 +192,23 @@ class MusicService : MediaSessionService() {
     }
 
     private inner class MusicSessionCallback : MediaSession.Callback {
-        override fun onPlay() {
+        override fun onPlay(session: MediaSession, controller: ControllerInfo) {
             resumePlayback()
         }
 
-        override fun onPause() {
+        override fun onPause(session: MediaSession, controller: ControllerInfo) {
             pausePlayback()
         }
 
-        override fun onSkipToNext() {
+        override fun onSkipToNext(session: MediaSession, controller: ControllerInfo) {
             skipToNext()
         }
 
-        override fun onSkipToPrevious() {
+        override fun onSkipToPrevious(session: MediaSession, controller: ControllerInfo) {
             skipToPrevious()
         }
 
-        override fun onSeekTo(pos: Long) {
+        override fun onSeekTo(session: MediaSession, controller: ControllerInfo, pos: Long) {
             seekTo(pos)
         }
     }
