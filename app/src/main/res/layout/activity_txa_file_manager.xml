@@ -47,7 +47,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="12dp"
-            android:text="/storage/emulated/0/Download/TXADEMO/"
+            android:text="/storage/emulated/0/Download/TXAMUSIC/"
             android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:fontFamily="monospace" />

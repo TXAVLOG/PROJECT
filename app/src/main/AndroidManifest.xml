@@ -53,7 +53,7 @@
 
         <!-- Music Library Activity -->
         <activity
-            android:name="gc.txa.demo.ui.TXAMusicLibraryActivity"
+            android:name=".ui.TXAMusicLibraryActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.TXAMusic.NoActionBar" />

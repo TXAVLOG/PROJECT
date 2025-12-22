@@ -19,12 +19,12 @@ val appVersionName = versionProps.getProperty("versionName", "1.0.0")
 
 android {
     namespace = "ms.txams.vv"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "ms.txams.vv"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 34
         versionCode = appVersionCode
         versionName = appVersionName
 

@@ -21,4 +21,4 @@
 #-renamesourcefileattribute SourceFile
 
 # Keep translation data classes
--keep class gc.txa.demo.core.TXATranslation$** { *; }
+-keep class ms.txams.vv.core.TXATranslation$** { *; }
