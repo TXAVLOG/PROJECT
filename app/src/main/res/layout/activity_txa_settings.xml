@@ -142,7 +142,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- File Manager Section -->
+        <!-- Music Library Section -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -158,20 +158,20 @@
                 android:padding="16dp">
 
                 <TextView
-                    android:id="@+id/tvFileManagerLabel"
+                    android:id="@+id/tvMusicLibraryLabel"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="File Manager"
+                    android:text="Music Library"
                     android:textColor="#00D9FF"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:paddingBottom="12dp" />
 
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnOpenFileManager"
+                    android:id="@+id/btnOpenMusicLibrary"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
-                    android:text="Open File Manager"
+                    android:text="Open Music Library"
                     android:textSize="14sp"
                     app:backgroundTint="#333355"
                     app:cornerRadius="8dp"
