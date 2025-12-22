@@ -1,4 +1,4 @@
-# 🎨 TXA Music - Design Assets
+# 🎨 TXA Music - Design Assets (Target SDK 33 / Android 13)
 
 ## 📁 Folder Structure
 
