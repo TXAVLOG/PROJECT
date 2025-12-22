@@ -44,7 +44,7 @@
                 android:id="@+id/tvFilePath"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="/storage/emulated/0/Download/TXADEMO/TXA_3.0.0_txa.apk"
+                android:text="/storage/emulated/0/Download/TXAMusic/TXA_3.0.0_txa.apk"
                 android:textColor="#AAAAAA"
                 android:textSize="12sp"
                 android:fontFamily="monospace"

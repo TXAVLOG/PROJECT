@@ -1,7 +1,7 @@
 #!/bin/bash
 # FILE BY TXA
 # Contact: https://fb.com/vlog.txa.2311
-# TXA Demo - VPS Environment Setup Script
+# TXA Music - VPS Environment Setup Script
 
 set -e
 
@@ -16,7 +16,7 @@ log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-log_info "Setting up TXA Demo build environment..."
+log_info "Setting up TXA Music build environment..."
 
 # Check if running on Ubuntu
 if ! grep -q "Ubuntu" /etc/os-release; then

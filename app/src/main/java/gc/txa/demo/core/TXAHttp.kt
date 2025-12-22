@@ -1,4 +1,4 @@
-package gc.txa.demo.core
+package ms.txams.vv.core
 
 import android.content.Context
 import okhttp3.OkHttpClient
@@ -36,7 +36,7 @@ object TXAHttp {
     fun logToPublic(context: Context, type: String, message: String) {
         try {
             val baseDir = context.getExternalFilesDir(null) ?: File("/storage/emulated/0")
-            val logDir = File(baseDir, "TXADEMO/logs")
+            val logDir = File(baseDir, "TXAMusic/logs")
             if (!logDir.exists()) {
                 logDir.mkdirs()
             }

@@ -1,4 +1,4 @@
-package gc.txa.demo.core
+package ms.txams.vv.core
 
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -53,32 +53,32 @@ object TXAFormat {
      * Uses adaptive time units: s, m s, h m s, d h m, M d h, y M d
      */
     fun formatETA(seconds: Long): String {
-        if (seconds <= 0) return TXATranslation.txa("txademo_time_now")
-        if (seconds < 60) return String.format(TXATranslation.txa("txademo_time_seconds"), seconds)
+        if (seconds <= 0) return TXATranslation.txa("txamusic_time_now")
+        if (seconds < 60) return String.format(TXATranslation.txa("txamusic_time_seconds"), seconds)
         
         val minutes = seconds / 60
         val secs = seconds % 60
-        if (seconds < 3600) return String.format(TXATranslation.txa("txademo_time_minutes"), minutes, secs)
+        if (seconds < 3600) return String.format(TXATranslation.txa("txamusic_time_minutes"), minutes, secs)
         
         val hours = seconds / 3600
         val remainingMinutes = (seconds % 3600) / 60
-        if (seconds < 86400) return String.format(TXATranslation.txa("txademo_time_hours"), hours, remainingMinutes, secs)
+        if (seconds < 86400) return String.format(TXATranslation.txa("txamusic_time_hours"), hours, remainingMinutes, secs)
         
         val days = seconds / 86400
         val remainingHours = (seconds % 86400) / 3600
         val remainingMinutesFromDays = ((seconds % 86400) % 3600) / 60
-        if (seconds < 2592000) return String.format(TXATranslation.txa("txademo_time_days"), days, remainingHours, remainingMinutesFromDays)
+        if (seconds < 2592000) return String.format(TXATranslation.txa("txamusic_time_days"), days, remainingHours, remainingMinutesFromDays)
         
         val months = seconds / 2592000 // ~30 days
         val remainingDays = (seconds % 2592000) / 86400
         val remainingHoursFromMonths = ((seconds % 2592000) % 86400) / 3600
-        if (seconds < 31536000) return String.format(TXATranslation.txa("txademo_time_months"), months, remainingDays, remainingHoursFromMonths)
+        if (seconds < 31536000) return String.format(TXATranslation.txa("txamusic_time_months"), months, remainingDays, remainingHoursFromMonths)
         
         // For very long periods (years+)
         val years = seconds / 31536000
         val remainingMonths = (seconds % 31536000) / 2592000
         val remainingDaysFromYears = ((seconds % 31536000) % 2592000) / 86400
-        return String.format(TXATranslation.txa("txademo_time_years"), years, remainingMonths, remainingDaysFromYears)
+        return String.format(TXATranslation.txa("txamusic_time_years"), years, remainingMonths, remainingDaysFromYears)
     }
 
     /**

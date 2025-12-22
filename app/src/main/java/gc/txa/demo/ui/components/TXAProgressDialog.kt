@@ -1,11 +1,11 @@
-package gc.txa.demo.ui.components
+package ms.txams.vv.ui.components
 
 import android.content.Context
 import android.view.LayoutInflater
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
-import gc.txa.demo.databinding.DialogProgressBinding
-import gc.txa.demo.core.TXATranslation
+import ms.txams.vv.databinding.DialogProgressBinding
+import ms.txams.vv.core.TXATranslation
 
 class TXAProgressDialog(private val context: Context) {
 
@@ -33,7 +33,7 @@ class TXAProgressDialog(private val context: Context) {
             // Initialize detailed fields
             binding.tvSize.text = "0 B / 0 B"
             binding.tvSpeed.text = "0 B/s"
-            binding.tvEtaLabel.text = TXATranslation.txa("txademo_update_download_eta")
+            binding.tvEtaLabel.text = TXATranslation.txa("txamusic_update_download_eta")
             binding.tvEta.text = "--:--"
             binding.tvPercent.text = "0%"
             binding.btnInstall.isVisible = false
@@ -81,11 +81,11 @@ class TXAProgressDialog(private val context: Context) {
 
     fun showCompleted(onInstall: () -> Unit) {
         val binding = binding ?: return
-        binding.tvMessage.text = TXATranslation.txa("txademo_download_completed")
+        binding.tvMessage.text = TXATranslation.txa("txamusic_download_completed")
         binding.progressBar.isIndeterminate = false
         binding.progressBar.progress = 100
         binding.tvPercent.text = "100%"
-        binding.btnInstall.text = TXATranslation.txa("txademo_update_install")
+        binding.btnInstall.text = TXATranslation.txa("txamusic_update_install")
         binding.btnInstall.isVisible = true
         onInstallClick = onInstall
         

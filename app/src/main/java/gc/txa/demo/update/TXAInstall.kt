@@ -1,4 +1,4 @@
-package gc.txa.demo.update
+package ms.txams.vv.update
 
 import android.content.Context
 import android.content.Intent

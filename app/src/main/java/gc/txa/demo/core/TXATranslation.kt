@@ -1,9 +1,9 @@
-package gc.txa.demo.core
+package ms.txams.vv.core
 
 import android.content.Context
 import android.content.Intent
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import gc.txa.demo.BuildConfig
+import ms.txams.vv.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
@@ -37,189 +37,178 @@ object TXATranslation {
     // Hardcoded fallback translations (English)
     private val fallbackTranslations = mapOf(
         // Core App
-        "txademo_app_name" to "TXA Demo",
-        "txademo_app_description" to "TXA Demo Application with OTA Updates",
+        "txamusic_app_name" to "TXA Demo",
+        "txamusic_app_description" to "TXA Demo Application with OTA Updates",
         
         // Splash
-        "txademo_splash_checking_permissions" to "Checking permissions...",
-        "txademo_splash_requesting_permissions" to "Requesting permissions...",
-        "txademo_splash_checking_language" to "Checking language updates...",
-        "txademo_splash_downloading_language" to "Downloading translations...",
-        "txademo_splash_language_updated" to "Language updated successfully",
-        "txademo_splash_language_failed" to "Failed to update language",
-        "txademo_splash_initializing" to "Initializing application...",
-        
-        // Demo Notice
-        "txademo_demo_notice_title" to "Demo Version Notice",
-        "txademo_demo_notice_description" to "This is a demo version with test features",
-        "txademo_demo_notice_feature_1" to "✓ OTA Translation System",
-        "txademo_demo_notice_feature_2" to "✓ MediaFire Download Resolver",
-        "txademo_demo_notice_feature_3" to "✓ Background Update Checker",
-        "txademo_demo_notice_feature_4" to "✓ Legacy Storage Support (Android 9)",
-        "txademo_demo_notice_feature_5" to "✓ Multi-language Support",
-        "txademo_demo_notice_confirm" to "Confirm",
-        "txademo_demo_notice_warning" to "This version is for testing purposes only",
+        "txamusic_splash_checking_permissions" to "Checking permissions...",
+        "txamusic_splash_requesting_permissions" to "Requesting permissions...",
+        "txamusic_splash_checking_language" to "Checking language updates...",
+        "txamusic_splash_downloading_language" to "Downloading translations...",
+        "txamusic_splash_language_updated" to "Language updated successfully",
+        "txamusic_splash_language_failed" to "Failed to update language",
+        "txamusic_splash_initializing" to "Initializing application...",
         
         // Settings
-        "txademo_settings_title" to "Settings",
-        "txademo_settings_app_info" to "Application Information",
-        "txademo_settings_version" to "Version",
-        "txademo_settings_app_set_id" to "App Set ID",
-        "txademo_settings_language" to "Language",
-        "txademo_settings_change_language" to "Change Language",
-        "txademo_settings_update" to "Update",
-        "txademo_settings_check_update" to "Check for Updates",
-        "txademo_settings_about" to "About",
+        "txamusic_settings_title" to "Settings",
+        "txamusic_settings_app_info" to "Application Information",
+        "txamusic_settings_version" to "Version",
+        "txamusic_settings_app_set_id" to "App Set ID",
+        "txamusic_settings_language" to "Language",
+        "txamusic_settings_change_language" to "Change Language",
+        "txamusic_settings_update" to "Update",
+        "txamusic_settings_check_update" to "Check for Updates",
+        "txamusic_settings_about" to "About",
         
         // Language Names
-        "txademo_lang_vi" to "Tiếng Việt",
-        "txademo_lang_en" to "English",
-        "txademo_lang_zh" to "中文",
-        "txademo_lang_ja" to "日本語",
-        "txademo_lang_ko" to "한국어",
+        "txamusic_lang_vi" to "Tiếng Việt",
+        "txamusic_lang_en" to "English",
+        "txamusic_lang_zh" to "中文",
+        "txamusic_lang_ja" to "日本語",
+        "txamusic_lang_ko" to "한국어",
         
         // Update Flow - Status
-        "txademo_update_checking" to "Checking for updates...",
-        "txademo_update_available" to "Update available",
-        "txademo_update_not_available" to "You are using the latest version",
-        "txademo_update_downloading" to "Downloading update...",
-        "txademo_update_download_complete" to "Download complete",
-        "txademo_update_installing" to "Installing update...",
-        "txademo_update_install_prompt" to "Tap to install update",
+        "txamusic_update_checking" to "Checking for updates...",
+        "txamusic_update_available" to "Update available",
+        "txamusic_update_not_available" to "You are using the latest version",
+        "txamusic_update_downloading" to "Downloading update...",
+        "txamusic_update_download_complete" to "Download complete",
+        "txamusic_update_installing" to "Installing update...",
+        "txamusic_update_install_prompt" to "Tap to install update",
         
         // Update Flow - Info
-        "txademo_update_new_version" to "New version",
-        "txademo_update_current_version" to "Current version",
-        "txademo_update_changelog" to "Changelog",
-        "txademo_update_changelog_empty" to "No changelog was provided for this version.",
-        "txademo_update_file_size" to "File size",
-        "txademo_update_download_progress" to "Progress",
-        "txademo_update_download_speed" to "Speed",
-        "txademo_update_download_eta" to "Time remaining",
-        "txademo_update_on_default" to "Updated on",
-        "txademo_update_time_unavailable" to "Release time not provided",
+        "txamusic_update_new_version" to "New version",
+        "txamusic_update_current_version" to "Current version",
+        "txamusic_update_changelog" to "Changelog",
+        "txamusic_update_changelog_empty" to "No changelog was provided for this version.",
+        "txamusic_update_file_size" to "File size",
+        "txamusic_update_download_progress" to "Progress",
+        "txamusic_update_download_speed" to "Speed",
+        "txamusic_update_download_eta" to "Time remaining",
+        "txamusic_update_on_default" to "Updated on",
+        "txamusic_update_time_unavailable" to "Release time not provided",
         
         // Update Flow - Actions
-        "txademo_update_download_now" to "Download Now",
-        "txademo_update_install_now" to "Install Now",
-        "txademo_update_cancel" to "Cancel",
-        "txademo_update_later" to "Later",
-        "txademo_update_retry" to "Retry",
+        "txamusic_update_download_now" to "Download Now",
+        "txamusic_update_install_now" to "Install Now",
+        "txamusic_update_cancel" to "Cancel",
+        "txamusic_update_later" to "Later",
+        "txamusic_update_retry" to "Retry",
         
         // Update Flow - Errors
-        "txademo_error_update_check_failed" to "Failed to check for updates",
-        "txademo_error_download_failed" to "Download failed",
-        "txademo_error_install_failed" to "Installation failed",
-        "txademo_error_network" to "Network error",
-        "txademo_error_storage_permission" to "Storage permission required",
-        "txademo_error_install_permission" to "Install permission required",
-        "txademo_error_no_space" to "Insufficient storage space",
-        "txademo_error_invalid_apk" to "Invalid APK file",
-        "txademo_error_resolver_failed" to "Failed to resolve download URL",
-        "txademo_error_download_url_unsupported" to "Unsupported download source",
+        "txamusic_error_update_check_failed" to "Failed to check for updates",
+        "txamusic_error_download_failed" to "Download failed",
+        "txamusic_error_install_failed" to "Installation failed",
+        "txamusic_error_network" to "Network error",
+        "txamusic_error_storage_permission" to "Storage permission required",
+        "txamusic_error_install_permission" to "Install permission required",
+        "txamusic_error_no_space" to "Insufficient storage space",
+        "txamusic_error_invalid_apk" to "Invalid APK file",
+        "txamusic_error_resolver_failed" to "Failed to resolve download URL",
+        "txamusic_error_download_url_unsupported" to "Unsupported download source",
         
         // Common Actions
-        "txademo_action_ok" to "OK",
-        "txademo_action_cancel" to "Cancel",
-        "txademo_action_yes" to "Yes",
-        "txademo_action_no" to "No",
-        "txademo_action_close" to "Close",
-        "txademo_action_retry" to "Retry",
-        "txademo_action_continue" to "Continue",
-        "txademo_action_back" to "Back",
+        "txamusic_action_ok" to "OK",
+        "txamusic_action_cancel" to "Cancel",
+        "txamusic_action_yes" to "Yes",
+        "txamusic_action_no" to "No",
+        "txamusic_action_close" to "Close",
+        "txamusic_action_retry" to "Retry",
+        "txamusic_action_continue" to "Continue",
+        "txamusic_action_back" to "Back",
         
         // Common Messages
-        "txademo_msg_loading" to "Loading...",
-        "txademo_msg_please_wait" to "Please wait...",
-        "txademo_msg_success" to "Success",
-        "txademo_msg_failed" to "Failed",
-        "txademo_msg_error" to "Error",
-        "txademo_msg_warning" to "Warning",
-        "txademo_msg_info" to "Information",
+        "txamusic_msg_loading" to "Loading...",
+        "txamusic_msg_please_wait" to "Please wait...",
+        "txamusic_msg_success" to "Success",
+        "txamusic_msg_failed" to "Failed",
+        "txamusic_msg_error" to "Error",
+        "txamusic_msg_warning" to "Warning",
+        "txamusic_msg_info" to "Information",
         
         // Permissions
-        "txademo_permission_storage_title" to "Storage Permission",
-        "txademo_permission_storage_message" to "This app needs storage permission to download updates",
-        "txademo_permission_install_title" to "Install Permission",
-        "txademo_permission_install_message" to "This app needs permission to install updates",
-        "txademo_permission_denied" to "Permission denied",
-        "txademo_permission_required" to "Permission required to continue",
+        "txamusic_permission_storage_title" to "Storage Permission",
+        "txamusic_permission_storage_message" to "This app needs storage permission to download updates",
+        "txamusic_permission_install_title" to "Install Permission",
+        "txamusic_permission_install_message" to "This app needs permission to install updates",
+        "txamusic_permission_denied" to "Permission denied",
+        "txamusic_permission_required" to "Permission required to continue",
         
         // Formats
-        "txademo_format_bytes" to "%s",
-        "txademo_format_speed" to "%s/s",
-        "txademo_format_percent" to "%s%%",
-        "txademo_format_version" to "v%s",
+        "txamusic_format_bytes" to "%s",
+        "txamusic_format_speed" to "%s/s",
+        "txamusic_format_percent" to "%s%%",
+        "txamusic_format_version" to "v%s",
         
         // API Error Messages
-        "txademo_error_metadata_unavailable" to "Update metadata not available",
-        "txademo_error_download_url_missing" to "Download URL not available",
-        "txademo_error_invalid_metadata" to "Invalid metadata format",
-        "txademo_error_locale_not_found" to "Language not found",
-        "txademo_error_invalid_locale_file" to "Invalid language file format",
-        "txademo_error_update_check_failed" to "Failed to check for updates",
-        "txademo_error_network" to "Network error",
-        "txademo_error_server" to "Server error",
-        "txademo_error_cache_invalid" to "Cache data is invalid, please refresh",
+        "txamusic_error_metadata_unavailable" to "Update metadata not available",
+        "txamusic_error_download_url_missing" to "Download URL not available",
+        "txamusic_error_invalid_metadata" to "Invalid metadata format",
+        "txamusic_error_locale_not_found" to "Language not found",
+        "txamusic_error_invalid_locale_file" to "Invalid language file format",
+        "txamusic_error_update_check_failed" to "Failed to check for updates",
+        "txamusic_error_network" to "Network error",
+        "txamusic_error_server" to "Server error",
+        "txamusic_error_cache_invalid" to "Cache data is invalid, please refresh",
         
         // File Manager
-        "txademo_file_manager_title" to "File Manager",
-        "txademo_file_manager_empty_title" to "No downloaded files",
-        "txademo_file_manager_empty_subtitle" to "Downloaded APKs will appear here",
-        "txademo_file_manager_refresh" to "Refresh",
-        "txademo_file_manager_cleanup" to "Clean Up",
-        "txademo_file_manager_install" to "Install",
-        "txademo_file_manager_delete" to "Delete",
-        "txademo_file_manager_storage_path" to "Storage Path",
-        "txademo_file_manager_files_count" to "%s files",
-        "txademo_file_manager_total_size" to "Total Size: %s",
-        "txademo_file_manager_delete_confirm" to "Delete File",
-        "txademo_file_manager_delete_message" to "Are you sure you want to delete %s?",
-        "txademo_file_manager_delete_success" to "File deleted successfully",
-        "txademo_file_manager_delete_failed" to "Failed to delete file",
-        "txademo_file_manager_install_success" to "Installation started",
-        "txademo_file_manager_install_failed" to "Failed to start installation",
-        "txademo_settings_file_manager" to "File Manager",
-        "txademo_settings_open_file_manager" to "Open File Manager",
+        "txamusic_file_manager_title" to "File Manager",
+        "txamusic_file_manager_empty_title" to "No downloaded files",
+        "txamusic_file_manager_empty_subtitle" to "Downloaded APKs will appear here",
+        "txamusic_file_manager_refresh" to "Refresh",
+        "txamusic_file_manager_cleanup" to "Clean Up",
+        "txamusic_file_manager_install" to "Install",
+        "txamusic_file_manager_delete" to "Delete",
+        "txamusic_file_manager_storage_path" to "Storage Path",
+        "txamusic_file_manager_files_count" to "%s files",
+        "txamusic_file_manager_total_size" to "Total Size: %s",
+        "txamusic_file_manager_delete_confirm" to "Delete File",
+        "txamusic_file_manager_delete_message" to "Are you sure you want to delete %s?",
+        "txamusic_file_manager_delete_success" to "File deleted successfully",
+        "txamusic_file_manager_delete_failed" to "Failed to delete file",
+        "txamusic_file_manager_install_success" to "Installation started",
+        "txamusic_file_manager_install_failed" to "Failed to start installation",
+        "txamusic_settings_file_manager" to "File Manager",
+        "txamusic_settings_open_file_manager" to "Open File Manager",
         
         // Download Notifications
-        "txademo_download_background_title" to "TXA Demo Update",
-        "txademo_download_background_starting" to "Starting download...",
-        "txademo_download_background_progress" to "Downloading update...",
-        "txademo_download_cancel" to "Cancel",
-        "txademo_download_return_app" to "Return to App",
-        "txademo_download_cancelled" to "Download Cancelled",
-        "txademo_download_cancelled_message" to "The download has been cancelled",
-        "txademo_download_complete" to "Download Complete",
-        "txademo_download_complete_message" to "Update downloaded successfully",
-        "txademo_download_completed" to "Download completed",
-        "txademo_download_failed" to "Download Failed",
-        "txademo_download_failed_message" to "Failed to download update",
-        "txademo_download_channel_name" to "TXA Downloads",
-        "txademo_download_channel_description" to "Background download notifications",
+        "txamusic_download_background_title" to "TXA Demo Update",
+        "txamusic_download_background_starting" to "Starting download...",
+        "txamusic_download_background_progress" to "Downloading update...",
+        "txamusic_download_cancel" to "Cancel",
+        "txamusic_download_return_app" to "Return to App",
+        "txamusic_download_cancelled" to "Download Cancelled",
+        "txamusic_download_cancelled_message" to "The download has been cancelled",
+        "txamusic_download_complete" to "Download Complete",
+        "txamusic_download_complete_message" to "Update downloaded successfully",
+        "txamusic_download_completed" to "Download completed",
+        "txamusic_download_failed" to "Download Failed",
+        "txamusic_download_failed_message" to "Failed to download update",
+        "txamusic_download_channel_name" to "TXA Downloads",
+        "txamusic_download_channel_description" to "Background download notifications",
         
         // Update Install
-        "txademo_update_install" to "Install",
+        "txamusic_update_install" to "Install",
         
         // File Errors
-        "txademo_file_not_found" to "Downloaded file not found",
+        "txamusic_file_not_found" to "Downloaded file not found",
         
         // Time Units for ETA
-        "txademo_time_now" to "now",
-        "txademo_time_seconds" to "%ds",
-        "txademo_time_minutes" to "%dm %ds",
-        "txademo_time_hours" to "%dh %dm %ds",
-        "txademo_time_days" to "%dd %dh %dm",
-        "txademo_time_months" to "%dM %dd %dh",
-        "txademo_time_years" to "%dy %dM %dd",
+        "txamusic_time_now" to "now",
+        "txamusic_time_seconds" to "%ds",
+        "txamusic_time_minutes" to "%dm %ds",
+        "txamusic_time_hours" to "%dh %dm %ds",
+        "txamusic_time_days" to "%dd %dh %dm",
+        "txamusic_time_months" to "%dM %dd %dh",
+        "txamusic_time_years" to "%dy %dM %dd",
         
-        "txademo_update_on" to "UPDATE ON %s",
-        "txademo_update_on_default" to "UPDATE ON",
-        "txademo_update_time_unavailable" to "Release time not provided",
-        "txademo_powered_by" to "©POWER BY TXA!",
-        "txademo_update_notification_body" to "Version %s is available to download",
-        "txademo_update_notification_channel_name" to "TXA Update Alerts",
-        "txademo_update_notification_channel_description" to "Receive notifications when a new version is ready"
+        "txamusic_update_on" to "UPDATE ON %s",
+        "txamusic_update_on_default" to "UPDATE ON",
+        "txamusic_update_time_unavailable" to "Release time not provided",
+        "txamusic_powered_by" to "©POWER BY TXA!",
+        "txamusic_update_notification_body" to "Version %s is available to download",
+        "txamusic_update_notification_channel_name" to "TXA Update Alerts",
+        "txamusic_update_notification_channel_description" to "Receive notifications when a new version is ready"
     )
 
     /**
@@ -481,11 +470,11 @@ object TXATranslation {
                 if (attempt == maxRetries) {
                     val errorMessage = when {
                         e.message?.contains("HTTP 404") == true -> 
-                            txa("txademo_error_locale_not_found")
+                            txa("txamusic_error_locale_not_found")
                         e.message?.contains("JSON") == true -> 
-                            txa("txademo_error_invalid_locale_file")
+                            txa("txamusic_error_invalid_locale_file")
                         e.message?.contains("HTTP") == true -> 
-                            txa("txademo_error_network")
+                            txa("txamusic_error_network")
                         e.message?.contains("UnknownHost") == true ->
                             "DNS resolution failed for $API_BASE"
                         e.message?.contains("SSL") == true ->

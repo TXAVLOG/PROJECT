@@ -1,4 +1,4 @@
-package gc.txa.demo.update
+package ms.txams.vv.update
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -10,13 +10,13 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
-import gc.txa.demo.BuildConfig
-import gc.txa.demo.TXAApp
-import gc.txa.demo.core.TXAHttp
-import gc.txa.demo.core.TXALog
-import gc.txa.demo.core.TXATranslation
-import gc.txa.demo.download.TXADownloadService
-import gc.txa.demo.ui.TXASettingsActivity
+import ms.txams.vv.BuildConfig
+import ms.txams.vv.TXAApp
+import ms.txams.vv.core.TXAHttp
+import ms.txams.vv.core.TXALog
+import ms.txams.vv.core.TXATranslation
+import ms.txams.vv.download.TXADownloadService
+import ms.txams.vv.ui.TXASettingsActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -33,7 +33,7 @@ object TXAUpdateManager {
     private const val TEST_CHANGELOG = "Phiên bản test nội bộ 3.0.0_txa – kiểm tra resolver & file manager."
     private const val TEST_DOWNLOAD_URL = "https://www.mediafire.com/file/jdy9nl8o6uqoyvq/TXA_AUTHENTICATOR_3.0.0_txa.apk/file"
 
-    private const val API_BASE = "https://soft.nrotxa.online/txademo/api"
+    private const val API_BASE = "https://soft.nrotxa.online/txamusic/api"
     private const val PREFS_NAME = "txa_update_prefs"
     private const val KEY_LAST_UPDATE_CHECK = "last_update_check"
     private const val KEY_CACHED_VERSION_CODE = "cached_version_code"

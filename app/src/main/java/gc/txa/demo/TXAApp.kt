@@ -1,4 +1,4 @@
-package gc.txa.demo
+package ms.txams.vv
 
 import android.app.Application
 import android.content.Context
@@ -6,8 +6,8 @@ import android.content.res.Configuration
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import gc.txa.demo.core.TXATranslation
-import gc.txa.demo.update.TXAUpdateWorker
+import ms.txams.vv.core.TXATranslation
+import ms.txams.vv.update.TXAUpdateWorker
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit
 class TXAApp : Application() {
 
     companion object {
-        private const val PREF_NAME = "txa_demo_prefs"
+        private const val PREF_NAME = "txamusic_prefs"
         private const val KEY_LOCALE = "app_locale"
         private const val DEFAULT_LOCALE = "vi"
 
@@ -61,7 +61,7 @@ class TXAApp : Application() {
 
     private fun cleanOldApkFiles() {
         try {
-            val downloadDir = File("/storage/emulated/0/Download/TXADEMO")
+            val downloadDir = File("/storage/emulated/0/Download/TXAMusic")
             if (downloadDir.exists() && downloadDir.isDirectory) {
                 downloadDir.listFiles()?.forEach { file ->
                     if (file.isFile && file.name.endsWith(".apk")) {

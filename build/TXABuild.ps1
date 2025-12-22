@@ -1,6 +1,6 @@
 # FILE BY TXA
 # Contact: https://fb.com/vlog.txa.2311
-# TXA Demo - Windows PowerShell Build Script
+# TXA Music - Windows PowerShell Build Script
 # Cross-platform build system with pre-flight checks
 
 param(
@@ -31,7 +31,7 @@ function Write-Error { Write-ColorOutput Red $args }
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = Split-Path -Parent $ScriptDir
 $EnvFile = Join-Path $ScriptDir ".env"
-$KeyStoreFile = Join-Path $ProjectRoot "app\txademo.keystore"
+$KeyStoreFile = Join-Path $ProjectRoot "app\txamusic.keystore"
 $BuildOutputDir = Join-Path $ProjectRoot "TXABUILD"
 
 # Load environment variables
@@ -74,7 +74,7 @@ if (-not $VersionCode -or -not $VersionName) {
     exit 1
 }
 
-Write-Info "Building TXA Demo v$VersionName ($VersionCode) - $BuildType"
+Write-Info "Building TXA Music v$VersionName ($VersionCode) - $BuildType"
 
 # Pre-flight checks
 function Test-Prerequisites {
@@ -174,13 +174,13 @@ function New-Keystore {
         & keytool -genkey `
             -v `
             -keystore $KeyStoreFile `
-            -alias txademo `
+            -alias txamusic `
             -keyalg RSA `
             -keysize 2048 `
             -validity 10000 `
             -storepass $KeyStorePassword `
             -keypass $KeyPassword `
-            -dname "CN=TXA Demo, OU=TXA, O=TXAVLOG, L=Ho Chi Minh, ST=HCM, C=VN" `
+            -dname "CN=TXA Music, OU=TXA, O=TXAVLOG, L=Ho Chi Minh, ST=HCM, C=VN" `
             -noprompt
         
         if ($LASTEXITCODE -eq 0) {
@@ -208,12 +208,12 @@ function Test-KeystoreAlias {
         
         $KeyStorePassword = [System.Environment]::GetEnvironmentVariable("KEYSTORE_PASSWORD")
         
-        $AliasCheck = & keytool -list -keystore $KeyStoreFile -storepass $KeyStorePassword -alias txademo 2>&1
+        $AliasCheck = & keytool -list -keystore $KeyStoreFile -storepass $KeyStorePassword -alias txamusic 2>&1
         
         if ($LASTEXITCODE -eq 0) {
-            Write-Success "Keystore alias verified: txademo"
+            Write-Success "Keystore alias verified: txamusic"
         } else {
-            Write-Error "Keystore alias 'txademo' not found or invalid password"
+            Write-Error "Keystore alias 'txamusic' not found or invalid password"
             Write-Error "Please check keystore file or regenerate with correct alias"
             exit 1
         }
@@ -314,7 +314,7 @@ function Copy-APK {
         New-Item -ItemType Directory -Path $BuildOutputDir -Force | Out-Null
     }
     
-    $OutputFile = Join-Path $BuildOutputDir "TXADEMO-$VersionName-$BuildType.apk"
+    $OutputFile = Join-Path $BuildOutputDir "TXAMusic-$VersionName-$BuildType.apk"
     
     Write-Info "Copying APK to: $OutputFile"
     Copy-Item $SourceAPK $OutputFile -Force
@@ -346,7 +346,7 @@ function Publish-Repository {
         # Check if there are changes to commit
         $GitStatus = & git status --porcelain TXABUILD\*.apk
         if ($GitStatus) {
-            & git commit -m "build: TXADEMO-$VersionName-$BuildType"
+            & git commit -m "build: TXAMusic-$VersionName-$BuildType"
             
             & git push origin main
             
@@ -387,7 +387,7 @@ function Show-BuildSummary {
 
 # Main execution
 try {
-    Write-Info "Starting TXA Demo build process..."
+    Write-Info "Starting TXA Music build process..."
     
     # Check if we're in the right directory
     if (-not (Test-Path (Join-Path $ProjectRoot "build.gradle.kts"))) {

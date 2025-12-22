@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "TXADemo"
+rootProject.name = "TXAMusic"
 include(":app")

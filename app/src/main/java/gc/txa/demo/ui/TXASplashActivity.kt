@@ -1,4 +1,4 @@
-package gc.txa.demo.ui
+package ms.txams.vv.ui
 
 import android.Manifest
 import android.content.Intent
@@ -48,7 +48,7 @@ class TXASplashActivity : AppCompatActivity() {
         }
 
         if (permissions.isNotEmpty()) {
-            updateStatus(TXATranslation.txa("txademo_splash_requesting_permissions"))
+            updateStatus(TXATranslation.txa("txamusic_splash_requesting_permissions"))
             ActivityCompat.requestPermissions(
                 this,
                 permissions.toTypedArray(),
@@ -62,7 +62,7 @@ class TXASplashActivity : AppCompatActivity() {
     private fun checkInstallPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (!TXAInstall.canInstallPackages(this)) {
-                updateStatus(TXATranslation.txa("txademo_permission_install_message"))
+                updateStatus(TXATranslation.txa("txamusic_permission_install_message"))
                 // For now, just continue - user can grant later when needed
                 lifecycleScope.launch {
                     delay(2000)
@@ -78,33 +78,33 @@ class TXASplashActivity : AppCompatActivity() {
 
     private fun startLanguageSync() {
         lifecycleScope.launch {
-            updateStatus(TXATranslation.txa("txademo_splash_checking_language"))
+            updateStatus(TXATranslation.txa("txamusic_splash_checking_language"))
             
             val locale = TXAApp.getLocale(this@TXASplashActivity)
             TXALog.i("SplashActivity", "Starting language sync for locale: $locale")
             
-            updateStatus(TXATranslation.txa("txademo_splash_downloading_language"))
+            updateStatus(TXATranslation.txa("txamusic_splash_downloading_language"))
             
             val result = TXATranslation.syncIfNewer(this@TXASplashActivity, locale)
             
             when (result) {
                 is TXATranslation.SyncResult.Success -> {
                     TXALog.i("SplashActivity", "Language sync successful for locale: $locale")
-                    updateStatus(TXATranslation.txa("txademo_splash_language_updated"))
+                    updateStatus(TXATranslation.txa("txamusic_splash_language_updated"))
                 }
                 is TXATranslation.SyncResult.CachedUsed -> {
                     TXALog.i("SplashActivity", "Using cached translations for locale: $locale")
-                    updateStatus(TXATranslation.txa("txademo_splash_initializing"))
+                    updateStatus(TXATranslation.txa("txamusic_splash_initializing"))
                 }
                 is TXATranslation.SyncResult.Failed -> {
                     TXALog.e("SplashActivity", "Language sync failed for locale: $locale")
                     TXALog.e("SplashActivity", "Error message: ${result.message}")
-                    updateStatus(TXATranslation.txa("txademo_splash_language_failed"))
+                    updateStatus(TXATranslation.txa("txamusic_splash_language_failed"))
                 }
             }
             
             delay(500)
-            navigateToNotice()
+            navigateToSettings()
         }
     }
 
@@ -112,8 +112,8 @@ class TXASplashActivity : AppCompatActivity() {
         binding.tvStatus.text = message
     }
 
-    private fun navigateToNotice() {
-        val intent = Intent(this, TXADemoNoticeActivity::class.java)
+    private fun navigateToSettings() {
+        val intent = Intent(this, TXASettingsActivity::class.java)
         startActivity(intent)
         finish()
     }

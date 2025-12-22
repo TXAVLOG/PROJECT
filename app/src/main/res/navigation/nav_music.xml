@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/libraryFragment"
-        android:name="gc.txa.demo.ui.library.LibraryFragment"
+        android:name="ms.txams.vv.ui.library.LibraryFragment"
         android:label="Library"
         tools:layout="@layout/fragment_library">
         
@@ -30,7 +30,7 @@
 
     <fragment
         android:id="@+id/songsFragment"
-        android:name="gc.txa.demo.ui.songs.SongsFragment"
+        android:name="ms.txams.vv.ui.songs.SongsFragment"
         android:label="Songs"
         tools:layout="@layout/fragment_songs">
         
@@ -51,7 +51,7 @@
 
     <fragment
         android:id="@+id/albumsFragment"
-        android:name="gc.txa.demo.ui.albums.AlbumsFragment"
+        android:name="ms.txams.vv.ui.albums.AlbumsFragment"
         android:label="Albums"
         tools:layout="@layout/fragment_albums">
         
@@ -62,7 +62,7 @@
 
     <fragment
         android:id="@+id/artistsFragment"
-        android:name="gc.txa.demo.ui.artists.ArtistsFragment"
+        android:name="ms.txams.vv.ui.artists.ArtistsFragment"
         android:label="Artists"
         tools:layout="@layout/fragment_artists">
         
@@ -73,7 +73,7 @@
 
     <fragment
         android:id="@+id/nowPlayingFragment"
-        android:name="gc.txa.demo.ui.nowplaying.NowPlayingFragment"
+        android:name="ms.txams.vv.ui.nowplaying.NowPlayingFragment"
         android:label="Now Playing"
         tools:layout="@layout/fragment_now_playing" />
 

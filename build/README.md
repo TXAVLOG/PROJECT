@@ -1,4 +1,4 @@
-# 🚀 TXA Demo - Cross-Platform Build System
+# 🚀 TXA Music - Cross-Platform Build System
 **Windows + Ubuntu VPS Support**
 
 **FILE BY TXA**  
@@ -6,7 +6,7 @@
 
 ## 📋 Overview
 
-Complete automated build system for TXA Demo Android app on Ubuntu VPS. Features keystore management, process cleanup, APK validation, and repository integration.
+Complete automated build system for TXA Music Android app on Ubuntu VPS. Features keystore management, process cleanup, APK validation, and repository integration.
 
 ## 📁 File Structure
 
@@ -139,15 +139,15 @@ chmod +x build/*.sh
 
 ## 📦 Output
 
-- **APK Location**: `TXABUILD/TXADEMO-{version}-{type}.apk`
-- **Keystore**: `app/txademo.keystore` (auto-generated)
+- **APK Location**: `TXABUILD/TXAMusic-{version}-{type}.apk`
+- **Keystore**: `app/txamusic.keystore` (auto-generated)
 - **Repository Upload**: Automatic if `UPLOAD_TO_REPO=true`
 
 ## 🔧 Features
 
 ### ✅ Security
 - Keystore passwords in `.env` (gitignored)
-- Automatic keystore generation (alias: `txademo`)
+- Automatic keystore generation (alias: `txamusic`)
 - Git configuration from environment variables
 - Process cleanup with graceful shutdown
 
@@ -225,11 +225,11 @@ If auto-generation fails:
 ```bash
 keytool -genkey \
     -v -keystore app/txademo.keystore \
-    -alias txademo -keyalg RSA \
+    -alias txamusic -keyalg RSA \
     -keysize 2048 -validity 10000 \
     -storepass YOUR_PASSWORD \
     -keypass YOUR_PASSWORD \
-    -dname "CN=TXA Demo, OU=TXA, O=TXAVLOG, L=Ho Chi Minh, ST=HCM, C=VN"
+    -dname "CN=TXA Music, OU=TXA, O=TXAVLOG, L=Ho Chi Minh, ST=HCM, C=VN"
 ```
 
 ## 🔒 Security Notes

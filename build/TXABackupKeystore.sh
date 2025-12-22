@@ -1,7 +1,7 @@
 #!/bin/bash
 # FILE BY TXA
 # Contact: https://fb.com/vlog.txa.2311
-# TXA Demo - Keystore Backup Script
+# TXA Music - Keystore Backup Script
 # Creates encrypted backup of keystore file
 
 set -e
@@ -21,10 +21,10 @@ log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-KEYSTORE_FILE="$PROJECT_ROOT/app/txademo.keystore"
+KEYSTORE_FILE="$PROJECT_ROOT/app/txamusic.keystore"
 BACKUP_DIR="$PROJECT_ROOT/keystore-backups"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-BACKUP_FILE="$BACKUP_DIR/txademo_keystore_$TIMESTAMP.tar.gz.gpg"
+BACKUP_FILE="$BACKUP_DIR/txamusic_keystore_$TIMESTAMP.tar.gz.gpg"
 
 # Load environment
 ENV_FILE="$SCRIPT_DIR/.env"
@@ -61,16 +61,16 @@ create_backup() {
     # Create archive with keystore and metadata
     tar -cf "$temp_archive" \
         -C "$PROJECT_ROOT" \
-        app/txademo.keystore \
+        app/txamusic.keystore \
         version.properties \
         build/.env.example
     
     # Add backup metadata
-    echo "=== TXA Demo Keystore Backup ===" > "/tmp/backup_info_$TIMESTAMP.txt"
+    echo "=== TXA Music Keystore Backup ===" > "/tmp/backup_info_$TIMESTAMP.txt"
     echo "Created: $(date)" >> "/tmp/backup_info_$TIMESTAMP.txt"
     echo "Version: $(grep 'versionName' "$PROJECT_ROOT/version.properties" | cut -d'=' -f2 | tr -d ' ')" >> "/tmp/backup_info_$TIMESTAMP.txt"
     echo "Build Code: $(grep 'versionCode' "$PROJECT_ROOT/version.properties" | cut -d'=' -f2 | tr -d ' ')" >> "/tmp/backup_info_$TIMESTAMP.txt"
-    echo "Keystore Alias: txademo" >> "/tmp/backup_info_$TIMESTAMP.txt"
+    echo "Keystore Alias: txamusic" >> "/tmp/backup_info_$TIMESTAMP.txt"
     echo "=================================" >> "/tmp/backup_info_$TIMESTAMP.txt"
     
     # Add metadata to archive
@@ -131,7 +131,7 @@ cleanup_old_backups() {
     log_info "Cleaning up old backups (keeping last 5)..."
     
     cd "$BACKUP_DIR"
-    ls -t txademo_keystore_*.tar.gz.gpg | tail -n +6 | xargs -r rm
+    ls -t txamusic_keystore_*.tar.gz.gpg | tail -n +6 | xargs -r rm
     
     local backup_count=$(ls -1 *.tar.gz.gpg 2>/dev/null | wc -l)
     log_info "Retained $backup_count backup files"
@@ -139,7 +139,7 @@ cleanup_old_backups() {
 
 # Main execution
 main() {
-    log_info "TXA Demo Keystore Backup"
+    log_info "TXA Music Keystore Backup"
     log_info "========================"
     
     create_backup

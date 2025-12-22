@@ -1,24 +1,45 @@
-package gc.txa.demo.ui
+package ms.txams.vv.ui
 
-import android.app.AlertDialog
+import android.Manifest
+import android.content.ContentUris
+import android.database.Cursor
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.view.View
+import android.provider.MediaStore
+import android.provider.MediaStore.Audio.Media
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import gc.txa.demo.core.TXAFormat
-import gc.txa.demo.core.TXATranslation
-import gc.txa.demo.databinding.ActivityTxaFileManagerBinding
-import gc.txa.demo.update.TXAInstall
-import java.io.File
+import dagger.hilt.android.AndroidEntryPoint
+import gc.txa.demo.data.database.SongEntity
+import gc.txa.demo.data.repository.MusicRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import ms.txams.vv.core.TXAFormat
+import ms.txams.vv.core.TXATranslation
+import ms.txams.vv.databinding.ActivityTxaFileManagerBinding
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class TXAFileManagerActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityTxaFileManagerBinding
-    private lateinit var adapter: FileManagerAdapter
-    private val downloadDir = File("/storage/emulated/0/Download/TXADEMO")
+    private lateinit var adapter: MusicAdapter
+    private val musicFiles = mutableListOf<SongEntity>()
+
+    @Inject
+    lateinit var musicRepository: MusicRepository
+
+    companion object {
+        private const val REQUEST_PERMISSION = 100
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,33 +53,33 @@ class TXAFileManagerActivity : AppCompatActivity() {
 
     private fun setupUI() {
         binding.apply {
-            toolbar.title = TXATranslation.txa("txademo_file_manager_title")
+            toolbar.title = TXATranslation.txa("txamusic_music_library_title")
             toolbar.setNavigationOnClickListener {
                 finish()
             }
 
-            tvStoragePath.text = downloadDir.absolutePath
-            btnRefresh.text = TXATranslation.txa("txademo_file_manager_refresh")
-            btnCleanUp.text = TXATranslation.txa("txademo_file_manager_cleanup")
+            tvStoragePath.text = TXATranslation.txa("txamusic_all_songs")
+            btnRefresh.text = TXATranslation.txa("txamusic_refresh_library")
+            btnCleanUp.text = TXATranslation.txa("txamusic_scan_library")
 
             btnRefresh.setOnClickListener {
                 loadFiles()
             }
 
             btnCleanUp.setOnClickListener {
-                showCleanupDialog()
+                scanMusicLibrary()
             }
         }
     }
 
     private fun setupRecyclerView() {
-        adapter = FileManagerAdapter { file, action ->
+        adapter = MusicAdapter { song, action ->
             when (action) {
-                "install" -> installFile(file)
-                "delete" -> showDeleteDialog(file)
+                "play" -> playSong(song)
+                "add_to_playlist" -> addToPlaylist(song)
             }
         }
-
+        
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(this@TXAFileManagerActivity)
             adapter = this@TXAFileManagerActivity.adapter
@@ -77,12 +98,12 @@ class TXAFileManagerActivity : AppCompatActivity() {
         if (files.isEmpty()) {
             binding.recyclerView.visibility = View.GONE
             binding.emptyState.visibility = View.VISIBLE
-            binding.tvFileCount.text = TXATranslation.txa("txademo_file_manager_files_count").format("0")
+            binding.tvFileCount.text = TXATranslation.txa("txamusic_file_manager_files_count").format("0")
         } else {
             binding.recyclerView.visibility = View.VISIBLE
             binding.emptyState.visibility = View.GONE
             
-            binding.tvFileCount.text = TXATranslation.txa("txademo_file_manager_files_count").format(files.size.toString())
+            binding.tvFileCount.text = TXATranslation.txa("txamusic_file_manager_files_count").format(files.size.toString())
             
             adapter.updateFiles(files)
         }
@@ -91,34 +112,34 @@ class TXAFileManagerActivity : AppCompatActivity() {
     private fun installFile(file: File) {
         val success = TXAInstall.installApk(this, file)
         if (success) {
-            Toast.makeText(this, TXATranslation.txa("txademo_file_manager_install_success"), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, TXATranslation.txa("txamusic_file_manager_install_success"), Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(this, TXATranslation.txa("txademo_file_manager_install_failed"), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, TXATranslation.txa("txamusic_file_manager_install_failed"), Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun showDeleteDialog(file: File) {
         AlertDialog.Builder(this)
-            .setTitle(TXATranslation.txa("txademo_file_manager_delete_confirm"))
-            .setMessage(TXATranslation.txa("txademo_file_manager_delete_message").format(file.name))
-            .setPositiveButton(TXATranslation.txa("txademo_file_manager_delete")) { _, _ ->
+            .setTitle(TXATranslation.txa("txamusic_file_manager_delete_confirm"))
+            .setMessage(TXATranslation.txa("txamusic_file_manager_delete_message").format(file.name))
+            .setPositiveButton(TXATranslation.txa("txamusic_file_manager_delete")) { _, _ ->
                 deleteFile(file)
             }
-            .setNegativeButton(TXATranslation.txa("txademo_action_cancel"), null)
+            .setNegativeButton(TXATranslation.txa("txamusic_action_cancel"), null)
             .show()
     }
 
     private fun deleteFile(file: File) {
         try {
             if (file.delete()) {
-                Toast.makeText(this, TXATranslation.txa("txademo_file_manager_delete_success"), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, TXATranslation.txa("txamusic_file_manager_delete_success"), Toast.LENGTH_SHORT).show()
                 loadFiles()
             } else {
-                Toast.makeText(this, TXATranslation.txa("txademo_file_manager_delete_failed"), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, TXATranslation.txa("txamusic_file_manager_delete_failed"), Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(this, TXATranslation.txa("txademo_file_manager_delete_failed"), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, TXATranslation.txa("txamusic_file_manager_delete_failed"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -151,7 +172,7 @@ class TXAFileManagerActivity : AppCompatActivity() {
                 Toast.makeText(this, "Deleted $deletedCount old files", Toast.LENGTH_SHORT).show()
                 loadFiles()
             }
-            .setNegativeButton(TXATranslation.txa("txademo_action_cancel"), null)
+            .setNegativeButton(TXATranslation.txa("txamusic_action_cancel"), null)
             .show()
     }
 }

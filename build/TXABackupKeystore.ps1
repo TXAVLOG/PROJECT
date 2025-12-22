@@ -1,6 +1,6 @@
 # FILE BY TXA
 # Contact: https://fb.com/vlog.txa.2311
-# TXA Demo - Windows PowerShell Keystore Backup Script
+# TXA Music - Windows PowerShell Keystore Backup Script
 
 # Error handling
 $ErrorActionPreference = "Stop"
@@ -23,10 +23,10 @@ function Write-Error { Write-ColorOutput Red $args }
 # Configuration
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = Split-Path -Parent $ScriptDir
-$KeyStoreFile = Join-Path $ProjectRoot "app\txademo.keystore"
+$KeyStoreFile = Join-Path $ProjectRoot "app\txamusic.keystore"
 $BackupDir = Join-Path $ProjectRoot "keystore-backups"
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$BackupFile = Join-Path $BackupDir "txademo_keystore_$Timestamp.tar.gz.gpg"
+$BackupFile = Join-Path $BackupDir "txamusic_keystore_$Timestamp.tar.gz.gpg"
 
 # Load environment
 $EnvFile = Join-Path $ScriptDir ".env"
@@ -80,7 +80,7 @@ function New-KeystoreBackup {
     
     & tar -cf $TempArchive `
         -C $ProjectRoot `
-        "app\txademo.keystore" `
+        "app\txamusic.keystore" `
         "version.properties" `
         "build\.env.example"
     
@@ -91,11 +91,11 @@ function New-KeystoreBackup {
     
     # Add backup metadata
     $BackupInfo = @"
-=== TXA Demo Keystore Backup ===
+=== TXA Music Keystore Backup ===
 Created: $(Get-Date)
 Version: $((Get-Content $VersionFile | Where-Object { $_ -match "^versionName=" }) -replace "versionName=", "")
 Build Code: $((Get-Content $VersionFile | Where-Object { $_ -match "^versionCode=" }) -replace "versionCode=", "")
-Keystore Alias: txademo
+Keystore Alias: txamusic
 =================================
 "@
     
@@ -170,7 +170,7 @@ function Remove-OldBackups {
     Write-Info "Cleaning up old backups (keeping last 5)..."
     
     Set-Location $BackupDir
-    $Backups = Get-ChildItem -Path "txademo_keystore_*.tar.gz.gpg" | Sort-Object LastWriteTime -Descending
+    $Backups = Get-ChildItem -Path "txamusic_keystore_*.tar.gz.gpg" | Sort-Object LastWriteTime -Descending
     
     if ($Backups.Count -gt 5) {
         $Backups | Select-Object -Skip 5 | ForEach-Object {
@@ -185,7 +185,7 @@ function Remove-OldBackups {
 
 # Main execution
 try {
-    Write-Info "TXA Demo Keystore Backup"
+    Write-Info "TXA Music Keystore Backup"
     Write-Info "========================"
     
     New-KeystoreBackup

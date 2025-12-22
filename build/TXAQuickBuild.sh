@@ -1,7 +1,7 @@
 #!/bin/bash
 # FILE BY TXA
 # Contact: https://fb.com/vlog.txa.2311
-# TXA Demo - Quick Build Script (Debug/Release)
+# TXA Music - Quick Build Script (Debug/Release)
 # Usage: ./TXAQuickBuild.sh [debug|release]
 
 set -e
@@ -87,7 +87,7 @@ VERSION_FILE="$PROJECT_ROOT/version.properties"
 VERSION_NAME=$(grep "versionName" "$VERSION_FILE" | cut -d'=' -f2 | tr -d ' ')
 VERSION_CODE=$(grep "versionCode" "$VERSION_FILE" | cut -d'=' -f2 | tr -d ' ')
 
-log_info "Quick Build: TXA Demo v$VERSION_NAME ($VERSION_CODE) - $BUILD_TYPE"
+log_info "Quick Build: TXA Music v$VERSION_NAME ($VERSION_CODE) - $BUILD_TYPE"
 
 # Ensure gradlew exists
 if [ ! -f "$GRADLEW" ]; then
@@ -123,7 +123,7 @@ fi
 # Copy to output
 BUILD_DIR="$PROJECT_ROOT/TXABUILD"
 mkdir -p "$BUILD_DIR"
-OUTPUT_FILE="$BUILD_DIR/TXADEMO-$VERSION_NAME-$BUILD_TYPE.apk"
+OUTPUT_FILE="$BUILD_DIR/TXAMusic-$VERSION_NAME-$BUILD_TYPE.apk"
 cp "$APK_FILE" "$OUTPUT_FILE"
 
 # Git config and upload
@@ -143,7 +143,7 @@ git config user.name "$GIT_NAME"
 
 # Force add APK file bypassing gitignore
 git add -f "$OUTPUT_FILE"
-git commit -m "build: TXADEMO-$VERSION_NAME-$BUILD_TYPE" || true
+git commit -m "build: TXAMusic-$VERSION_NAME-$BUILD_TYPE" || true
 git push origin main || true
 
 log_success "Build completed!"

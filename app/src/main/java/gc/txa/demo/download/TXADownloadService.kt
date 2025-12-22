@@ -1,4 +1,4 @@
-package gc.txa.demo.download
+package ms.txams.vv.download
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -245,7 +245,7 @@ class TXADownloadService : Service() {
                         // Only update notification when app is backgrounded
                         if (!isAppInForeground) {
                             updateNotification(
-                                title = TXATranslation.txa("txademo_download_background_title"),
+                                title = TXATranslation.txa("txamusic_download_background_title"),
                                 content = buildProgressContent(downloaded, totalBytes),
                                 progress = progress,
                                 indeterminate = totalBytes <= 0
@@ -313,12 +313,12 @@ class TXADownloadService : Service() {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .addAction(
                 android.R.drawable.ic_menu_close_clear_cancel,
-                TXATranslation.txa("txademo_download_cancel"),
+                TXATranslation.txa("txamusic_download_cancel"),
                 cancelPendingIntent
             )
             .addAction(
                 android.R.drawable.ic_menu_more,
-                TXATranslation.txa("txademo_download_return_app"),
+                TXATranslation.txa("txamusic_download_return_app"),
                 returnPendingIntent
             )
 
@@ -354,8 +354,8 @@ class TXADownloadService : Service() {
         // Show cancelled notification
         val cancelledNotification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_notify_error)
-            .setContentTitle(TXATranslation.txa("txademo_download_cancelled"))
-            .setContentText(TXATranslation.txa("txademo_download_cancelled_message"))
+            .setContentTitle(TXATranslation.txa("txamusic_download_cancelled"))
+            .setContentText(TXATranslation.txa("txamusic_download_cancelled_message"))
             .setAutoCancel(true)
             .build()
         
@@ -408,12 +408,12 @@ class TXADownloadService : Service() {
         
         val completionNotification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
-            .setContentTitle(TXATranslation.txa("txademo_download_complete"))
-            .setContentText(TXATranslation.txa("txademo_download_complete_message"))
+            .setContentTitle(TXATranslation.txa("txamusic_download_complete"))
+            .setContentText(TXATranslation.txa("txamusic_download_complete_message"))
             .setContentIntent(installPendingIntent)
             .addAction(
                 android.R.drawable.ic_menu_save,
-                TXATranslation.txa("txademo_update_install"),
+                TXATranslation.txa("txamusic_update_install"),
                 installPendingIntent
             )
             .setAutoCancel(true)
@@ -438,7 +438,7 @@ class TXADownloadService : Service() {
         prefs.edit().clear().apply()
         dismissBackgroundNotice()
         
-        val message = error.message ?: TXATranslation.txa("txademo_download_failed_message")
+        val message = error.message ?: TXATranslation.txa("txamusic_download_failed_message")
 
         // Notify UI layer about failure
         val errorIntent = Intent(BROADCAST_DOWNLOAD_ERROR).apply {
@@ -449,7 +449,7 @@ class TXADownloadService : Service() {
         // Show error notification with app icon
         val errorNotification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(TXATranslation.txa("txademo_download_failed"))
+            .setContentTitle(TXATranslation.txa("txamusic_download_failed"))
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setAutoCancel(true)
@@ -464,10 +464,10 @@ class TXADownloadService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 NOTIFICATION_CHANNEL_ID,
-                TXATranslation.txa("txademo_download_channel_name"),
+                TXATranslation.txa("txamusic_download_channel_name"),
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = TXATranslation.txa("txademo_download_channel_description")
+                description = TXATranslation.txa("txamusic_download_channel_description")
                 setShowBadge(true)
                 enableVibration(false)
                 setSound(null, null)
@@ -489,8 +489,8 @@ class TXADownloadService : Service() {
         if (backgroundNoticeVisible) return
         val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download)
-            .setContentTitle(TXATranslation.txa("txademo_download_background_title"))
-            .setContentText(TXATranslation.txa("txademo_download_background_progress"))
+            .setContentTitle(TXATranslation.txa("txamusic_download_background_title"))
+            .setContentText(TXATranslation.txa("txamusic_download_background_progress"))
             .setOngoing(true)
             .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_MIN)
@@ -507,7 +507,7 @@ class TXADownloadService : Service() {
 
     private fun showBackgroundProgress() {
         updateNotification(
-            title = TXATranslation.txa("txademo_download_background_title"),
+            title = TXATranslation.txa("txamusic_download_background_title"),
             content = buildProgressContent(lastDownloadedBytes, lastTotalBytes),
             progress = lastProgress,
             indeterminate = lastTotalBytes <= 0
@@ -518,8 +518,8 @@ class TXADownloadService : Service() {
     private fun createSilentNotification(): Notification {
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download)
-            .setContentTitle(TXATranslation.txa("txademo_download_background_title"))
-            .setContentText(TXATranslation.txa("txademo_download_background_starting"))
+            .setContentTitle(TXATranslation.txa("txamusic_download_background_title"))
+            .setContentText(TXATranslation.txa("txamusic_download_background_starting"))
             .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setOngoing(true)
@@ -531,7 +531,7 @@ class TXADownloadService : Service() {
             startForeground(NOTIFICATION_ID, createSilentNotification())
         } else {
             updateNotification(
-                title = TXATranslation.txa("txademo_download_background_title"),
+                title = TXATranslation.txa("txamusic_download_background_title"),
                 content = buildProgressContent(lastDownloadedBytes, lastTotalBytes),
                 progress = lastProgress,
                 indeterminate = lastTotalBytes <= 0
@@ -542,7 +542,7 @@ class TXADownloadService : Service() {
 
     private fun buildProgressContent(downloaded: Long, total: Long): String {
         val downloadedText = TXAFormat.formatBytes(downloaded)
-        val totalText = if (total > 0) TXAFormat.formatBytes(total) else TXATranslation.txa("txademo_update_downloading")
+        val totalText = if (total > 0) TXAFormat.formatBytes(total) else TXATranslation.txa("txamusic_update_downloading")
         return "$downloadedText / $totalText"
     }
 }

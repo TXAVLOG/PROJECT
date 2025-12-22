@@ -1,4 +1,4 @@
-package gc.txa.demo.ui
+package ms.txams.vv.ui
 
 import android.app.AlertDialog
 import android.app.NotificationChannel
@@ -51,7 +51,7 @@ class TXASettingsActivity : AppCompatActivity() {
     private val downloadErrorReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val message = intent?.getStringExtra(TXADownloadService.EXTRA_ERROR_MESSAGE)
-                ?: TXATranslation.txa("txademo_error_download_failed")
+                ?: TXATranslation.txa("txamusic_error_download_failed")
             runOnUiThread {
                 downloadProgressDialog?.dismiss()
                 downloadProgressDialog = null
@@ -118,16 +118,16 @@ class TXASettingsActivity : AppCompatActivity() {
     private fun setupUI() {
         binding.apply {
             // Set texts
-            tvSettingsTitle.text = TXATranslation.txa("txademo_settings_title")
-            tvAppInfoLabel.text = TXATranslation.txa("txademo_settings_app_info")
-            tvVersionLabel.text = TXATranslation.txa("txademo_settings_version")
-            tvAppSetIdLabel.text = TXATranslation.txa("txademo_settings_app_set_id")
-            tvLanguageLabel.text = TXATranslation.txa("txademo_settings_language")
-            btnChangeLanguage.text = TXATranslation.txa("txademo_settings_change_language")
-            tvFileManagerLabel.text = TXATranslation.txa("txademo_settings_file_manager")
-            btnOpenFileManager.text = TXATranslation.txa("txademo_settings_open_file_manager")
-            tvUpdateLabel.text = TXATranslation.txa("txademo_settings_update")
-            btnCheckUpdate.text = TXATranslation.txa("txademo_settings_check_update")
+            tvSettingsTitle.text = TXATranslation.txa("txamusic_settings_title")
+            tvAppInfoLabel.text = TXATranslation.txa("txamusic_settings_app_info")
+            tvVersionLabel.text = TXATranslation.txa("txamusic_settings_version")
+            tvAppSetIdLabel.text = TXATranslation.txa("txamusic_settings_app_set_id")
+            tvLanguageLabel.text = TXATranslation.txa("txamusic_settings_language")
+            btnChangeLanguage.text = TXATranslation.txa("txamusic_settings_change_language")
+            tvMusicLibraryLabel.text = TXATranslation.txa("txamusic_settings_music_library")
+            btnOpenMusicLibrary.text = TXATranslation.txa("txamusic_settings_open_music_library")
+            tvUpdateLabel.text = TXATranslation.txa("txamusic_settings_update")
+            btnCheckUpdate.text = TXATranslation.txa("txamusic_settings_check_update")
 
             // Set values
             tvVersionValue.text = BuildConfig.VERSION_NAME
@@ -137,8 +137,8 @@ class TXASettingsActivity : AppCompatActivity() {
                 showLanguageDialog()
             }
 
-            btnOpenFileManager.setOnClickListener {
-                openFileManager()
+            btnOpenMusicLibrary.setOnClickListener {
+                openMusicLibrary()
             }
 
             btnCheckUpdate.setOnClickListener {
@@ -147,8 +147,8 @@ class TXASettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun openFileManager() {
-        val intent = Intent(this, TXAFileManagerActivity::class.java)
+    private fun openMusicLibrary() {
+        val intent = Intent(this, TXAMusicLibraryActivity::class.java)
         startActivity(intent)
     }
 
@@ -167,23 +167,23 @@ class TXASettingsActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val locales = TXATranslation.getAvailableLocales()
-                val localeNames = locales.map { TXATranslation.txa("txademo_lang_${it.tag}") }.toTypedArray()
+                val localeNames = locales.map { TXATranslation.txa("txamusic_lang_${it.tag}") }.toTypedArray()
                 val currentLocale = TXAApp.getLocale(this@TXASettingsActivity)
                 val currentIndex = locales.indexOfFirst { it.tag == currentLocale }
 
                 AlertDialog.Builder(this@TXASettingsActivity)
-                    .setTitle(TXATranslation.txa("txademo_settings_change_language"))
+                    .setTitle(TXATranslation.txa("txamusic_settings_change_language"))
                     .setSingleChoiceItems(localeNames, currentIndex) { dialog, which ->
                         val selectedLocale = locales[which]
                         dialog.dismiss()
                         changeLanguage(selectedLocale.tag)
                     }
-                    .setNegativeButton(TXATranslation.txa("txademo_action_cancel"), null)
+                    .setNegativeButton(TXATranslation.txa("txamusic_action_cancel"), null)
                     .show()
             } catch (e: Exception) {
                 Toast.makeText(
                     this@TXASettingsActivity,
-                    TXATranslation.txa("txademo_error_network"),
+                    TXATranslation.txa("txamusic_error_network"),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -195,7 +195,7 @@ class TXASettingsActivity : AppCompatActivity() {
             val progress = TXAProgressDialog(this@TXASettingsActivity)
             try {
                 progress.show(
-                    message = TXATranslation.txa("txademo_splash_downloading_language"),
+                    message = TXATranslation.txa("txamusic_splash_downloading_language"),
                     cancellable = false
                 )
 
@@ -207,7 +207,7 @@ class TXASettingsActivity : AppCompatActivity() {
                 
                 Toast.makeText(
                     this@TXASettingsActivity,
-                    TXATranslation.txa("txademo_language_change_success"),
+                    TXATranslation.txa("txamusic_language_change_success"),
                     Toast.LENGTH_SHORT
                 ).show()
                 
@@ -216,7 +216,7 @@ class TXASettingsActivity : AppCompatActivity() {
                 Toast.makeText(
                     this@TXASettingsActivity,
                     String.format(
-                        TXATranslation.txa("txademo_language_change_failed"),
+                        TXATranslation.txa("txamusic_language_change_failed"),
                         e.message ?: "unknown"
                     ),
                     Toast.LENGTH_LONG
@@ -232,7 +232,7 @@ class TXASettingsActivity : AppCompatActivity() {
             val progress = TXAProgressDialog(this@TXASettingsActivity)
             try {
                 progress.show(
-                    message = TXATranslation.txa("txademo_update_checking"),
+                    message = TXATranslation.txa("txamusic_update_checking"),
                     cancellable = false
                 )
 
@@ -244,14 +244,14 @@ class TXASettingsActivity : AppCompatActivity() {
                     is TXAUpdateManager.UpdateCheckResult.NoUpdate -> {
                         Toast.makeText(
                             this@TXASettingsActivity,
-                            TXATranslation.txa("txademo_update_not_available"),
+                            TXATranslation.txa("txamusic_update_not_available"),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
                     is TXAUpdateManager.UpdateCheckResult.Error -> {
                         Toast.makeText(
                             this@TXASettingsActivity,
-                            "${TXATranslation.txa("txademo_error_update_check_failed")}: ${result.message}",
+                            "${TXATranslation.txa("txamusic_error_update_check_failed")}: ${result.message}",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -300,7 +300,7 @@ class TXASettingsActivity : AppCompatActivity() {
         
         // Show changelog with WebView and download button
         changelogDialog.show(
-            title = TXATranslation.txa("txademo_update_available"),
+            title = TXATranslation.txa("txamusic_update_available"),
             changelog = updateInfo.changelog,
             versionName = updateInfo.versionName,
             updatedAt = updateInfo.updatedAt,
@@ -332,7 +332,7 @@ class TXASettingsActivity : AppCompatActivity() {
             showDownloadProgressDialog(initialProgress = 0)
         } else {
             downloadProgressDialog?.update(
-                message = TXATranslation.txa("txademo_update_downloading"),
+                message = TXATranslation.txa("txamusic_update_downloading"),
                 indeterminate = true,
                 progressPercent = 0
             )
@@ -342,7 +342,7 @@ class TXASettingsActivity : AppCompatActivity() {
             try {
                 val resolvedUrl = TXADownloadUrlResolver.resolveUrl(updateInfo.downloadUrl)
                     ?: throw IllegalArgumentException(
-                        TXATranslation.txa("txademo_error_download_url_unsupported")
+                        TXATranslation.txa("txamusic_error_download_url_unsupported")
                     )
                 val resolvedInfo = updateInfo.copy(downloadUrl = resolvedUrl)
 
@@ -350,7 +350,7 @@ class TXASettingsActivity : AppCompatActivity() {
 
                 Toast.makeText(
                     this@TXASettingsActivity,
-                    TXATranslation.txa("txademo_download_background_starting"),
+                    TXATranslation.txa("txamusic_download_background_starting"),
                     Toast.LENGTH_SHORT
                 ).show()
             } catch (e: Exception) {
@@ -369,7 +369,7 @@ class TXASettingsActivity : AppCompatActivity() {
     private fun showDownloadProgressDialog(initialProgress: Int) {
         downloadProgressDialog = TXAProgressDialog(this).also { dialog ->
             dialog.show(
-                message = TXATranslation.txa("txademo_update_downloading"),
+                message = TXATranslation.txa("txamusic_update_downloading"),
                 cancellable = false,
                 indeterminate = initialProgress == 0
             )
@@ -405,9 +405,9 @@ class TXASettingsActivity : AppCompatActivity() {
         val rawMessage = error.message
         val localizedMessage = when {
             error is IllegalArgumentException -> rawMessage
-            rawMessage.isNullOrBlank() -> TXATranslation.txa("txademo_error_resolver_failed")
+            rawMessage.isNullOrBlank() -> TXATranslation.txa("txamusic_error_resolver_failed")
             else -> rawMessage
-        } ?: TXATranslation.txa("txademo_error_resolver_failed")
+        } ?: TXATranslation.txa("txamusic_error_resolver_failed")
 
         showDownloadErrorNotification(localizedMessage)
 
@@ -424,7 +424,7 @@ class TXASettingsActivity : AppCompatActivity() {
 
         val notification = NotificationCompat.Builder(this, DOWNLOAD_ERROR_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(TXATranslation.txa("txademo_download_failed"))
+            .setContentTitle(TXATranslation.txa("txamusic_download_failed"))
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setAutoCancel(true)
@@ -441,10 +441,10 @@ class TXASettingsActivity : AppCompatActivity() {
 
         val channel = NotificationChannel(
             DOWNLOAD_ERROR_CHANNEL_ID,
-            TXATranslation.txa("txademo_download_failed"),
+            TXATranslation.txa("txamusic_download_failed"),
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = TXATranslation.txa("txademo_error_resolver_failed")
+            description = TXATranslation.txa("txamusic_error_resolver_failed")
         }
 
         manager.createNotificationChannel(channel)
@@ -461,7 +461,7 @@ class TXASettingsActivity : AppCompatActivity() {
                 // Update dialog if it's showing
                 downloadProgressDialog?.let { dialog ->
                     dialog.update(
-                        message = TXATranslation.txa("txademo_update_downloading"),
+                        message = TXATranslation.txa("txamusic_update_downloading"),
                         etaText = dialog.getBinding()?.tvEta?.text?.toString() ?: "--:--"
                     )
                 }
@@ -481,7 +481,7 @@ class TXASettingsActivity : AppCompatActivity() {
                 downloadProgressDialog?.let { dialog ->
                     dialog.update(
                         progressPercent = progress,
-                        message = TXATranslation.txa("txademo_update_downloading"),
+                        message = TXATranslation.txa("txamusic_update_downloading"),
                         sizeText = "${TXAFormat.formatBytes(downloadedBytes)} / ${if (totalBytes > 0) TXAFormat.formatBytes(totalBytes) else "Unknown"}",
                         speedText = TXAFormat.formatSpeed(speedBps),
                         etaText = if (etaSeconds > 0) TXAFormat.formatETA(etaSeconds) else "--:--",
@@ -535,19 +535,19 @@ class TXASettingsActivity : AppCompatActivity() {
 
     private fun showInstallDialog(apkFile: File) {
         AlertDialog.Builder(this)
-            .setTitle(TXATranslation.txa("txademo_update_download_complete"))
-            .setMessage(TXATranslation.txa("txademo_update_install_prompt"))
-            .setPositiveButton(TXATranslation.txa("txademo_update_install_now")) { _, _ ->
+            .setTitle(TXATranslation.txa("txamusic_update_download_complete"))
+            .setMessage(TXATranslation.txa("txamusic_update_install_prompt"))
+            .setPositiveButton(TXATranslation.txa("txamusic_update_install_now")) { _, _ ->
                 val success = TXAInstall.installApk(this, apkFile)
                 if (!success) {
                     Toast.makeText(
                         this,
-                        TXATranslation.txa("txademo_error_install_failed"),
+                        TXATranslation.txa("txamusic_error_install_failed"),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             }
-            .setNegativeButton(TXATranslation.txa("txademo_update_later"), null)
+            .setNegativeButton(TXATranslation.txa("txamusic_update_later"), null)
             .show()
     }
     
@@ -558,7 +558,7 @@ class TXASettingsActivity : AppCompatActivity() {
             if (!success) {
                 Toast.makeText(
                     this,
-                    TXATranslation.txa("txademo_error_install_failed"),
+                    TXATranslation.txa("txamusic_error_install_failed"),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -568,7 +568,7 @@ class TXASettingsActivity : AppCompatActivity() {
         } else {
             Toast.makeText(
                 this,
-                TXATranslation.txa("txademo_file_not_found"),
+                TXATranslation.txa("txamusic_file_not_found"),
                 Toast.LENGTH_SHORT
             ).show()
         }

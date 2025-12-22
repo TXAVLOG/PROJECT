@@ -1,6 +1,6 @@
-package gc.txa.demo.update
+package ms.txams.vv.update
 
-import gc.txa.demo.core.TXAHttp
+import ms.txams.vv.core.TXAHttp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

@@ -1,4 +1,4 @@
-# 🎨 TXA Demo - Design Assets
+# 🎨 TXA Music - Design Assets
 
 ## 📁 Folder Structure
 

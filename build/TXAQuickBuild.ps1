@@ -1,6 +1,6 @@
 # FILE BY TXA
 # Contact: https://fb.com/vlog.txa.2311
-# TXA Demo - Windows PowerShell Quick Build Script
+# TXA Music - Windows PowerShell Quick Build Script
 
 param(
     [switch]$Release,
@@ -56,7 +56,7 @@ $VersionFile = Join-Path $ProjectRoot "version.properties"
 $VersionName = ((Get-Content $VersionFile | Where-Object { $_ -match "^versionName=" }) -replace "versionName=", "").Trim()
 $VersionCode = ((Get-Content $VersionFile | Where-Object { $_ -match "^versionCode=" }) -replace "versionCode=", "").Trim()
 
-Write-Info "Quick Build: TXA Demo v$VersionName ($VersionCode) - $BuildType"
+Write-Info "Quick Build: TXA Music v$VersionName ($VersionCode) - $BuildType"
 
 # Pre-flight checks
 function Test-Prerequisites {
@@ -132,7 +132,7 @@ function Copy-APK {
         New-Item -ItemType Directory -Path $BuildDir -Force | Out-Null
     }
     
-    $OutputFile = Join-Path $BuildDir "TXADEMO-$VersionName-$BuildType.apk"
+    $OutputFile = Join-Path $BuildDir "TXAMusic-$VersionName-$BuildType.apk"
     Copy-Item $SourceAPK $OutputFile -Force
     
     return $OutputFile
@@ -150,7 +150,7 @@ function Publish-Repository {
     & git config user.name $GitName
     
     & git add $APKFile
-    & git commit -m "build: TXADEMO-$VersionName-$BuildType" > $null 2>&1
+    & git commit -m "build: TXAMusic-$VersionName-$BuildType" > $null 2>&1
     & git push origin main > $null 2>&1
     
     if ($LASTEXITCODE -eq 0) {

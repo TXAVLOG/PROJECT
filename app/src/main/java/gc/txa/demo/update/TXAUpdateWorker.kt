@@ -1,9 +1,9 @@
-package gc.txa.demo.update
+package ms.txams.vv.update
 
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import gc.txa.demo.core.TXAHttp
+import ms.txams.vv.core.TXAHttp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

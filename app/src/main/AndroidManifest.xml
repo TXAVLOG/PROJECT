@@ -44,13 +44,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Demo Notice Activity -->
-        <activity
-            android:name=".ui.TXADemoNoticeActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.TXAMusic.NoActionBar" />
-
         <!-- Settings Activity -->
         <activity
             android:name=".ui.TXASettingsActivity"
@@ -58,9 +51,9 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.TXAMusic.NoActionBar" />
 
-        <!-- File Manager Activity -->
+        <!-- Music Library Activity -->
         <activity
-            android:name=".ui.TXAFileManagerActivity"
+            android:name="gc.txa.demo.ui.TXAMusicLibraryActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.TXAMusic.NoActionBar" />

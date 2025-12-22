@@ -1,5 +1,5 @@
 # FILE BY TXA
-# TXA Demo - Image Processing Script
+# TXA Music - Image Processing Script
 # Contact: fb.com/vlog.txa.2311
 # 
 # This script resizes and copies app icons to appropriate Android resource folders

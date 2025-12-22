@@ -1,7 +1,7 @@
 #!/bin/bash
 # FILE BY TXA
 # Contact: https://fb.com/vlog.txa.2311
-# TXA Demo - VPS Ubuntu Build Script
+# TXA Music - VPS Ubuntu Build Script
 # 
 # Features:
 # - Auto-generate keystore if not exists
@@ -42,7 +42,7 @@ log_error() {
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 ENV_FILE="$SCRIPT_DIR/.env"
-KEYSTORE_FILE="$PROJECT_ROOT/app/txademo.keystore"
+KEYSTORE_FILE="$PROJECT_ROOT/app/txamusic.keystore"
 BUILD_OUTPUT_DIR="$PROJECT_ROOT/TXABUILD"
 
 # Load environment variables
@@ -78,7 +78,7 @@ if [ -z "$VERSION_CODE" ] || [ -z "$VERSION_NAME" ]; then
     exit 1
 fi
 
-log_info "Building TXA Demo v$VERSION_NAME ($VERSION_CODE)"
+log_info "Building TXA Music v$VERSION_NAME ($VERSION_CODE)"
 
 # Function to kill processes
 kill_processes() {
@@ -166,10 +166,10 @@ verify_keystore() {
         log_info "Verifying keystore alias..."
         
         # Check if keystore contains the correct alias
-        if keytool -list -keystore "$KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD" -alias txademo &> /dev/null; then
-            log_success "Keystore alias verified: txademo"
+        if keytool -list -keystore "$KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD" -alias txamusic &> /dev/null; then
+            log_success "Keystore alias verified: txamusic"
         else
-            log_error "Keystore alias 'txademo' not found or invalid password"
+            log_error "Keystore alias 'txamusic' not found or invalid password"
             log_error "Please check keystore file or regenerate with correct alias"
             exit 1
         fi
@@ -184,13 +184,13 @@ generate_keystore() {
         keytool -genkey \
             -v \
             -keystore "$KEYSTORE_FILE" \
-            -alias txademo \
+            -alias txamusic \
             -keyalg RSA \
             -keysize 2048 \
             -validity 10000 \
             -storepass "$KEYSTORE_PASSWORD" \
             -keypass "$KEY_PASSWORD" \
-            -dname "CN=TXA Demo, OU=TXA, O=TXAVLOG, L=Ho Chi Minh, ST=HCM, C=VN" \
+            -dname "CN=TXA Music, OU=TXA, O=TXAVLOG, L=Ho Chi Minh, ST=HCM, C=VN" \
             -noprompt
         
         if [ $? -eq 0 ]; then
@@ -259,7 +259,7 @@ copy_apk() {
     log_info "Creating output directory..."
     mkdir -p "$BUILD_OUTPUT_DIR"
     
-    OUTPUT_FILE="$BUILD_OUTPUT_DIR/TXADEMO-$VERSION_NAME-$BUILD_TYPE.apk"
+    OUTPUT_FILE="$BUILD_OUTPUT_DIR/TXAMusic-$VERSION_NAME-$BUILD_TYPE.apk"
     
     log_info "Copying APK to: $OUTPUT_FILE"
     cp "$APK_FILE" "$OUTPUT_FILE"
@@ -287,7 +287,7 @@ upload_to_repo() {
         if git diff --cached --quiet; then
             log_info "No changes to commit"
         else
-            git commit -m "build: TXADEMO-$VERSION_NAME-$BUILD_TYPE"
+            git commit -m "build: TXAMusic-$VERSION_NAME-$BUILD_TYPE"
             
             # Push to remote
             git push origin main
@@ -354,7 +354,7 @@ check_prerequisites() {
 
 # Main execution
 main() {
-    log_info "Starting TXA Demo build process..."
+    log_info "Starting TXA Music build process..."
     
     # Check if we're in the right directory
     if [ ! -f "$PROJECT_ROOT/build.gradle.kts" ]; then

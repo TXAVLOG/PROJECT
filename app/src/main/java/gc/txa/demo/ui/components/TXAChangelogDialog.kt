@@ -1,13 +1,13 @@
-package gc.txa.demo.ui.components
+package ms.txams.vv.ui.components
 
 import android.content.Context
 import android.view.LayoutInflater
 import android.webkit.WebView
 import androidx.appcompat.app.AlertDialog
-import gc.txa.demo.R
-import gc.txa.demo.databinding.DialogChangelogBinding
-import gc.txa.demo.core.TXATranslation
-import gc.txa.demo.core.TXAFormat
+import ms.txams.vv.R
+import ms.txams.vv.databinding.DialogChangelogBinding
+import ms.txams.vv.core.TXATranslation
+import ms.txams.vv.core.TXAFormat
 
 class TXAChangelogDialog(private val context: Context) {
 
@@ -36,10 +36,10 @@ class TXAChangelogDialog(private val context: Context) {
             .setView(binding?.root)
         
         if (showDownloadButton && onDownloadClick != null) {
-            builder.setPositiveButton(TXATranslation.txa("txademo_update_download_now")) { _, _ ->
+            builder.setPositiveButton(TXATranslation.txa("txamusic_update_download_now")) { _, _ ->
                 onDownloadClick()
             }
-            builder.setNegativeButton(TXATranslation.txa("txademo_update_later"), null)
+            builder.setNegativeButton(TXATranslation.txa("txamusic_update_later"), null)
         } else {
             builder.setPositiveButton(android.R.string.ok, null)
         }
@@ -53,7 +53,7 @@ class TXAChangelogDialog(private val context: Context) {
         
         // Handle empty changelog
         val changelogContent = changelog.takeIf { it.isNotBlank() }
-            ?: "<p style='color: #666; font-style: italic;'>${TXATranslation.txa("txademo_update_changelog_empty")}</p>"
+            ?: "<p style='color: #666; font-style: italic;'>${TXATranslation.txa("txamusic_update_changelog_empty")}</p>"
         
         // Try to load custom CSS from resources first
         val customCss = loadCustomCss()
@@ -166,16 +166,16 @@ class TXAChangelogDialog(private val context: Context) {
     private fun setupFooter(versionName: String, updatedAt: String?) {
         val formattedTime = TXAFormat.formatUpdateTime(updatedAt)
         val displayTime = formattedTime.takeIf { it.isNotBlank() && it != "--" }
-            ?: TXATranslation.txa("txademo_update_time_unavailable")
+            ?: TXATranslation.txa("txamusic_update_time_unavailable")
 
-        val template = TXATranslation.txa("txademo_update_on")
+        val template = TXATranslation.txa("txamusic_update_on")
         val updateOnText = if (template.contains("%s")) {
             String.format(template, displayTime)
         } else {
             "$template $displayTime"
         }
 
-        val footerText = "$updateOnText - v$versionName - ${TXATranslation.txa("txademo_powered_by")}"
+        val footerText = "$updateOnText - v$versionName - ${TXATranslation.txa("txamusic_powered_by")}"
         
         binding?.tvFooter?.text = footerText
     }

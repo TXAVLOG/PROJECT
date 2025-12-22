@@ -3,7 +3,7 @@
     <!-- External storage Download directory -->
     <external-path
         name="download"
-        path="Download/TXADEMO/" />
+        path="Download/TXAMusic/" />
     
     <!-- External storage root -->
     <external-path

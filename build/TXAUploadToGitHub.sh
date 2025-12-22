@@ -1,7 +1,7 @@
 #!/bin/bash
 # FILE BY TXA
 # Contact: https://fb.com/vlog.txa.2311
-# TXA Demo - GitHub Releases Upload Script
+# TXA Music - GitHub Releases Upload Script
 # Alternative to committing APKs to git repository
 
 set -e

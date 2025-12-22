@@ -1,30 +1,31 @@
-# TXA Demo – Android OTA Update System
+# TXA Music – Dynamic Music Player with OTA Updates
 
-> Ứng dụng demo showcase hệ thống cập nhật OTA, tải APK qua resolver và dịch đa ngôn ngữ hoàn toàn động.
+> Ứng dụng music player động với hệ thống cập nhật OTA, tải APK qua resolver và dịch đa ngôn ngữ hoàn toàn động cho TXA Music.
 
 ## 🧭 Tổng quan
 
-- **Package**: `gc.txa.demo`
+- **Package**: `ms.txams.vv`
 - **Target SDK**: 28 (Android 9 – legacy storage)
 - **Ngôn ngữ**: Kotlin + XML
 - **Kiến trúc**: MVVM + Repository, WorkManager cho background update
 
 ## ✨ Tính năng chính
 
-1. **OTA Translation System** – Đồng bộ ngôn ngữ từ API (`/locales`, `/tXALocale/{locale}`) với cache `updated_at`.
-2. **Update Resolver** – Hỗ trợ MediaFire, GitHub blob/raw, Google Drive confirm page; lưu APK tại `/storage/emulated/0/Download/TXADEMO/`.
-3. **Force Test Mode** – Có thể bật trong `TXAUpdateManager` để luôn trả về bản cập nhật giả.
-4. **File Manager UI** – Liệt kê, cài đặt, xoá APK tải về.
-5. **Legacy Storage + Logging** – Phù hợp Android 8/9, ghi log vào thư mục tải xuống.
+1. **Dynamic Music Player** – Music player với now bar UI và các tính năng hiện đại.
+2. **OTA Translation System** – Đồng bộ ngôn ngữ từ API (`/locales`, `/tXALocale/{locale}`) với cache `updated_at`.
+3. **Update Resolver** – Hỗ trợ MediaFire, GitHub blob/raw, Google Drive confirm page; lưu APK tại `/storage/emulated/0/Download/TXAMusic/`.
+4. **Force Test Mode** – Có thể bật trong `TXAUpdateManager` để luôn trả về bản cập nhật giả.
+5. **File Manager UI** – Liệt kê, cài đặt, xoá APK tải về.
+6. **Legacy Storage + Logging** – Phù hợp Android 8/9, ghi log vào thư mục tải xuống.
 
 ## 📂 Cấu trúc chính
 
 ```
 PROJECT-ANDROID/
-├── app/src/main/java/gc/txa/demo/
+├── app/src/main/java/ms/txams/vv/
 │   ├── core/              # TXATranslation, TXAHttp, TXAFormat
 │   ├── update/            # Resolver, Download, Install, UpdateManager
-│   └── ui/                # Splash, DemoNotice, Settings, FileManager
+│   └── ui/                # Splash, Settings, FileManager
 ├── app/src/main/res/      # Layouts, drawables, themes (không dùng strings.xml)
 ├── build/                 # Script build Windows/Ubuntu
 ├── tools/                 # TXAProcessImages.ps1 (xử lý icon)
