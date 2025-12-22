@@ -132,7 +132,7 @@ class TXASplashActivity : AppCompatActivity() {
                 checkInstallPermission()
             } else {
                 // Show message and continue anyway
-                updateStatus(TXATranslation.txa("txademo_permission_denied"))
+                updateStatus(TXATranslation.txa("txamusic_permission_denied"))
                 lifecycleScope.launch {
                     delay(2000)
                     checkInstallPermission()

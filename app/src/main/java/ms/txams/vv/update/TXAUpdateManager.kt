@@ -98,7 +98,7 @@ object TXAUpdateManager {
                 
                 if (attempt == maxRetries) {
                     // Final attempt failed, return error
-                    val errorMessage = getErrorMessage(e) ?: TXATranslation.txa("txademo_error_update_check_failed")
+                    val errorMessage = getErrorMessage(e) ?: TXATranslation.txa("txamusic_error_update_check_failed")
                     TXALog.e(TAG, "Final update check error: $errorMessage")
                     return UpdateCheckResult.Error(errorMessage)
                 }
@@ -109,7 +109,7 @@ object TXAUpdateManager {
             }
         }
         
-        return UpdateCheckResult.Error(TXATranslation.txa("txademo_error_update_check_failed"))
+        return UpdateCheckResult.Error(TXATranslation.txa("txamusic_error_update_check_failed"))
     }
     
     /**
@@ -129,7 +129,7 @@ object TXAUpdateManager {
         val request = Request.Builder()
             .url(url)
             .get()
-            .addHeader("User-Agent", "TXADemo-Android/${BuildConfig.VERSION_NAME}")
+            .addHeader("User-Agent", "TXAMusic-Android/${BuildConfig.VERSION_NAME}")
             .build()
         
         TXALog.d(TAG, "Executing update check request...")
@@ -192,7 +192,7 @@ object TXAUpdateManager {
         }
 
         val changelogContent = latestPayload.changelog?.takeIf { it.isNotBlank() }
-            ?: TXATranslation.txa("txademo_update_changelog")
+            ?: TXATranslation.txa("txamusic_update_changelog")
 
         val forced = latestPayload.mandatory
 
@@ -239,11 +239,11 @@ object TXAUpdateManager {
     private fun getErrorMessage(exception: Exception): String? {
         return when {
             exception is IOException && exception.message?.contains("HTTP 404") == true -> 
-                TXATranslation.txa("txademo_error_metadata_unavailable")
+                TXATranslation.txa("txamusic_error_metadata_unavailable")
             exception is IOException && exception.message?.contains("HTTP") == true -> 
-                TXATranslation.txa("txademo_error_network")
+                TXATranslation.txa("txamusic_error_network")
             exception.message?.contains("JSON") == true -> 
-                TXATranslation.txa("txademo_error_invalid_metadata")
+                TXATranslation.txa("txamusic_error_invalid_metadata")
             else -> exception.message
         }
     }
@@ -323,7 +323,7 @@ object TXAUpdateManager {
         ensureUpdateNotificationChannel(context)
 
         val content = String.format(
-            TXATranslation.txa("txademo_update_notification_body"),
+            TXATranslation.txa("txamusic_update_notification_body"),
             updateInfo.versionName
         )
 
@@ -343,7 +343,7 @@ object TXAUpdateManager {
 
         val builder = NotificationCompat.Builder(context, UPDATE_NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
-            .setContentTitle(TXATranslation.txa("txademo_update_available"))
+            .setContentTitle(TXATranslation.txa("txamusic_update_available"))
             .setContentText(content)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -360,10 +360,10 @@ object TXAUpdateManager {
 
         val channel = NotificationChannel(
             UPDATE_NOTIFICATION_CHANNEL_ID,
-            TXATranslation.txa("txademo_update_notification_channel_name"),
+            TXATranslation.txa("txamusic_update_notification_channel_name"),
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = TXATranslation.txa("txademo_update_notification_channel_description")
+            description = TXATranslation.txa("txamusic_update_notification_channel_description")
         }
         manager.createNotificationChannel(channel)
     }

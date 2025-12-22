@@ -37,8 +37,8 @@ object TXATranslation {
     // Hardcoded fallback translations (English)
     private val fallbackTranslations = mapOf(
         // Core App
-        "txamusic_app_name" to "TXA Demo",
-        "txamusic_app_description" to "TXA Demo Application with OTA Updates",
+        "txamusic_app_name" to "TXA Music",
+        "txamusic_app_description" to "TXA Music – Dynamic music player with OTA updates and now bar UI",
         
         // Splash
         "txamusic_splash_checking_permissions" to "Checking permissions...",
@@ -172,7 +172,7 @@ object TXATranslation {
         "txamusic_settings_open_file_manager" to "Open File Manager",
         
         // Download Notifications
-        "txamusic_download_background_title" to "TXA Demo Update",
+        "txamusic_download_background_title" to "TXA Music Update",
         "txamusic_download_background_starting" to "Starting download...",
         "txamusic_download_background_progress" to "Downloading update...",
         "txamusic_download_cancel" to "Cancel",
@@ -208,7 +208,24 @@ object TXATranslation {
         "txamusic_powered_by" to "©POWER BY TXA!",
         "txamusic_update_notification_body" to "Version %s is available to download",
         "txamusic_update_notification_channel_name" to "TXA Update Alerts",
-        "txamusic_update_notification_channel_description" to "Receive notifications when a new version is ready"
+        "txamusic_update_notification_channel_description" to "Receive notifications when a new version is ready",
+        
+        // Language change
+        "txamusic_language_change_success" to "Language changed successfully",
+        "txamusic_language_change_failed" to "Language change failed: %s",
+        
+        // Music library
+        "txamusic_music_library_title" to "Music Library",
+        "txamusic_all_songs" to "All Songs",
+        "txamusic_refresh_library" to "Refresh Library",
+        "txamusic_scan_library" to "Scan Library",
+        "txamusic_songs_count" to "%s songs",
+        "txamusic_library_scanned" to "Library scanned: %s songs found",
+        "txamusic_scan_failed" to "Failed to scan library",
+        "txamusic_permission_audio_rationale" to "This app needs access to your audio files to display your music library.",
+        "txamusic_action_grant" to "Grant",
+        "txamusic_settings_music_library" to "Music Library",
+        "txamusic_settings_open_music_library" to "Open Music Library"
     )
 
     /**
@@ -270,7 +287,7 @@ object TXATranslation {
                 val request = Request.Builder()
                     .url("$API_BASE/locales")
                     .get()
-                    .addHeader("User-Agent", "TXADemo-Android/${BuildConfig.VERSION_NAME}")
+                    .addHeader("User-Agent", "TXAMusic-Android/${BuildConfig.VERSION_NAME}")
                     .build()
 
                 TXALog.d(TAG, "Fetching locale list: $API_BASE/locales (attempt $attempt)")

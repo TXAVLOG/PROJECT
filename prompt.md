@@ -9,9 +9,9 @@
 ## 2. Objectives for API Team
 1. **Rename & isolate environment**
    - Ensure all endpoints under `https://soft.nrotxa.online/txamusic/api/` serve TXA Music resources only.
-   - Deprecate or block `/txademo/` responses to prevent stale data.
+   - Deprecate or block `/txamusic/` responses to prevent stale data.
 2. **Update Translation Service**
-   - Replace old `txademo_*` keys with the new `txamusic_*` set (see sample payload below).
+   - Replace old `txamusic_*` keys with the new `txamusic_*` set (see sample payload below).
    - Guarantee `updated_at` timestamps increase whenever content changes.
 3. **Update Checker Endpoint**
    - Return TXA Music metadata: version `1.0.0_txa`, package `ms.txams.vv`, download size, changelog, force flags.
@@ -65,11 +65,11 @@
 
 ## 4. Validation Checklist
 - [ ] `/txamusic/` endpoints return HTTP 200 with valid JSON.
-- [ ] No response contains `txademo_` keys or `gc.txa.demo` strings.
+- [ ] No response contains `txamusic_` keys or `gc.txa.demo` strings.
 - [ ] Translation diffs trigger new `updated_at` timestamps.
 - [ ] Update response download URL is reachable and matches checksum.
 - [ ] APK metadata (package name, version) aligns with mobile build.
-- [ ] Legacy `/txademo/` endpoints return HTTP 410/404 or clear deprecation notice.
+- [ ] Legacy `/txamusic/` endpoints return HTTP 410/404 or clear deprecation notice.
 
 ## 5. Deliverables
 1. Updated API deployment pointing to TXA Music data.

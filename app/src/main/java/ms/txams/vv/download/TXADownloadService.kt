@@ -179,7 +179,7 @@ class TXADownloadService : Service() {
             val downloadDir = File(getExternalFilesDir(null), "downloads")
             if (!downloadDir.exists()) downloadDir.mkdirs()
             
-            val fileName = "TXADemo_${versionName.replace(" ", "_")}.apk"
+            val fileName = "TXAMusic_${versionName.replace(" ", "_")}.apk"
             val outputFile = File(downloadDir, fileName)
             
             // Save file path for cleanup
