@@ -117,9 +117,7 @@ class MusicService : MediaSessionService() {
             })
         }
 
-        mediaSession = MediaSession.Builder(this, player!!)
-            .setCallback(MusicSessionCallback())
-            .build()
+        mediaSession = MediaSession.Builder(this, player!!).build()
     }
 
     override fun onGetSession(controllerInfo: ControllerInfo): MediaSession? {
@@ -191,25 +189,4 @@ class MusicService : MediaSessionService() {
         player?.seekToPrevious()
     }
 
-    private inner class MusicSessionCallback : MediaSession.Callback {
-        override fun onPlay(session: MediaSession, controller: ControllerInfo) {
-            resumePlayback()
-        }
-
-        override fun onPause(session: MediaSession, controller: ControllerInfo) {
-            pausePlayback()
-        }
-
-        override fun onSkipToNext(session: MediaSession, controller: ControllerInfo) {
-            skipToNext()
-        }
-
-        override fun onSkipToPrevious(session: MediaSession, controller: ControllerInfo) {
-            skipToPrevious()
-        }
-
-        override fun onSeekTo(session: MediaSession, controller: ControllerInfo, pos: Long) {
-            seekTo(pos)
-        }
-    }
 }
