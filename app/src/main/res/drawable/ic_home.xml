@@ -1,20 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-
-    <!-- Music note -->
+    
+    <!-- Home icon path -->
     <path
         android:fillColor="?attr/colorOnSurface"
-        android:pathData="M12,3v10.55c-0.59,-0.34 -1.27,-0.55 -2,-0.55 -2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4L14,7h4L18,3h-6z" />
-
+        android:pathData="M10,20v-6h4v6h5v-8h3L12,3 2,12h3v8z"/>
+    
     <!-- Letter T badge -->
     <path
         android:fillColor="?attr/colorPrimary"
-        android:pathData="M18,2m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
-
+        android:pathData="M18,2m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"/>
+    
     <path
         android:fillColor="?attr/colorOnPrimary"
-        android:pathData="M16.5,3.5h3v0.8h-1v2.2h-1v-2.2h-1z" />
+        android:pathData="M16.5,3.5h3v0.8h-1v2.2h-1v-2.2h-1z"/>
 </vector>
