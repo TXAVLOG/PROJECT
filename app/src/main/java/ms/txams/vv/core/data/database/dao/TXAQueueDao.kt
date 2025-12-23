@@ -277,6 +277,10 @@ interface TXAQueueDao {
         insertQueueItems(updatedItems)
     }
 
+    // Shuffle operations
+    @Query("UPDATE queue SET position = (ABS(RANDOM()) % (SELECT COUNT(*) FROM queue WHERE queue_name = :queueName))) WHERE queue_name = :queueName")
+    suspend fun shuffleQueue(queueName: String = "default")
+
     // Cleanup operations
     @Query("DELETE FROM queue WHERE queue_name != 'default' AND added_at < :threshold")
     suspend fun cleanupOldQueues(threshold: Long): Int
