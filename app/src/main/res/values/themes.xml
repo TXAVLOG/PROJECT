@@ -34,6 +34,12 @@
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.TXAMusic.LargeComponent</item>
     </style>
 
+    <style name="Theme.TXAMusic.NoActionBar" parent="Theme.TXAMusic">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowFullscreen">false</item>
+    </style>
+
     <style name="ShapeAppearance.TXAMusic.SmallComponent" parent="ShapeAppearance.Material3.SmallComponent">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">8dp</item>
