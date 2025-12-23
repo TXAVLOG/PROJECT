@@ -133,25 +133,40 @@ object TXAUpdateManager {
             .build()
         
         TXALog.d(TAG, "Executing update check request...")
-        val response = TXAHttp.client.newCall(request).execute()
-        TXALog.d(TAG, "Update check response: ${response.code} - ${response.message}")
         
-        if (!response.isSuccessful) {
-            TXALog.e(TAG, "Update check HTTP error: ${response.code} - ${response.message}")
-            throw IOException("HTTP ${response.code}: ${response.message}")
+        try {
+            val response = TXAHttp.client.newCall(request).execute()
+            TXALog.d(TAG, "Update check response: ${response.code} - ${response.message}")
+            
+            if (!response.isSuccessful) {
+                TXALog.e(TAG, "Update check HTTP error: ${response.code} - ${response.message}")
+                throw IOException("HTTP ${response.code}: ${response.message}")
+            }
+            
+            val responseBody = response.body?.string()
+                ?: throw IOException("Empty response body")
+            
+            TXALog.d(TAG, "Update check response length: ${responseBody.length} chars")
+            TXALog.v(TAG, "Update check response preview: ${responseBody.take(200)}...")
+            
+            return parseUpdateResponse(responseBody)
+            
+        } catch (e: IOException) {
+            TXALog.e(TAG, "Network error during update check", e)
+            TXAHttp.logError(context, "UpdateCheck_Network", e)
+            throw e
+        } catch (e: Exception) {
+            TXALog.e(TAG, "Unexpected error during update check", e)
+            TXAHttp.logError(context, "UpdateCheck_Unexpected", e)
+            throw e
         }
         
-        val responseBody = response.body?.string()
-            ?: throw IOException("Empty response body")
-        
-        TXALog.d(TAG, "Update check response length: ${responseBody.length} chars")
-        TXALog.v(TAG, "Update check response preview: ${responseBody.take(200)}...")
-        
-        // Parse response
+        // Parse response inside try block
         val updateResponse = try {
             gson.fromJson(responseBody, UpdateCheckResponse::class.java)
         } catch (e: Exception) {
             TXALog.e(TAG, "Update check JSON parsing failed", e)
+            TXAHttp.logError(context, "UpdateCheck_JSON", e)
             throw IOException("Invalid JSON response: ${e.message}")
         }
 

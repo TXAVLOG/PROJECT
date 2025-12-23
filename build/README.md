@@ -224,7 +224,7 @@ export DEBUG=true
 If auto-generation fails:
 ```bash
 keytool -genkey \
-    -v -keystore app/txademo.keystore \
+    -v -keystore app/txamusic.keystore \
     -alias txamusic -keyalg RSA \
     -keysize 2048 -validity 10000 \
     -storepass YOUR_PASSWORD \
