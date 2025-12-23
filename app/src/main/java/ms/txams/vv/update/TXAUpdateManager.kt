@@ -149,7 +149,60 @@ object TXAUpdateManager {
             TXALog.d(TAG, "Update check response length: ${responseBody.length} chars")
             TXALog.v(TAG, "Update check response preview: ${responseBody.take(200)}...")
             
-            return parseUpdateResponse(responseBody)
+            // Parse response
+            val updateResponse = try {
+                gson.fromJson(responseBody, UpdateCheckResponse::class.java)
+            } catch (e: Exception) {
+                TXALog.e(TAG, "Update check JSON parsing failed", e)
+                TXAHttp.logError(context, "UpdateCheck_JSON", e)
+                throw IOException("Invalid JSON response: ${e.message}")
+            }
+
+            updateResponse.apiVersion?.let {
+                TXALog.i(TAG, "Update API version: $it (source=${updateResponse.source.orEmpty()})")
+            }
+
+            val latestPayload = updateResponse.latest ?: run {
+                TXALog.e(TAG, "Missing latest block in update response: $responseBody")
+                throw IOException("Invalid JSON response: missing latest payload")
+            }
+
+            val latestVersionCode = latestPayload.versionCode ?: run {
+                TXALog.e(TAG, "Missing latest.versionCode in update response: $responseBody")
+                throw IOException("Invalid JSON response: missing latest.versionCode")
+            }
+
+            val latestVersionName = latestPayload.versionName ?: run {
+                TXALog.e(TAG, "Missing latest.versionName in update response: $responseBody")
+                throw IOException("Invalid JSON response: missing latest.versionName")
+            }
+
+            val latestDownloadUrl = latestPayload.downloadUrl ?: run {
+                TXALog.e(TAG, "Missing latest.downloadUrl in update response: $responseBody")
+                throw IOException("Invalid JSON response: missing latest.downloadUrl")
+            }
+
+            val latestChangelog = latestPayload.changelog ?: ""
+            val latestFileSize = latestPayload.downloadSizeBytes ?: 0L
+            val isForceUpdate = latestPayload.mandatory ?: false
+
+            val updateAvailable = latestVersionCode > versionCode
+            TXALog.i(TAG, "Update available: $updateAvailable (current: $versionCode, latest: $latestVersionCode)")
+
+            return if (updateAvailable) {
+                UpdateCheckResult.UpdateAvailable(
+                    UpdateInfo(
+                        versionName = latestVersionName,
+                        versionCode = latestVersionCode,
+                        downloadUrl = latestDownloadUrl,
+                        changelog = latestChangelog,
+                        fileSize = latestFileSize,
+                        isForced = isForceUpdate
+                    )
+                )
+            } else {
+                UpdateCheckResult.NoUpdate
+            }
             
         } catch (e: IOException) {
             TXALog.e(TAG, "Network error during update check", e)
@@ -160,70 +213,7 @@ object TXAUpdateManager {
             TXAHttp.logError(context, "UpdateCheck_Unexpected", e)
             throw e
         }
-        
-        // Parse response inside try block
-        val updateResponse = try {
-            gson.fromJson(responseBody, UpdateCheckResponse::class.java)
-        } catch (e: Exception) {
-            TXALog.e(TAG, "Update check JSON parsing failed", e)
-            TXAHttp.logError(context, "UpdateCheck_JSON", e)
-            throw IOException("Invalid JSON response: ${e.message}")
-        }
-
-        updateResponse.apiVersion?.let {
-            TXALog.i(TAG, "Update API version: $it (source=${updateResponse.source.orEmpty()})")
-        }
-
-        val latestPayload = updateResponse.latest ?: run {
-            TXALog.e(TAG, "Missing latest block in update response: $responseBody")
-            throw IOException("Invalid JSON response: missing latest payload")
-        }
-
-        val latestVersionCode = latestPayload.versionCode ?: run {
-            TXALog.e(TAG, "Missing latest.versionCode in update response: $responseBody")
-            throw IOException("Invalid JSON response: missing latest.versionCode")
-        }
-
-        val latestVersionName = latestPayload.versionName ?: run {
-            TXALog.e(TAG, "Missing latest.versionName in update response: $responseBody")
-            throw IOException("Invalid JSON response: missing latest.versionName")
-        }
-
-        val downloadUrl = latestPayload.downloadUrl ?: run {
-            TXALog.e(TAG, "Missing latest.downloadUrl in update response: $responseBody")
-            throw IOException("Invalid JSON response: missing latest.downloadUrl")
-        }
-
-        TXALog.i(
-            TAG,
-            "Parsed update responses: latest=$latestVersionName ($latestVersionCode), current=$versionName ($versionCode)"
-        )
-        
-        val apiSignalsUpdate = updateResponse.updateAvailable
-        val shouldUpdate = apiSignalsUpdate || latestVersionCode > versionCode
-
-        if (!shouldUpdate) {
-            return UpdateCheckResult.NoUpdate
-        }
-
-        val changelogContent = latestPayload.changelog?.takeIf { it.isNotBlank() }
-            ?: TXATranslation.txa("txamusic_update_changelog")
-
-        val forced = latestPayload.mandatory
-
-        return UpdateCheckResult.UpdateAvailable(
-            UpdateInfo(
-                versionName = latestVersionName,
-                versionCode = latestVersionCode,
-                downloadUrl = downloadUrl,
-                changelog = changelogContent,
-                fileSize = 0L, // Unknown until resolved
-                isForced = forced,
-                updatedAt = latestPayload.releaseDate
-            )
-        )
-    }
-
+    
     private fun buildUpdateCheckUrl(
         versionCode: Int,
         versionName: String,
