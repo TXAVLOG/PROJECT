@@ -1,14 +1,12 @@
 package ms.txams.vv.permission
 
-import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import androidx.fragment.app.Fragment
+import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import ms.txams.vv.R
 import ms.txams.vv.core.TXATranslation
 
 class PermissionDialogManager {

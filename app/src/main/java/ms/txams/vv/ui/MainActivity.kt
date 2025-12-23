@@ -89,14 +89,6 @@ class MainActivity : AppCompatActivity() {
         permissionHelper.forceCheckPermissions()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        mediaController?.release()
-        mediaController = null
-        mediaControllerFuture?.cancel(true)
-        mediaControllerFuture = null
-    }
-
     private fun handlePermissionResult(permission: String, granted: Boolean) {
         if (granted) {
             // Permission granted, you can initialize music library here
