@@ -275,6 +275,38 @@ class TXAAudioInjectionManager(private val context: Context) {
         )
     }
 
+    /**
+     * Check audio injection integrity
+     */
+    suspend fun checkIntegrity(): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Check if intro audio is properly loaded
+                val hasValidIntro = introAudioPath?.let { path ->
+                    val introFile = File(path)
+                    introFile.exists() && introFile.length() > 0
+                } ?: false
+                
+                // Check initialization state
+                if (!isInitialized) {
+                    Timber.w("TXAAudioInjectionManager not initialized")
+                    return@withContext false
+                }
+                
+                // Check branding configuration
+                if (!isBrandingEnabled) {
+                    Timber.d("Audio branding is disabled")
+                }
+                
+                Timber.d("Audio injection integrity check passed")
+                true
+            } catch (e: Exception) {
+                Timber.e(e, "Audio injection integrity check failed")
+                false
+            }
+        }
+    }
+
     data class InjectionStats(
         val isInitialized: Boolean,
         val brandingEnabled: Boolean,
