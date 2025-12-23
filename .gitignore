@@ -69,7 +69,7 @@ vcs.xml
 lint/intermediates/
 lint/generated/
 lint/outputs/
-lint/tmp/
+lint/tmp/*
 lint-results.html
 lint-results.xml
 
