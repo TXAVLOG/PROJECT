@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- TXA Music Player Color Palette - One UI 8 Design System -->
+    
+    <!-- Primary Colors -->
+    <color name="txa_primary">#1976D2</color>
+    <color name="txa_primary_dark">#1565C0</color>
+    <color name="txa_primary_light">#42A5F5</color>
+    
+    <!-- Secondary Colors -->
+    <color name="txa_secondary">#03DAC6</color>
+    <color name="txa_secondary_variant">#018786</color>
+    
+    <!-- Background Colors -->
+    <color name="txa_background">#121212</color>
+    <color name="txa_surface">#1E1E1E</color>
+    <color name="txa_surface_variant">#2C2C2C</color>
+    
+    <!-- Text Colors -->
+    <color name="txa_text_primary">#FFFFFF</color>
+    <color name="txa_text_secondary">#B3B3B3</color>
+    <color name="txa_text_secondary_white">#E0E0E0</color>
+    <color name="txa_text_hint">#666666</color>
+    
+    <!-- Status Colors -->
+    <color name="txa_error">#F44336</color>
+    <color name="txa_warning">#FF9800</color>
+    <color name="txa_success">#4CAF50</color>
+    <color name="txa_info">#2196F3</color>
+    
+    <!-- Navigation Colors -->
+    <color name="txa_nav_item_color">#FFFFFF</color>
+    <color name="txa_nav_item_selected">#1976D2</color>
+    
+    <!-- Glassmorphism Colors -->
+    <color name="txa_glassmorphism_background">#33FFFFFF</color>
+    <color name="txa_glassmorphism_border">#44FFFFFF</color>
+    <color name="txa_glassmorphism_surface">#22FFFFFF</color>
+    
+    <!-- Player Controls -->
+    <color name="txa_player_control">#FFFFFF</color>
+    <color name="txa_player_control_active">#1976D2</color>
+    <color name="txa_player_control_disabled">#666666</color>
+    
+    <!-- Progress Bar -->
+    <color name="txa_progress_background">#44FFFFFF</color>
+    <color name="txa_progress_primary">#1976D2</color>
+    <color name="txa_progress_secondary">#03DAC6</color>
+    
+    <!-- Now Playing Gradient -->
+    <color name="txa_now_playing_start">#1976D2</color>
+    <color name="txa_now_playing_end">#0D47A1</color>
+    
+    <!-- System Colors -->
+    <color name="android_color_white">#FFFFFF</color>
+    <color name="android_color_black">#000000</color>
+    <color name="android_color_transparent">#00000000</color>
+    
+    <!-- Ripple Effects -->
+    <color name="txa_ipple_color">#33FFFFFF</color>
+    
+    <!-- Divider Colors -->
+    <color name="txa_divider">#33FFFFFF</color>
+    
+    <!-- Card Colors -->
+    <color name="txa_card_background">#1E1E1E</color>
+    <color name="txa_card_stroke">#44FFFFFF</color>
+    
+    <!-- Button Colors -->
+    <color name="txa_button_primary">#1976D2</color>
+    <color name="txa_button_secondary">#2C2C2C</color>
+    <color name="txa_button_text">#FFFFFF</color>
+</resources>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    
+    <!-- TXA Logo Design - Circular with music note -->
+    <path
+        android:fillColor="@color/txa_primary"
+        android:pathData="M32,8c-13.3,0 -24,10.7 -24,24s10.7,24 24,24s24,-10.7 24,-24S45.3,8 32,8zM32,52c-11,0 -20,-9 -20,-20s9,-20 20,-20s20,9 20,20S43,52 32,52z" />
+    
+    <!-- Music note inside circle -->
+    <path
+        android:fillColor="@color/txa_text_primary"
+        android:pathData="M26,20v18c0,1.1 -0.9,2 -2,2s-2,-0.9 -2,-2s0.9,-2 2,-2c0.4,0 0.7,0.1 1,0.3V26l10,2.5v11.5c0,1.1 -0.9,2 -2,2s-2,-0.9 -2,-2s0.9,-2 2,-2c0.4,0 0.7,0.1 1,0.3V24L26,20z" />
+</vector>

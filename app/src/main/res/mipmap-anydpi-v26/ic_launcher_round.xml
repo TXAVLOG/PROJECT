@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Circular background -->
+    <path
+        android:fillColor="@color/txa_primary"
+        android:pathData="M54,6c-26.5,0 -48,21.5 -48,48s21.5,48 48,48s48,-21.5 48,-48S80.5,6 54,6zM54,96c-23.2,0 -42,-18.8 -42,-42s18.8,-42 42,-42s42,18.8 42,42S77.2,96 54,96z" />
+    
+    <!-- Music note symbol -->
+    <path
+        android:fillColor="@color/txa_text_primary"
+        android:pathData="M44,30v36c0,2.2 -1.8,4 -4,4s-4,-1.8 -4,-4s1.8,-4 4,-4c0.7,0 1.4,0.2 2,0.5V38l16,4v24c0,2.2 -1.8,4 -4,4s-4,-1.8 -4,-4s1.8,-4 4,-4c0.7,0 1.4,0.2 2,0.5V34L44,30z" />
+</vector>

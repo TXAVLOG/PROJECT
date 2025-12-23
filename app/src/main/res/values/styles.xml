@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme -->
+    <style name="Theme.TXAMusic" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/txa_primary</item>
+        <item name="colorPrimaryVariant">@color/txa_primary_dark</item>
+        <item name="colorOnPrimary">@color/txa_text_primary</item>
+        
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/txa_secondary</item>
+        <item name="colorSecondaryVariant">@color/txa_secondary_variant</item>
+        <item name="colorOnSecondary">@color/txa_text_primary</item>
+        
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/txa_background</item>
+        <item name="colorSurface">@color/txa_surface</item>
+        <item name="colorOnBackground">@color/txa_text_primary</item>
+        <item name="colorOnSurface">@color/txa_text_primary</item>
+        
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/txa_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+        
+        <!-- Navigation bar -->
+        <item name="android:navigationBarColor">@color/txa_background</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+    
+    <!-- Splash theme -->
+    <style name="Theme.TXAMusic.Splash" parent="Theme.TXAMusic">
+        <item name="android:windowBackground">@color/txa_background</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+    
+    <!-- Navigation text styles -->
+    <style name="TXANavigationTextActive" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textColor">@color/txa_nav_item_selected</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <style name="TXANavigationTextInactive" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textColor">@color/txa_nav_item_color</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+</resources>
