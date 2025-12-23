@@ -278,7 +278,7 @@ interface TXAQueueDao {
     }
 
     // Cleanup operations
-    @Query("DELETE FROM queue WHERE queue_name != 'default' AND created_at < :threshold")
+    @Query("DELETE FROM queue WHERE queue_name != 'default' AND added_at < :threshold")
     suspend fun cleanupOldQueues(threshold: Long): Int
 
     @Query("DELETE FROM queue WHERE playback_state = 3 AND last_played_position < :threshold")

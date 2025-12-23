@@ -49,6 +49,20 @@ android {
         dataBinding true
     }
 
+    buildFeatures {
+        viewBinding true
+        dataBinding true
+    }
+
+    kapt {
+        correctErrorTypes true
+        arguments {
+            arg("room.schemaLocation", "$projectDir/schemas")
+            arg("room.incremental", "true")
+            arg("room.expandProjection", "true")
+        }
+    }
+
     composeOptions {
         kotlinCompilerExtensionVersion '1.5.4'
     }

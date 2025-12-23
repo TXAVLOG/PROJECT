@@ -40,7 +40,7 @@ interface TXAPlaylistDao {
     @Query("SELECT * FROM playlists WHERE is_system = 0 ORDER BY name ASC")
     fun getUserPlaylists(): Flow<List<TXAPlaylistEntity>>
 
-    @Query("SELECT * FROM playlists WHERE favorite = 1 ORDER BY name ASC")
+    @Query("SELECT * FROM playlists WHERE is_favorite = 1 ORDER BY name ASC")
     fun getFavoritePlaylists(): Flow<List<TXAPlaylistEntity>>
 
     // Playlist-Song relationship operations
@@ -111,7 +111,7 @@ interface TXAPlaylistDao {
     @Query("UPDATE playlists SET play_count = play_count + 1, last_played = :timestamp WHERE id = :id")
     suspend fun incrementPlaylistPlayCount(id: Long, timestamp: Long = System.currentTimeMillis())
 
-    @Query("UPDATE playlists SET favorite = :favorite WHERE id = :id")
+    @Query("UPDATE playlists SET is_favorite = :favorite WHERE id = :id")
     suspend fun updatePlaylistFavorite(id: Long, favorite: Boolean)
 
     // Position management for drag & drop
