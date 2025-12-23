@@ -8,7 +8,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsController
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -365,6 +365,15 @@ class TXAMainActivity : AppCompatActivity() {
     private fun applyTypographyAndSpacing() {
         // Apply One UI 8 typography and spacing guidelines
         // Large headers (1/3 top), interactive elements (2/3 bottom)
+    }
+
+    private fun setupMiniPlayer() {
+        // Setup mini player with blur and rounded corners
+        val radius = resources.getDimension(R.dimen.mini_player_corner_radius)
+        
+        binding.miniPlayer.apply {
+            background = createRoundedBackground(radius)
+        }
     }
 
     private fun handleServiceIntent(intent: Intent?) {

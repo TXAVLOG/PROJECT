@@ -250,20 +250,20 @@ class TXASplashActivity : AppCompatActivity() {
 
     private fun updateProgressUI(progress: Int, message: String) {
         runOnUiThread {
-            // Update progress bar
-            when (progressBar) {
-                is android.widget.ProgressBar -> progressBar.progress = progress
-                is android.widget.SeekBar -> progressBar.progress = progress
+            // Update progress bar - use local val to enable smart cast
+            val currentProgressBar = progressBar
+            when (currentProgressBar) {
+                is android.widget.ProgressBar -> currentProgressBar.progress = progress
+                is android.widget.SeekBar -> currentProgressBar.progress = progress
             }
             
-            // Update progress text
-            when (progressText) {
+            // Update progress text - use local val to enable smart cast
+            val currentProgressText = progressText
+            when (currentProgressText) {
                 is android.widget.TextView -> {
-                    progressText.text = "${TXAFormat.formatPercent(progress.toLong(), 100L)} • $message"
+                    currentProgressText.text = "$progress% • $message"
                 }
             }
-            
-            Timber.d("Splash progress: $progress% - $message")
         }
     }
 

@@ -75,7 +75,10 @@ class TXAAudioProcessor(private val context: Context) {
 
             // Release audio processing resources
             activeProcessor?.flush()
-            activeProcessor?.release()
+            activeProcessor?.let { processor ->
+                // Media3 AudioProcessor doesn't have release(), just flush
+                processor.flush()
+            }
             activeProcessor = null
 
             isInitialized = false
@@ -158,7 +161,7 @@ class TXAAudioProcessor(private val context: Context) {
         return when (crossfadeCurveType) {
             CrossfadeCurve.LINEAR -> progress
             CrossfadeCurve.SINE -> (sin((progress - 0.5f) * PI) + 1f) / 2f
-            CrossfadeCurve.LOGARITHMIC -> log10((progress * 9f) + 1f) / log10(10f)
+            CrossfadeCurve.LOGARITHMIC -> (log10((progress * 9f) + 1f) / log10(10f)).toFloat()
             CrossfadeCurve.EXPONENTIAL -> (progress * progress)
         }
     }

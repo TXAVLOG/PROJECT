@@ -155,34 +155,15 @@ class TXAMusicService : MediaSessionService() {
                     songId?.let { id ->
                         val song = songDao.getSongById(id)
                         _currentSong.value = song
-                        queueDao.setCurrentPlaying(id)
+                        queueDao.setCurrentTrack(id)
                     }
                 }
             }
         }
     }
 
-    private val mediaSessionCallback = object : MediaSession.Callback {
-        override fun onPlay() {
-            play()
-        }
-
-        override fun onPause() {
-            pause()
-        }
-
-        override fun onSkipToNext() {
-            playNext()
-        }
-
-        override fun onSkipToPrevious() {
-            playPrevious()
-        }
-
-        override fun onStop() {
-            stop()
-        }
-    }
+    // Media3 MediaSession automatically forwards commands to ExoPlayer
+    // No need for custom callback implementation
 
     // Playback controls
     fun play() {

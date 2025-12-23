@@ -63,6 +63,17 @@ android {
         }
     }
 
+    // Suppress incubating warnings
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs += ['-Xlint:-deprecation']
+    }
+    
+    tasks.withType(KotlinCompile).configureEach {
+        kotlinOptions {
+            freeCompilerArgs += ['-Xsuppress-warnings=EXPERIMENTAL_API_USAGE']
+        }
+    }
+
     composeOptions {
         kotlinCompilerExtensionVersion '1.5.4'
     }

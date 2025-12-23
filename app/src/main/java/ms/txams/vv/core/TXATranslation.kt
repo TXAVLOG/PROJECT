@@ -41,7 +41,7 @@ class TXATranslation private constructor(private val context: Context) {
         private const val TRANSLATION_ENDPOINT = "$API_BASE/tXALocale"
         
         // Fallback translations (English) - Sync with translation_keys_en.json
-        private val fallbackTranslations = mapOf(
+        internal val fallbackTranslations = mapOf(
             // App Info
             "txamusic_app_name" to "TXA Music",
             "txamusic_app_description" to "TXA Music – Dynamic music player with OTA updates and now bar UI",

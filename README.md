@@ -31,7 +31,7 @@ PROJECT-ANDROID/
 │   ├── ui/          # Splash, Settings, MusicLibraryActivity, fragments
 │   └── update/      # Resolver, Downloader, Installer, UpdateManager
 ├── app/src/main/res/   # Layouts, drawables, themes (không dùng strings.xml)
-├── build/              # Script build Windows/Ubuntu (TXAQuickBuild, TXABuild, setup)
+├── buildsc/              # Script build Windows/Ubuntu (TXAQuickBuild, TXABuild, setup)
 ├── tools/              # TXAProcessImages.ps1 (xử lý icon/splash/notification)
 ├── translation_keys_en.json
 ├── version.properties
@@ -62,7 +62,7 @@ PROJECT-ANDROID/
    ```powershell
    git clone https://github.com/TXAVLOG/PROJECT.git
    cd PROJECT-ANDROID
-   copy build\.env.example build\.env   # điền thông tin keystore/Git
+   copy buildsc\.env.example buildsc\.env   # điền thông tin keystore/Git
    ```
    > **Nếu clone về mà chưa có `gradlew`**: cài Gradle rồi tạo wrapper một lần (chỉ cần chạy, không cần commit)
    > ```powershell
@@ -71,12 +71,12 @@ PROJECT-ANDROID/
    > ```
 3. **Chạy build nhanh** (mặc định debug):
    ```powershell
-   .\build\TXAQuickBuild.ps1           # build debug
-   .\build\TXAQuickBuild.ps1 -Release  # build release (thêm -Debug nếu muốn ép debug)
+   .\buildsc\TXAQuickBuild.ps1           # build debug
+   .\buildsc\TXAQuickBuild.ps1 -Release  # build release (thêm -Debug nếu muốn ép debug)
    ```
 4. **Build đầy đủ với upload**:
    ```powershell
-   .\build\TXABuild.ps1                # hỗ trợ GitHub Releases + git push
+   .\buildsc\TXABuild.ps1                # hỗ trợ GitHub Releases + git push
    ```
 
 ## 🐧 Build trên Ubuntu (VPS)
@@ -90,11 +90,11 @@ PROJECT-ANDROID/
    ```
 2. **Thiết lập SDK & Tools**:
    ```bash
-   chmod +x build/TXASetupEnvironment.sh
-   chmod +x build/*.sh                # cấp quyền cho toàn bộ script trong build/
-   ./build/TXASetupEnvironment.sh
+   chmod +x buildsc/TXASetupEnvironment.sh
+   chmod +x buildsc/*.sh                # cấp quyền cho toàn bộ script trong build/
+   ./buildsc/TXASetupEnvironment.sh
    source ~/.bashrc
-   cp build/.env.example build/.env     # cập nhật mật khẩu keystore, Git user
+   cp buildsc/.env.example buildsc/.env     # cập nhật mật khẩu keystore, Git user
    ```
    > **Nếu thiếu file `gradlew`** (chỉ cần tạo wrapper, không cần commit):
    > ```bash
@@ -103,9 +103,9 @@ PROJECT-ANDROID/
    > ```
 3. **Build** (mặc định debug):
    ```bash
-   ./build/TXAQuickBuild.sh            # build debug
-   ./build/TXAQuickBuild.sh --release   # build release (có thể dùng --debug để ép debug)
-   ./build/TXABuild.sh                  # build + upload (nếu cấu hình)
+   ./buildsc/TXAQuickBuild.sh            # build debug
+   ./buildsc/TXAQuickBuild.sh --release   # build release (có thể dùng --debug để ép debug)
+   ./buildsc/TXABuild.sh                  # build + upload (nếu cấu hình)
    ```
 
 ## 🖼️ Xử lý icon / splash / notification
