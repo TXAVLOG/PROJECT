@@ -3,13 +3,38 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_music"
-    app:startDestination="@id/libraryFragment">
+    app:startDestination="@id/nav_home">
 
+    <!-- Home Fragment -->
     <fragment
-        android:id="@+id/libraryFragment"
+        android:id="@+id/nav_home"
+        android:name="ms.txams.vv.ui.home.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home_new">
+        
+        <action
+            android:id="@+id/action_homeFragment_to_nowPlayingFragment"
+            app:destination="@id/nowPlayingFragment" />
+    </fragment>
+
+    <!-- Explore Fragment -->
+    <fragment
+        android:id="@+id/nav_explore"
+        android:name="ms.txams.vv.ui.explore.ExploreFragment"
+        android:label="Explore"
+        tools:layout="@layout/fragment_explore">
+        
+        <action
+            android:id="@+id/action_exploreFragment_to_nowPlayingFragment"
+            app:destination="@id/nowPlayingFragment" />
+    </fragment>
+
+    <!-- Library Fragment -->
+    <fragment
+        android:id="@+id/nav_library"
         android:name="ms.txams.vv.ui.library.LibraryFragment"
         android:label="Library"
-        tools:layout="@layout/fragment_library">
+        tools:layout="@layout/fragment_library_new">
         
         <action
             android:id="@+id/action_libraryFragment_to_songsFragment"
@@ -28,6 +53,14 @@
             app:destination="@id/nowPlayingFragment" />
     </fragment>
 
+    <!-- Settings Fragment -->
+    <fragment
+        android:id="@+id/nav_settings"
+        android:name="ms.txams.vv.ui.settings.SettingsFragment"
+        android:label="Settings"
+        tools:layout="@layout/fragment_settings" />
+
+    <!-- Legacy Fragments -->
     <fragment
         android:id="@+id/songsFragment"
         android:name="ms.txams.vv.ui.songs.SongsFragment"

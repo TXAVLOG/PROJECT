@@ -16,17 +16,23 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.NavigationUI
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.common.util.concurrent.ListenableFuture
 import ms.txams.vv.R
 import ms.txams.vv.data.database.SongEntity
 import ms.txams.vv.service.MusicService
+import ms.txams.vv.permission.PermissionHelper
 import com.google.android.material.color.DynamicColors
 
 class MainActivity : AppCompatActivity() {
 
     private var mediaControllerFuture: ListenableFuture<MediaController>? = null
     private var mediaController: MediaController? = null
+    private lateinit var bottomNavigationView: BottomNavigationView
+    private lateinit var permissionHelper: PermissionHelper
 
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
     
@@ -54,18 +60,55 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main_music)
+        setContentView(R.layout.activity_main_new)
         
         // Apply Material You dynamic colors
         DynamicColors.applyToActivitiesIfAvailable(this.application)
         
+        // Initialize permission helper
+        permissionHelper = PermissionHelper(this) { permission, granted ->
+            handlePermissionResult(permission, granted)
+        }
+        
         setupWindowInsets()
+        setupBottomNavigation()
         initViews()
         setupBottomSheet()
         setupClickListeners()
         
         // Initialize Media Controller
         initializeMediaController()
+        
+        // Check and request permissions
+        permissionHelper.checkAndRequestPermissions()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // PermissionHelper will automatically check permissions in its onResume
+        permissionHelper.forceCheckPermissions()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaController?.release()
+        mediaController = null
+        mediaControllerFuture?.cancel(true)
+        mediaControllerFuture = null
+    }
+
+    private fun handlePermissionResult(permission: String, granted: Boolean) {
+        if (granted) {
+            // Permission granted, you can initialize music library here
+            initializeMusicLibrary()
+        } else {
+            // Permission denied, user will see appropriate dialog
+        }
+    }
+
+    private fun initializeMusicLibrary() {
+        // TODO: Initialize music library scanning and loading
+        // This will be called when audio permission is granted
     }
 
     private fun initializeMediaController() {
@@ -118,6 +161,14 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+    }
+
+    private fun setupBottomNavigation() {
+        bottomNavigationView = findViewById(R.id.bottom_navigation)
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
+        
+        NavigationUI.setupWithNavController(bottomNavigationView, navController)
     }
 
     private fun initViews() {

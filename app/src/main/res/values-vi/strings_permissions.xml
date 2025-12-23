@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Permission Dialog Titles -->
+    <string name="permission_required_title">Cần Quyền Truy Cập</string>
+    <string name="permission_blocked_title">Quyền Truy Cập Bị Chặn</string>
+    <string name="permission_install_blocked_title">Cần Quyền Cài Đặt</string>
+    
+    <!-- Permission Rationale Messages -->
+    <string name="permission_audio_rationale">Ứng dụng cần quyền truy cập file âm thanh để phát nhạc. Vui lòng cấp quyền để truy cập thư viện nhạc của bạn.</string>
+    <string name="permission_audio_blocked">Quyền truy cập âm thanh đã bị từ chối vĩnh viễn. Vui lòng bật trong Cài đặt để sử dụng ứng dụng.</string>
+    <string name="permission_install_rationale">Ứng dụng cần quyền cài đặt để cung cấp các tính năng và cải tiến mới nhất cho bạn.</string>
+    <string name="permission_install_blocked">Quyền cài đặt là bắt buộc để cập nhật ứng dụng. Vui lòng bật trong Cài đặt.</string>
+    
+    <!-- Dialog Buttons -->
+    <string name="btn_grant_permission">Cấp Quyền</string>
+    <string name="btn_open_settings">Mở Cài đặt</string>
+    <string name="btn_cancel">Hủy</string>
+    <string name="btn_later">Để sau</string>
+    
+    <!-- Permission Status Messages -->
+    <string name="permission_granted">Đã cấp quyền</string>
+    <string name="permission_denied">Đã từ chối quyền</string>
+    <string name="permission_permanently_denied">Quyền bị từ chối vĩnh viễn</string>
+</resources>

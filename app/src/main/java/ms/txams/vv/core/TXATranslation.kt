@@ -223,9 +223,26 @@ object TXATranslation {
         "txamusic_library_scanned" to "Library scanned: %s songs found",
         "txamusic_scan_failed" to "Failed to scan library",
         "txamusic_permission_audio_rationale" to "This app needs access to your audio files to display your music library.",
+        "txamusic_permission_required_title" to "Permission Required",
+        "txamusic_permission_blocked_title" to "Permission Blocked",
+        "txamusic_permission_install_blocked_title" to "Install Permission Required",
+        "txamusic_permission_audio_blocked" to "Audio permission was permanently denied. Please enable it in Settings to use the app.",
+        "txamusic_permission_install_rationale" to "This app needs permission to install updates to provide you with the latest features and improvements.",
+        "txamusic_permission_install_blocked" to "Install permission is required for app updates. Please enable it in Settings.",
+        "txamusic_permission_granted" to "Permission granted",
+        "txamusic_permission_denied" to "Permission denied",
+        "txamusic_permission_permanently_denied" to "Permission permanently denied",
         "txamusic_action_grant" to "Grant",
+        "txamusic_action_later" to "Later",
+        "txamusic_action_open_settings" to "Open Settings",
         "txamusic_settings_music_library" to "Music Library",
-        "txamusic_settings_open_music_library" to "Open Music Library"
+        "txamusic_settings_open_music_library" to "Open Music Library",
+
+        // Navigation
+        "txamusic_nav_home" to "Home",
+        "txamusic_nav_explore" to "Explore",
+        "txamusic_nav_library" to "Library",
+        "txamusic_nav_settings" to "Settings"
     )
 
     /**

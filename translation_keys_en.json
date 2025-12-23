@@ -143,5 +143,9 @@
   "txamusic_permission_audio_rationale": "This app needs access to your audio files to display your music library.",
   "txamusic_action_grant": "Grant",
   "txamusic_settings_music_library": "Music Library",
-  "txamusic_settings_open_music_library": "Open Music Library"
+  "txamusic_settings_open_music_library": "Open Music Library",
+  "txamusic_nav_home": "Home",
+  "txamusic_nav_explore": "Explore",
+  "txamusic_nav_library": "Library",
+  "txamusic_nav_settings": "Settings"
 }
