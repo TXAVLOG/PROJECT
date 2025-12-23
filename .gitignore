@@ -89,6 +89,7 @@ buildsc/.env
 
 # Build artifacts (keep TXABUILD/ for APK distribution)
 app/build/*
+build/*
 buildsc/reports/*
 buildsc/tmp/*
 buildsc/intermediates/*
