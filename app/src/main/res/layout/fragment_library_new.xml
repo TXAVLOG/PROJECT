@@ -156,7 +156,7 @@
                     android:checked="true"
                     style="@style/Widget.Material3.Chip.Filter" />
 
-                <com.google.material.circulardisplaychip.CircularDisplayChip
+                <com.google.android.material.chip.Chip
                     android:id="@+id/chip_recent"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

@@ -28,6 +28,7 @@ class PermissionManager {
             ) == PackageManager.PERMISSION_GRANTED
         }
         
+        @Suppress("DEPRECATION")
         fun requestAudioPermission(fragment: Fragment) {
             fragment.requestPermissions(
                 arrayOf(getAudioPermission()),
