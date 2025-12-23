@@ -19,7 +19,7 @@ class PermissionDialogManager {
     }
 
     companion object {
-        private var currentDialog: AlertDialog? = null
+        private var currentDialog: androidx.appcompat.app.AlertDialog? = null
 
         fun dismissCurrentDialog() {
             currentDialog?.dismiss()
