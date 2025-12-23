@@ -415,6 +415,11 @@ object TXAUpdateManager {
         val versionName: String?,
         @SerializedName(value = "download_url", alternate = ["downloadUrl"])
         val downloadUrl: String?,
+        @SerializedName(
+            value = "download_size_bytes",
+            alternate = ["downloadSizeBytes", "size_bytes", "downloadSize"]
+        )
+        val downloadSizeBytes: Long? = null,
         @SerializedName(value = "release_date", alternate = ["releaseDate"])
         val releaseDate: String? = null,
         val mandatory: Boolean = false,
