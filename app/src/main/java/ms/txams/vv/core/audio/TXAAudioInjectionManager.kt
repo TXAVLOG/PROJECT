@@ -59,18 +59,15 @@ class TXAAudioInjectionManager(private val context: Context) {
     }
 
     fun release() {
-        try {
-            if (!isInitialized) {
-                return
+        injectionScope.launch {
+            try {
+                // Release audio injection resources
+                introMediaSource = null
+                isInitialized = false
+                Timber.d("TXAAudioInjectionManager released")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to release TXAAudioInjectionManager")
             }
-
-            // Release audio resources
-            introMediaSource = null
-            
-            isInitialized = false
-            Timber.d("TXAAudioInjectionManager released")
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to release TXAAudioInjectionManager")
         }
     }
 
