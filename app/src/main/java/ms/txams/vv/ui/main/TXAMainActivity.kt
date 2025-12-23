@@ -118,7 +118,7 @@ class TXAMainActivity : AppCompatActivity() {
     private fun setupMiniPlayer() {
         binding.miniPlayer.apply {
             // Set click listeners
-           .setOnClickListener {
+            setOnClickListener {
                 navigateToNowPlaying()
             }
             

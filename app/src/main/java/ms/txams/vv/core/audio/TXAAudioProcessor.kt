@@ -13,6 +13,7 @@ import androidx.media3.common.MediaItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -203,3 +204,20 @@ class TXAAudioProcessor(private val context: Context) {
             volumeMultiplier = volumeMultiplier
         )
     }
+
+    data class AudioInfo(
+        val isInitialized: Boolean,
+        val crossfadeEnabled: Boolean,
+        val crossfadeDuration: Long,
+        val pitchMultiplier: Float,
+        val speedMultiplier: Float,
+        val volumeMultiplier: Float
+    )
+
+    enum class CrossfadeCurve {
+        LINEAR,
+        SINE,
+        LOGARITHMIC,
+        EXPONENTIAL
+    }
+}
