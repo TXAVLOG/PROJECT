@@ -213,6 +213,7 @@ object TXAUpdateManager {
             TXAHttp.logError(context, "UpdateCheck_Unexpected", e)
             throw e
         }
+    }
     
     private fun buildUpdateCheckUrl(
         versionCode: Int,
