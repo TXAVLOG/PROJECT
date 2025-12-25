@@ -12,11 +12,11 @@ import ms.txams.vv.core.audio.TXAAudioProcessor
 import javax.inject.Singleton
 
 /**
- * Hilt Service Module - Cung cấp audio components và translation service
+ * TXA Service Module - Cung cấp audio components và translation service
  */
 @Module
 @InstallIn(SingletonComponent::class)
-object ServiceModule {
+object TXAServiceModule {
 
     @Provides
     @Singleton
