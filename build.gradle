@@ -6,6 +6,14 @@ plugins {
     id 'androidx.room' version '2.6.0' apply false
 }
 
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
