@@ -190,7 +190,22 @@ class TXAMusicService : MediaSessionService() {
                 _currentSong.value = song
                 
                 val mediaSource = if (injectBranding) {
-                    audioInjectionManager.createBrandedMediaSource(song, dataSourceFactory)
+                    // Kiểm tra file branded đã tồn tại chưa
+                    val brandedPath = audioInjectionManager.getBrandedFilePath(song)
+                    if (brandedPath != null) {
+                        Timber.d("Playing existing branded file: $brandedPath")
+                        createSimpleMediaSourceFromPath(brandedPath, song.id)
+                    } else {
+                        // Tạo file branded mới
+                        val newBrandedPath = audioInjectionManager.createBrandedAudioFile(song)
+                        if (newBrandedPath != null) {
+                            Timber.d("Created and playing new branded file: $newBrandedPath")
+                            createSimpleMediaSourceFromPath(newBrandedPath, song.id)
+                        } else {
+                            Timber.w("Failed to create branded file, using original")
+                            audioInjectionManager.createBrandedMediaSource(song, dataSourceFactory)
+                        }
+                    }
                 } else {
                     createSimpleMediaSource(song)
                 }
@@ -206,6 +221,15 @@ class TXAMusicService : MediaSessionService() {
                 Timber.e(e, "Failed to play song: ${song.title}")
             }
         }
+    }
+
+    private fun createSimpleMediaSourceFromPath(filePath: String, songId: Long): ProgressiveMediaSource {
+        val mediaItem = MediaItem.Builder()
+            .setMediaId(songId.toString())
+            .setUri(android.net.Uri.parse(filePath))
+            .build()
+        return ProgressiveMediaSource.Factory(dataSourceFactory)
+            .createMediaSource(mediaItem)
     }
 
     fun playNext() {

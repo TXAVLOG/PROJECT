@@ -18,6 +18,9 @@ import kotlinx.coroutines.withContext
 import ms.txams.vv.core.data.database.entity.TXASongEntity
 import timber.log.Timber
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.IOException
 
 /**
  * TXA Audio Injection Manager - Xử lý branding audio injection
@@ -87,6 +90,134 @@ class TXAAudioInjectionManager(private val context: Context) {
         } catch (e: Exception) {
             Timber.e(e, "Failed to load intro audio")
             introAudioPath = null
+        }
+    }
+
+    /**
+     * Ghép intro audio vào đầu file nhạc và tạo file mới trong Android/data/
+     */
+    suspend fun createBrandedAudioFile(song: TXASongEntity): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val introPath = introAudioPath ?: return@withContext null
+                val originalFile = File(song.filePath)
+                
+                if (!originalFile.exists()) {
+                    Timber.e("Original file not found: ${song.filePath}")
+                    return@withContext null
+                }
+                
+                // Tạo thư mục output trong Android/data/
+                val outputDir = getBrandedAudioOutputDir()
+                if (!outputDir.exists()) {
+                    outputDir.mkdirs()
+                }
+                
+                // Tạo tên file mới với prefix TXA_
+                val originalFileName = File(song.filePath).nameWithoutExtension
+                val fileExtension = File(song.filePath).extension
+                val brandedFileName = "TXA_${originalFileName}_branded.$fileExtension"
+                val brandedFile = File(outputDir, brandedFileName)
+                
+                // Ghép file intro và file nhạc
+                val success = mergeAudioFiles(introPath, song.filePath, brandedFile.absolutePath)
+                
+                if (success && brandedFile.exists()) {
+                    Timber.d("Branded audio file created: ${brandedFile.absolutePath}")
+                    return@withContext brandedFile.absolutePath
+                } else {
+                    Timber.e("Failed to create branded audio file")
+                    return@withContext null
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Error creating branded audio file")
+                return@withContext null
+            }
+        }
+    }
+
+    /**
+     * Lấy thư mục output cho file branded audio trong Android/data/
+     */
+    private fun getBrandedAudioOutputDir(): File {
+        // Sử dụng external files directory để lưu trong Android/data/[package-id]/files/
+        val baseDir = File(context.getExternalFilesDir(null), "MergeMp3")
+        return baseDir
+    }
+
+    /**
+     * Ghép 2 file audio thành 1 file mới
+     */
+    private fun mergeAudioFiles(introPath: String, songPath: String, outputPath: String): Boolean {
+        return try {
+            val introFile = File(introPath)
+            val songFile = File(songPath)
+            val outputFile = File(outputPath)
+            
+            if (!introFile.exists() || !songFile.exists()) {
+                Timber.e("Source files not found")
+                return false
+            }
+            
+            FileOutputStream(outputFile).use { fos ->
+                // Ghi file intro trước
+                FileInputStream(introFile).use { fis ->
+                    fis.copyTo(fos)
+                }
+                
+                // Ghi file nhạc ngay sau intro
+                FileInputStream(songFile).use { fis ->
+                    fis.copyTo(fos)
+                }
+            }
+            
+            Timber.d("Audio files merged successfully: ${outputFile.length()} bytes")
+            true
+        } catch (e: IOException) {
+            Timber.e(e, "Failed to merge audio files")
+            false
+        }
+    }
+
+    /**
+     * Kiểm tra file branded đã tồn tại chưa
+     */
+    fun hasBrandedFile(song: TXASongEntity): Boolean {
+        val originalFileName = File(song.filePath).nameWithoutExtension
+        val fileExtension = File(song.filePath).extension
+        val brandedFileName = "TXA_${originalFileName}_branded.$fileExtension"
+        val brandedFile = File(getBrandedAudioOutputDir(), brandedFileName)
+        return brandedFile.exists()
+    }
+
+    /**
+     * Lấy path của file branded nếu đã tồn tại
+     */
+    fun getBrandedFilePath(song: TXASongEntity): String? {
+        val originalFileName = File(song.filePath).nameWithoutExtension
+        val fileExtension = File(song.filePath).extension
+        val brandedFileName = "TXA_${originalFileName}_branded.$fileExtension"
+        val brandedFile = File(getBrandedAudioOutputDir(), brandedFileName)
+        return if (brandedFile.exists()) brandedFile.absolutePath else null
+    }
+
+    /**
+     * Xóa tất cả file branded audio
+     */
+    fun clearBrandedFiles() {
+        try {
+            val outputDir = getBrandedAudioOutputDir()
+            if (outputDir.exists()) {
+                outputDir.listFiles()?.forEach { file ->
+                    if (file.delete()) {
+                        Timber.d("Deleted branded file: ${file.name}")
+                    } else {
+                        Timber.w("Failed to delete branded file: ${file.name}")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to clear branded files")
         }
     }
 

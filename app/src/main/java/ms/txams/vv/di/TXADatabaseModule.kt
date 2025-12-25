@@ -14,11 +14,12 @@ import ms.txams.vv.core.data.database.dao.TXASongDao
 import javax.inject.Singleton
 
 /**
- * Hilt Database Module - Cung cấp Room database và DAOs
+ * TXA Database Module
+ * Cung cấp Room database và DAOs
  */
 @Module
 @InstallIn(SingletonComponent::class)
-object DatabaseModule {
+object TXADatabaseModule {
 
     @Provides
     @Singleton
