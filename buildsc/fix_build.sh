@@ -13,7 +13,7 @@ git log --oneline -1
 
 # 3. Pull latest code
 echo "Pulling latest code..."
-git pull
+git pull origin 09d36872
 
 # 4. Check if we're on right commit
 echo "Verifying commit (should be a3808a6)..."
