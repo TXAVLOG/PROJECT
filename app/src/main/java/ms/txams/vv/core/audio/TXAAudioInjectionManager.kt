@@ -140,8 +140,8 @@ class TXAAudioInjectionManager(private val context: Context) {
      * Lấy thư mục output cho file branded audio trong Android/data/
      */
     private fun getBrandedAudioOutputDir(): File {
-        // Sử dụng external files directory để lưu trong Android/data/
-        val baseDir = File(context.getExternalFilesDir(null), "TXA_Branded_Audio")
+        // Sử dụng external files directory để lưu trong Android/data/[package-id]/files/
+        val baseDir = File(context.getExternalFilesDir(null), "MergeMp3")
         return baseDir
     }
 
