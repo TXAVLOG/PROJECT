@@ -4,18 +4,113 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/txa_background"
     tools:context=".ui.TXASplashActivity">
 
+    <!-- App Logo/Icon -->
+    <ImageView
+        android:id="@+id/ivLogo"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:src="@mipmap/ic_launcher"
+        android:contentDescription="TXA Music Logo"
+        app:layout_constraintBottom_toTopOf="@+id/tvAppName"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <!-- App Name -->
     <TextView
-        android:id="@+id/tvStatus"
+        android:id="@+id/tvAppName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:text="TXA Music"
-        android:textSize="24sp"
+        android:textSize="28sp"
         android:textStyle="bold"
+        android:textColor="@color/txa_primary"
+        app:layout_constraintBottom_toTopOf="@+id/tvTagline"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ivLogo" />
+
+    <!-- Tagline -->
+    <TextView
+        android:id="@+id/tvTagline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="POWER BY TXA!"
+        android:textSize="12sp"
+        android:textColor="@color/txa_secondary"
+        android:alpha="0.7"
+        app:layout_constraintBottom_toTopOf="@+id/progressContainer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvAppName" />
+
+    <!-- Progress Container -->
+    <LinearLayout
+        android:id="@+id/progressContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:layout_marginHorizontal="32dp"
+        android:orientation="vertical"
+        android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/tvTagline">
+
+        <!-- Status Text -->
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Loading..."
+            android:textSize="14sp"
+            android:textColor="@color/txa_on_background"
+            android:gravity="center" />
+
+        <!-- Progress Bar -->
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progressBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:max="100"
+            android:progress="0"
+            app:indicatorColor="@color/txa_primary"
+            app:trackColor="@color/txa_surface"
+            app:trackCornerRadius="4dp"
+            app:trackThickness="8dp" />
+
+        <!-- Progress Percentage -->
+        <TextView
+            android:id="@+id/tvProgress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="0%"
+            android:textSize="12sp"
+            android:textColor="@color/txa_secondary" />
+
+    </LinearLayout>
+
+    <!-- Version Info at Bottom -->
+    <TextView
+        android:id="@+id/tvVersion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:text="v1.0.0"
+        android:textSize="10sp"
+        android:textColor="@color/txa_secondary"
+        android:alpha="0.5"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

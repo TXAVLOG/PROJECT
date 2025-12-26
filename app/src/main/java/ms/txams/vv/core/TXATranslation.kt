@@ -6,21 +6,53 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
+import java.util.concurrent.TimeUnit
 
+/**
+ * TXA Translation Manager
+ * 
+ * Fallback Logic (3 layers):
+ * 1. OTA Cache (downloaded from API)
+ * 2. Hardcoded Fallback Map (embedded in app)
+ * 3. Key itself (last resort)
+ */
 object TXATranslation {
-    private var currentTranslations: Map<String, String> = emptyMap()
+    private var otaTranslations: Map<String, String> = emptyMap()
     private var fallbackTranslations: Map<String, String> = emptyMap()
     private var context: Context? = null
     
     private val _currentLocale = MutableStateFlow("en")
     val currentLocale: StateFlow<String> = _currentLocale.asStateFlow()
+    
+    private val _loadingState = MutableStateFlow(LoadingState.IDLE)
+    val loadingState: StateFlow<LoadingState> = _loadingState.asStateFlow()
+    
+    // API endpoint for translation files (placeholder - replace with actual API)
+    private const val TRANSLATION_API_BASE = "https://raw.githubusercontent.com/TXAVLOG/PROJECT/main/translations/"
+    
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+    enum class LoadingState {
+        IDLE,
+        CHECKING_CACHE,
+        DOWNLOADING,
+        VERIFYING,
+        COMPLETE,
+        ERROR,
+        USING_FALLBACK
+    }
 
     fun init(ctx: Context) {
         context = ctx.applicationContext
-        // 1. Load Hardcoded Fallback (Layer 3)
+        // 1. Load Hardcoded Fallback (Layer 2)
         loadEmbeddedFallback()
     }
 
@@ -36,6 +68,10 @@ object TXATranslation {
   "txamusic_splash_language_updated": "Language updated successfully",
   "txamusic_splash_language_failed": "Failed to update language",
   "txamusic_splash_initializing": "Initializing application...",
+  "txamusic_splash_loading_data": "Loading language data...",
+  "txamusic_splash_checking_data": "Checking data...",
+  "txamusic_splash_entering_app": "Entering app...",
+  "txamusic_splash_connection_error": "Connection error, using fallback data",
   "txamusic_settings_title": "Settings",
   "txamusic_settings_app_info": "Application Information",
   "txamusic_settings_version": "Version",
@@ -219,20 +255,31 @@ object TXATranslation {
   "txamusic_now_bar": "Now Bar",
   "txamusic_shared_elements": "Shared Elements",
   "txamusic_glassmorphism": "Glassmorphism",
-  "txamusic_app_incompatible": "Your Android version is not yet supported. We will support it soon."
+  "txamusic_app_incompatible": "Your Android version is not yet supported. We will support it soon.",
+  "txamusic_integrity_check_failed": "App integrity check failed. Please reinstall the app."
 }
 """
         try {
-                fallbackTranslations = parseJsonToMap(jsonString)
-                currentTranslations = fallbackTranslations
+            fallbackTranslations = parseJsonToMap(jsonString)
+            // Initialize OTA with fallback if no cache exists
+            if (otaTranslations.isEmpty()) {
+                otaTranslations = fallbackTranslations
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
+    /**
+     * Get translated string with 3-layer fallback
+     * Layer 1: OTA Cache (downloaded translations)
+     * Layer 2: Hardcoded Fallback (embedded in app)
+     * Layer 3: Key itself (last resort)
+     */
     fun txa(key: String): String {
-        // Fallback Logic: OTA Cache (currentTranslations) -> Local Assets (fallbackTranslations) -> Key itself
-        return currentTranslations[key] ?: fallbackTranslations[key] ?: key
+        return otaTranslations[key] 
+            ?: fallbackTranslations[key] 
+            ?: key
     }
 
     private fun parseJsonToMap(json: String): Map<String, String> {
@@ -248,53 +295,186 @@ object TXATranslation {
         return map
     }
 
+    /**
+     * Load language with progress reporting
+     * 
+     * First Time Scenario:
+     * - Display "Loading language data..."
+     * - Download JSON from API
+     * - If success -> Save Cache -> Enter App
+     * - If error -> Display "Connection error, using fallback data" -> Use Fallback -> Enter App
+     * 
+     * Subsequent Scenario:
+     * - Display "Checking data..."
+     * - Compare MD5 of cache with API
+     * - If match -> Display "Entering app" -> Delay 5s (init Hilt/ExoPlayer) -> Enter App
+     * - If update available -> Run download progress like first time
+     */
     suspend fun loadLanguageWithProgress(
         locale: String, 
-        onProgress: (String) -> Unit
-    ): Boolean = withContext(Dispatchers.IO) {
-        // Logic:
-        // 1. Check if cache exists & hash check (Hypothetical API comparison)
-        // 2. If new, download with progress
+        onProgress: (current: Long, total: Long, message: String) -> Unit
+    ): LoadResult = withContext(Dispatchers.IO) {
+        val ctx = context ?: return@withContext LoadResult.Error("Context not initialized")
         
-        onProgress("Checking cache integrity...")
-        // Fake check logic
-        val cacheFile = File(context?.cacheDir, "lang_$locale.json")
+        val cacheFile = File(ctx.cacheDir, "lang_$locale.json")
+        val cacheHashFile = File(ctx.cacheDir, "lang_${locale}_hash.txt")
         val isFirstTime = !cacheFile.exists()
 
-        if (isFirstTime) {
-            onProgress("Downloading translation data (0%)...")
-            // Simulation of download
-            for (i in 10..100 step 10) {
-                kotlinx.coroutines.delay(100L) // Scan fast
-                onProgress("Downloading translation data ($i%)...")
-            }
-            // Save fake cache
-            cacheFile.writeText(JSONObject(fallbackTranslations).toString())
-            true
-        } else {
-            // Hash check simulation
-            val cachedHash = calculateMD5(cacheFile)
-            // Compare with "API hash" (mocked)
-            val apiHash = cachedHash // Assume match
-            
-            if (cachedHash == apiHash) {
-                onProgress("Verifying data...")
-                true
+        try {
+            if (isFirstTime) {
+                // First Time Scenario
+                _loadingState.value = LoadingState.DOWNLOADING
+                onProgress(0, 100, txa("txamusic_splash_loading_data"))
+                
+                // Try to download from API
+                val downloadResult = downloadTranslationFile(locale) { current, total ->
+                    onProgress(current, total, "${txa("txamusic_splash_downloading_language")} ${TXAFormat.formatPercent(current, total)}")
+                }
+                
+                if (downloadResult != null) {
+                    // Save to cache
+                    cacheFile.writeText(downloadResult)
+                    cacheHashFile.writeText(calculateMD5(downloadResult))
+                    
+                    // Parse and use downloaded translations
+                    otaTranslations = parseJsonToMap(downloadResult)
+                    _loadingState.value = LoadingState.COMPLETE
+                    onProgress(100, 100, txa("txamusic_splash_language_updated"))
+                    LoadResult.Success(isUpdated = true)
+                } else {
+                    // Download failed, use fallback
+                    _loadingState.value = LoadingState.USING_FALLBACK
+                    onProgress(100, 100, txa("txamusic_splash_connection_error"))
+                    // Save fallback to cache for next time
+                    cacheFile.writeText(JSONObject(fallbackTranslations).toString())
+                    cacheHashFile.writeText(calculateMD5(JSONObject(fallbackTranslations).toString()))
+                    LoadResult.Success(isUpdated = false, usedFallback = true)
+                }
             } else {
-                onProgress("Updating translation...")
-                true
+                // Subsequent Scenario
+                _loadingState.value = LoadingState.CHECKING_CACHE
+                onProgress(0, 100, txa("txamusic_splash_checking_data"))
+                
+                // Load cached translations first
+                val cachedContent = cacheFile.readText()
+                otaTranslations = parseJsonToMap(cachedContent)
+                val cachedHash = cacheHashFile.takeIf { it.exists() }?.readText() ?: ""
+                
+                // Try to get API hash (optional - for update check)
+                val apiHash = getRemoteHash(locale)
+                
+                if (apiHash != null && cachedHash != apiHash) {
+                    // Update available - download new version
+                    _loadingState.value = LoadingState.DOWNLOADING
+                    val downloadResult = downloadTranslationFile(locale) { current, total ->
+                        onProgress(current, total, "${txa("txamusic_splash_downloading_language")} ${TXAFormat.formatPercent(current, total)}")
+                    }
+                    
+                    if (downloadResult != null) {
+                        cacheFile.writeText(downloadResult)
+                        cacheHashFile.writeText(calculateMD5(downloadResult))
+                        otaTranslations = parseJsonToMap(downloadResult)
+                        _loadingState.value = LoadingState.COMPLETE
+                        onProgress(100, 100, txa("txamusic_splash_language_updated"))
+                        LoadResult.Success(isUpdated = true)
+                    } else {
+                        // Update download failed, continue with cache
+                        _loadingState.value = LoadingState.COMPLETE
+                        onProgress(100, 100, txa("txamusic_splash_entering_app"))
+                        LoadResult.Success(isUpdated = false)
+                    }
+                } else {
+                    // No update needed - proceed to app with initialization delay
+                    _loadingState.value = LoadingState.VERIFYING
+                    onProgress(50, 100, txa("txamusic_splash_entering_app"))
+                    
+                    // Simulate initialization delay (5 seconds for Hilt/ExoPlayer)
+                    val delaySteps = 50
+                    val delayPerStep = 100L // 5000ms / 50 = 100ms per step
+                    for (i in 1..delaySteps) {
+                        kotlinx.coroutines.delay(delayPerStep)
+                        onProgress(50 + i, 100, txa("txamusic_splash_initializing"))
+                    }
+                    
+                    _loadingState.value = LoadingState.COMPLETE
+                    onProgress(100, 100, txa("txamusic_splash_entering_app"))
+                    LoadResult.Success(isUpdated = false)
+                }
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            _loadingState.value = LoadingState.ERROR
+            onProgress(0, 100, txa("txamusic_msg_error"))
+            LoadResult.Error(e.message ?: "Unknown error")
         }
     }
 
-    private fun calculateMD5(file: File): String {
+    private suspend fun downloadTranslationFile(
+        locale: String,
+        onProgress: (current: Long, total: Long) -> Unit
+    ): String? = withContext(Dispatchers.IO) {
+        try {
+            val url = "${TRANSLATION_API_BASE}translation_keys_$locale.json"
+            val request = Request.Builder().url(url).build()
+            
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return@withContext null
+                
+                val body = response.body ?: return@withContext null
+                val contentLength = body.contentLength().takeIf { it > 0 } ?: 10000L
+                
+                val source = body.source()
+                val buffer = StringBuilder()
+                var bytesRead = 0L
+                val charBuffer = ByteArray(1024)
+                
+                while (true) {
+                    val read = source.read(charBuffer)
+                    if (read == -1L) break
+                    
+                    buffer.append(String(charBuffer, 0, read.toInt()))
+                    bytesRead += read
+                    onProgress(bytesRead, contentLength)
+                }
+                
+                buffer.toString()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private suspend fun getRemoteHash(locale: String): String? = withContext(Dispatchers.IO) {
+        try {
+            val url = "${TRANSLATION_API_BASE}translation_keys_${locale}_hash.txt"
+            val request = Request.Builder().url(url).build()
+            
+            httpClient.newCall(request).execute().use { response ->
+                if (response.isSuccessful) {
+                    response.body?.string()?.trim()
+                } else {
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun calculateMD5(content: String): String {
         return try {
             val md = MessageDigest.getInstance("MD5")
-            val digest = md.digest(file.readBytes())
+            val digest = md.digest(content.toByteArray())
             digest.joinToString("") { "%02x".format(it) }
         } catch (e: Exception) {
             ""
         }
+    }
+
+    sealed class LoadResult {
+        data class Success(val isUpdated: Boolean, val usedFallback: Boolean = false) : LoadResult()
+        data class Error(val message: String) : LoadResult()
     }
 }
 
