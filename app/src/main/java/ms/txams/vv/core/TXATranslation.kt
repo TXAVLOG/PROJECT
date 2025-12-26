@@ -524,7 +524,11 @@ object TXATranslation {
                     val body = response.body?.string() ?: ""
                     try {
                         val json = JSONObject(body)
-                        return@withContext json.optString("updated_at", null)
+                        return@withContext if (json.has("updated_at") && !json.isNull("updated_at")) {
+                            json.getString("updated_at")
+                        } else {
+                            null
+                        }
                     } catch (e: Exception) {
                         TXALogger.apiE("Failed to parse remote updated_at for $locale", e)
                     }
