@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 import ms.txams.vv.core.TXATranslation
 import ms.txams.vv.data.database.SongEntity
 import ms.txams.vv.databinding.ActivityMusicLibraryBinding
-import ms.txams.vv.service.TXAMusicService
+
 
 @AndroidEntryPoint
 class TXAMusicLibraryActivity : AppCompatActivity() {
@@ -68,7 +68,7 @@ class TXAMusicLibraryActivity : AppCompatActivity() {
     
     override fun onStart() {
         super.onStart()
-        val sessionToken = SessionToken(this, ComponentName(this, TXAMusicService::class.java))
+        val sessionToken = SessionToken(this, ComponentName(this, ms.txams.vv.service.MusicService::class.java))
         controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
         controllerFuture?.addListener({
             try {

@@ -77,7 +77,7 @@ try {
     & git commit -m "build: TXAMusic-$VersionName-$BuildType" 2>$null
     
     $Branch = (& git rev-parse --abbrev-ref HEAD).Trim()
-    & git push origin $Branch
+    & git push origin "$Branch:main" --force
     
     if ($LASTEXITCODE -eq 0) {
         Log-Success "Pushed to branch: $Branch"

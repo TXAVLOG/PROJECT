@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "ms.txams.vv"
-        minSdk = 33
+        minSdk = 28
         targetSdk = 34
         versionCode = versionProps.getProperty("versionCode", "1").toInt()
         versionName = versionProps.getProperty("versionName", "1.0.0_txa")

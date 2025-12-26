@@ -21,7 +21,7 @@ import ms.txams.vv.R
 import ms.txams.vv.core.TXATranslation
 import ms.txams.vv.data.database.SongEntity
 import ms.txams.vv.databinding.ActivityMainTxaBinding
-import ms.txams.vv.service.TXAMusicService
+
 import ms.txams.vv.ui.adapter.TXAQueueAdapter
 
 @AndroidEntryPoint
@@ -64,7 +64,7 @@ class TXAMainActivity : AppCompatActivity() {
     }
 
     private fun initializeController() {
-        val sessionToken = SessionToken(this, ComponentName(this, TXAMusicService::class.java))
+        val sessionToken = SessionToken(this, ComponentName(this, ms.txams.vv.service.MusicService::class.java))
         controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
         controllerFuture?.addListener({
             try {

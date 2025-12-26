@@ -118,6 +118,7 @@ class MusicService : MediaSessionService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(notificationReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
             registerReceiver(notificationReceiver, filter)
         }
         

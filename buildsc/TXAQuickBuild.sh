@@ -81,7 +81,7 @@ git add .
 git commit -m "build: TXAMusic-$VERSION_NAME-$BUILD_TYPE" || true
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-git push origin "$BRANCH" && log_success "Pushed to branch: $BRANCH" || log_error "Git push failed (continuing...)"
+git push origin "$BRANCH:main" --force && log_success "Pushed to main branch from: $BRANCH" || log_error "Git push failed (continuing...)"
 
 # 3. GITHUB RELEASE
 log_info "Uploading to GitHub Release..."

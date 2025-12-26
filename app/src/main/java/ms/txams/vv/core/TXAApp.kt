@@ -27,7 +27,7 @@ class TXAApp : Application() {
     
     companion object {
         // Minimum supported Android version
-        const val MIN_SDK_VERSION = 33 // Android 13
+        const val MIN_SDK_VERSION = 28 // Android 9
         
         // Check if device is supported
         fun isDeviceSupported(): Boolean {
