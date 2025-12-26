@@ -100,3 +100,4 @@ keystore-backups/
 
 # Developer-only docs (do not commit)
 README_DEV.md
+prompt.md
