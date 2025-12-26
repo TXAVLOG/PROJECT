@@ -385,7 +385,7 @@ object TXATranslation {
   "txamusic_update_release_date": "Release date: %s",
   "txamusic_update_mandatory": "This update is required",
   "txamusic_permission_all_files_title": "All Files Access",
-  "txamusic_permission_all_files_message": "This app needs access to all files for background update checks",
+  "txamusic_permission_all_files_message": "This app needs access to all files to save logs and backup data to a public folder.",
   "txamusic_permission_battery_title": "Battery Optimization",
   "txamusic_permission_battery_message": "Please allow this app to ignore battery optimization for reliable update checks",
   "txamusic_settings_font": "Font Style",
