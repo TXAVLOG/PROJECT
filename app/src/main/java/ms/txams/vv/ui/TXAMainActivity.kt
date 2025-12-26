@@ -165,12 +165,12 @@ class TXAMainActivity : AppCompatActivity() {
             viewHolder: androidx.recyclerview.widget.RecyclerView.ViewHolder,
             target: androidx.recyclerview.widget.RecyclerView.ViewHolder
         ): Boolean {
-            queueAdapter.onItemMove(viewHolder.adapterPosition, target.adapterPosition)
+            queueAdapter.onItemMove(viewHolder.bindingAdapterPosition, target.bindingAdapterPosition)
             return true
         }
 
         override fun onSwiped(viewHolder: androidx.recyclerview.widget.RecyclerView.ViewHolder, direction: Int) {
-            queueAdapter.onItemDismiss(viewHolder.adapterPosition)
+            queueAdapter.onItemDismiss(viewHolder.bindingAdapterPosition)
         }
     })
 
