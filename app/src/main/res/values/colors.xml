@@ -16,6 +16,7 @@
     <color name="txa_surface">#FF2B2930</color>
     <color name="txa_on_background">#FFE6E1E5</color>
     <color name="txa_on_surface">#FFE6E1E5</color>
+    <color name="txa_on_surface_variant">#FF938F99</color>
     <color name="txa_error">#FFF2B8B5</color>
     <color name="txa_accent">#FFD0BCFF</color>
 </resources>

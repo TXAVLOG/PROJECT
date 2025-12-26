@@ -1,5 +1,6 @@
 package ms.txams.vv.core
 
+import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -10,12 +11,27 @@ import java.util.concurrent.TimeUnit
  * TXA HTTP Client - Singleton HTTP client for TXA Music
  * 
  * Features:
+ * - Kotlinx Serialization Json config
  * - Singleton OkHttpClient with optimized timeouts
  * - Request builder helpers
  * 
  * @author TXA - fb.com/vlog.txa.2311 - txavlog7@gmail.com
  */
 object TXAHttp {
+    
+    /**
+     * JSON configuration for Kotlinx Serialization
+     * - ignoreUnknownKeys: Skip unknown fields in JSON
+     * - isLenient: Accept non-standard JSON
+     * - explicitNulls: Don't require null fields
+     */
+    val json: Json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+        explicitNulls = false
+        encodeDefaults = true
+        prettyPrint = false
+    }
     
     /**
      * Singleton OkHttpClient with optimized timeouts
@@ -86,5 +102,38 @@ object TXAHttp {
             .header("Content-Type", "application/json")
             .post(body)
             .build()
+    }
+    
+    /**
+     * Execute GET request and return response body as String
+     */
+    fun getString(url: String): String? {
+        return try {
+            val request = buildGet(url)
+            client.newCall(request).execute().use { response ->
+                if (response.isSuccessful) {
+                    response.body?.string()
+                } else {
+                    TXALogger.apiE("GET $url failed: ${response.code}")
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            TXALogger.apiE("GET $url exception", e)
+            null
+        }
+    }
+    
+    /**
+     * Execute GET request and parse JSON response
+     */
+    inline fun <reified T> getJson(url: String): T? {
+        return try {
+            val responseBody = getString(url) ?: return null
+            json.decodeFromString<T>(responseBody)
+        } catch (e: Exception) {
+            TXALogger.apiE("JSON parse error for $url", e)
+            null
+        }
     }
 }

@@ -574,6 +574,38 @@ object TXATranslation {
         )
     }
 
+    /**
+     * Get available locales from API
+     * @return List of locale codes or null if failed
+     */
+    suspend fun getAvailableLocales(): List<String>? = withContext(Dispatchers.IO) {
+        try {
+            val url = "${TRANSLATION_API_BASE}locales"
+            TXALogger.apiD("Getting available locales: $url")
+            val request = Request.Builder().url(url).build()
+            
+            httpClient.newCall(request).execute().use { response ->
+                if (response.isSuccessful) {
+                    val json = JSONObject(response.body?.string() ?: "")
+                    if (json.optBoolean("ok")) {
+                        val locales = json.getJSONArray("locales")
+                        val result = mutableListOf<String>()
+                        for (i in 0 until locales.length()) {
+                            val item = locales.getJSONObject(i)
+                            result.add(item.getString("code"))
+                        }
+                        TXALogger.apiD("Available locales: $result")
+                        return@withContext result
+                    }
+                }
+                null
+            }
+        } catch (e: Exception) {
+            TXALogger.apiE("Failed to get available locales", e)
+            null
+        }
+    }
+
     // Data classes
     data class CacheData(
         val translations: Map<String, String>,
