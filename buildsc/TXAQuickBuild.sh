@@ -144,7 +144,7 @@ git config user.name "$GIT_NAME"
 # Force add APK file bypassing gitignore
 git add -f "$OUTPUT_FILE"
 git commit -m "build: TXAMusic-$VERSION_NAME-$BUILD_TYPE" || true
-git push origin 09d36872 || true
+git push origin main || true
 
 log_success "Build completed!"
 log_info "Output: $OUTPUT_FILE"
