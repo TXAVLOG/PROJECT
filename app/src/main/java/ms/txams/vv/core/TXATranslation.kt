@@ -55,6 +55,7 @@ object TXATranslation {
     // Current locale and cached updated_at
     private var currentLocale = "en"
     private var localUpdatedAt: String? = null
+    private var isSyncing = false
     
     private val _syncState = MutableStateFlow(SyncState.IDLE)
     val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
@@ -412,6 +413,8 @@ object TXATranslation {
      * 4. Apply new translations
      */
     private suspend fun syncIfNewer(locale: String) = withContext(Dispatchers.IO) {
+        if (isSyncing) return@withContext
+        isSyncing = true
         try {
             _syncState.value = SyncState.CHECKING
             TXALogger.apiD("Starting background sync for locale: $locale")
@@ -420,7 +423,8 @@ object TXATranslation {
             val remoteUpdatedAt = getRemoteUpdatedAt(locale)
             
             if (remoteUpdatedAt == null) {
-                TXALogger.apiW("Could not get remote updated_at, keeping current")
+                // If remoteUpdatedAt is null, it might be due to API format (array)
+                // In this case, we don't log a warning, just use what we have
                 _syncState.value = if (localUpdatedAt != null) SyncState.USING_CACHE else SyncState.USING_FALLBACK
                 return@withContext
             }
@@ -457,6 +461,8 @@ object TXATranslation {
         } catch (e: Exception) {
             TXALogger.apiE("Sync failed", e)
             _syncState.value = SyncState.ERROR
+        } finally {
+            isSyncing = false
         }
     }
 
@@ -477,20 +483,25 @@ object TXATranslation {
             
             TXAHttp.client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
-                    val rawBody = response.body?.string() ?: ""
-                    if (rawBody.trim().startsWith("[")) {
-                        TXALogger.apiD("Locales API returned array list, skipping timestamp check")
+                    val body = response.body?.string() ?: ""
+                    if (body.trim().startsWith("[")) {
+                        // Silent return for array format
                         return@withContext null
                     }
-                    val json = JSONObject(rawBody)
-                    if (json.optBoolean("ok")) {
-                        val locales = json.getJSONArray("locales")
-                        for (i in 0 until locales.length()) {
-                            val item = locales.getJSONObject(i)
-                            if (item.getString("code") == locale) {
-                                return@withContext item.getString("updated_at")
+                    try {
+                        val json = JSONObject(body)
+                        if (json.optBoolean("ok")) {
+                            val locales = json.getJSONArray("locales")
+                            for (i in 0 until locales.length()) {
+                                val item = locales.getJSONObject(i)
+                                if (item.getString("code") == locale) {
+                                    return@withContext item.getString("updated_at")
+                                }
                             }
                         }
+                    } catch (e: Exception) {
+                        // If it's not a valid JSONObject but we have a success response,
+                        // it might just be the array or something else, return null silently
                     }
                 }
                 null
