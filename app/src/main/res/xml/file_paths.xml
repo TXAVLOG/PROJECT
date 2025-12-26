@@ -1,15 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- External storage for music files -->
-    <external-path name="external_music" path="Music/" />
-    <external-path name="external_downloads" path="Download/" />
-    
-    <!-- Cache directory for temporary audio files -->
-    <external-cache-path name="audio_cache" path="audio_cache/" />
-    
-    <!-- Internal storage for app data -->
-    <files-path name="internal_data" path="data/" />
-    
-    <!-- Shared storage for album art -->
-    <external-files-path name="album_art" path="album_art/" />
+<paths>
+    <external-path name="external_files" path="." />
+    <external-files-path name="external_files_path" path="." />
+    <cache-path name="cache" path="." />
+    <external-cache-path name="external_cache" path="." />
+    <files-path name="files" path="." />
 </paths>
