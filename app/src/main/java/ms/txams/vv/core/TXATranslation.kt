@@ -64,11 +64,6 @@ object TXATranslation {
     
     // API endpoint
     private const val TRANSLATION_API_BASE = "https://soft.nrotxa.online/txamusic/api/"
-    
-    private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
-        .build()
 
     enum class SyncState {
         IDLE,           // Not syncing
@@ -392,7 +387,10 @@ object TXATranslation {
   "txamusic_permission_all_files_title": "All Files Access",
   "txamusic_permission_all_files_message": "This app needs access to all files for background update checks",
   "txamusic_permission_battery_title": "Battery Optimization",
-  "txamusic_permission_battery_message": "Please allow this app to ignore battery optimization for reliable update checks"
+  "txamusic_permission_battery_message": "Please allow this app to ignore battery optimization for reliable update checks",
+  "txamusic_settings_font": "Font Style",
+  "txamusic_settings_change_font": "Change Font Style",
+  "txamusic_current_font": "Current Font"
 }
 """
         try {
@@ -476,7 +474,7 @@ object TXATranslation {
             val url = "${TRANSLATION_API_BASE}locales"
             val request = Request.Builder().url(url).build()
             
-            httpClient.newCall(request).execute().use { response ->
+            TXAHttp.client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
                     val json = JSONObject(response.body?.string() ?: "")
                     if (json.optBoolean("ok")) {
@@ -506,7 +504,7 @@ object TXATranslation {
             TXALogger.apiD("Downloading: $url")
             val request = Request.Builder().url(url).build()
             
-            httpClient.newCall(request).execute().use { response ->
+            TXAHttp.client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
                     TXALogger.apiE("Download failed: HTTP ${response.code}")
                     return@withContext null
@@ -598,7 +596,7 @@ object TXATranslation {
             TXALogger.apiD("Getting available locales: $url")
             val request = Request.Builder().url(url).build()
             
-            httpClient.newCall(request).execute().use { response ->
+            TXAHttp.client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
                     val json = JSONObject(response.body?.string() ?: "")
                     if (json.optBoolean("ok")) {

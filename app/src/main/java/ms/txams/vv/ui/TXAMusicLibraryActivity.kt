@@ -31,7 +31,7 @@ import ms.txams.vv.databinding.ActivityMusicLibraryBinding
 
 
 @AndroidEntryPoint
-class TXAMusicLibraryActivity : AppCompatActivity() {
+class TXAMusicLibraryActivity : BaseActivity() {
     private lateinit var binding: ActivityMusicLibraryBinding
     private val viewModel: MusicViewModel by viewModels()
     

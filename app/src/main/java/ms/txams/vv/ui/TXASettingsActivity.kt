@@ -33,7 +33,7 @@ import ms.txams.vv.update.UpdateCheckResult
  * @author TXA - fb.com/vlog.txa.2311 - txavlog7@gmail.com
  */
 @AndroidEntryPoint
-class TXASettingsActivity : AppCompatActivity() {
+class TXASettingsActivity : BaseActivity() {
     
     private lateinit var binding: TxaActivitySettingsBinding
     
@@ -57,6 +57,7 @@ class TXASettingsActivity : AppCompatActivity() {
         setupToolbar()
         setupAppInfo()
         setupLanguageSection()
+        setupFontSection()
         setupThemeSection()
         setupUpdateSection()
         setupLogsSection()
@@ -122,7 +123,7 @@ class TXASettingsActivity : AppCompatActivity() {
         return getSharedPreferences("txa_prefs", MODE_PRIVATE)
             .getInt("theme_mode", THEME_SYSTEM)
     }
-    
+
     private fun saveThemeMode(mode: Int) {
         getSharedPreferences("txa_prefs", MODE_PRIVATE)
             .edit()
@@ -130,6 +131,87 @@ class TXASettingsActivity : AppCompatActivity() {
             .apply()
     }
     
+    // --- FONT SECTION ---
+
+    data class FontItem(val name: String, val resId: Int)
+
+    private val availableFonts = listOf(
+        FontItem("Soyuz Grotesk", R.font.soyuz_grotesk),
+        FontItem("Outfit", R.font.outfit),
+        FontItem("Montserrat", R.font.montserrat),
+        FontItem("Inter", R.font.inter)
+    )
+
+    private fun setupFontSection() {
+        binding.tvFontSectionTitle.text = TXATranslation.txa("txamusic_settings_font")
+        binding.tvChangeFont.text = TXATranslation.txa("txamusic_settings_change_font")
+
+        val currentFontName = getSavedFontName()
+        binding.tvCurrentFont.text = currentFontName
+        
+        binding.layoutChangeFont.setOnClickListener {
+            showFontSelectionDialog()
+        }
+    }
+
+    private fun showFontSelectionDialog() {
+        val currentFontName = getSavedFontName()
+        val currentIndex = availableFonts.indexOfFirst { it.name == currentFontName }.coerceAtLeast(0)
+
+        val adapter = object : android.widget.ArrayAdapter<FontItem>(
+            this,
+            android.R.layout.select_dialog_singlechoice,
+            availableFonts
+        ) {
+            override fun getView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
+                val view = super.getView(position, convertView, parent) as android.widget.TextView
+                val font = getItem(position)
+                if (font != null) {
+                    view.text = font.name
+                    view.typeface = androidx.core.content.res.ResourcesCompat.getFont(context, font.resId)
+                }
+                return view
+            }
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(TXATranslation.txa("txamusic_settings_change_font"))
+            .setSingleChoiceItems(adapter, currentIndex) { dialog, which ->
+                handleFontSelection(availableFonts[which])
+                dialog.dismiss()
+            }
+            .setNegativeButton(TXATranslation.txa("txamusic_action_cancel"), null)
+            .show()
+    }
+
+    private fun handleFontSelection(font: FontItem) {
+        saveFontSelection(font.name)
+        binding.tvCurrentFont.text = font.name
+        
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Apply Font")
+            .setMessage("App needs to restart to apply new font style.")
+            .setPositiveButton("Restart Now") { _, _ ->
+                restartApp()
+            }
+            .setNegativeButton("Later", null)
+            .show()
+    }
+
+    private fun getSavedFontName(): String {
+        val locale = TXATranslation.getCurrentLocale()
+        return getSharedPreferences("txa_prefs", MODE_PRIVATE)
+            .getString("font_selection_$locale", availableFonts[0].name) ?: availableFonts[0].name
+    }
+
+    private fun saveFontSelection(fontName: String) {
+        val locale = TXATranslation.getCurrentLocale()
+        getSharedPreferences("txa_prefs", MODE_PRIVATE)
+            .edit()
+            .putString("font_selection_$locale", fontName)
+            .apply()
+    }
+
     private fun setupLanguageSection() {
         val currentLocale = TXATranslation.getCurrentLocale()
         val currentLangName = defaultLocales.find { it.code == currentLocale }?.name ?: currentLocale

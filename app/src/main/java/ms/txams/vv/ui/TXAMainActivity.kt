@@ -25,7 +25,7 @@ import ms.txams.vv.databinding.ActivityMainTxaBinding
 import ms.txams.vv.ui.adapter.TXAQueueAdapter
 
 @AndroidEntryPoint
-class TXAMainActivity : AppCompatActivity() {
+class TXAMainActivity : BaseActivity() {
 
     private lateinit var binding: ActivityMainTxaBinding
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>

@@ -40,6 +40,20 @@ class TXAApp : Application() {
                    "TXA Music requires Android 13 (API 33) or higher.\n\n" +
                    "We will support older versions soon."
         }
+
+        // --- NEW: Font Helper ---
+        fun getCurrentFontResId(context: android.content.Context): Int {
+            val prefs = context.getSharedPreferences("txa_prefs", android.content.Context.MODE_PRIVATE)
+            val locale = prefs.getString("locale", "en") ?: "en"
+            val fontName = prefs.getString("font_selection_$locale", "Soyuz Grotesk") ?: "Soyuz Grotesk"
+            
+            return when (fontName) {
+                "Outfit" -> ms.txams.vv.R.font.outfit
+                "Montserrat" -> ms.txams.vv.R.font.montserrat
+                "Inter" -> ms.txams.vv.R.font.inter
+                else -> ms.txams.vv.R.font.soyuz_grotesk
+            }
+        }
     }
     
     override fun onCreate() {

@@ -33,7 +33,7 @@ import javax.inject.Inject
  * @author TXA - fb.com/vlog.txa.2311 - txavlog7@gmail.com
  */
 @AndroidEntryPoint
-class TXASplashActivity : AppCompatActivity() {
+class TXASplashActivity : BaseActivity() {
 
     @Inject lateinit var audioInjectionManager: TXAAudioInjectionManager
     private lateinit var binding: ActivitySplashBinding

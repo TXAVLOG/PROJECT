@@ -39,8 +39,31 @@ object TXAHttp {
      * - Read: 30 seconds
      * - Write: 30 seconds
      */
+    private fun getUnsafeOkHttpClientBuilder(): OkHttpClient.Builder {
+        try {
+            val trustAllCerts = arrayOf<javax.net.ssl.TrustManager>(object : javax.net.ssl.X509TrustManager {
+                override fun checkClientTrusted(chain: Array<out java.security.cert.X509Certificate>?, authType: String?) {}
+                override fun checkServerTrusted(chain: Array<out java.security.cert.X509Certificate>?, authType: String?) {}
+                override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
+            })
+
+            val sslContext = javax.net.ssl.SSLContext.getInstance("SSL")
+            sslContext.init(null, trustAllCerts, java.security.SecureRandom())
+            
+            val builder = OkHttpClient.Builder()
+            builder.sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as javax.net.ssl.X509TrustManager)
+            builder.hostnameVerifier { _, _ -> true }
+            return builder
+        } catch (e: Exception) {
+            return OkHttpClient.Builder()
+        }
+    }
+
+    /**
+     * Singleton OkHttpClient with optimized timeouts and SSL BYPASS (for local testing)
+     */
     val client: OkHttpClient by lazy {
-        OkHttpClient.Builder()
+        getUnsafeOkHttpClientBuilder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
@@ -54,7 +77,7 @@ object TXAHttp {
      * Client without auto-redirect (for URL resolver)
      */
     val noRedirectClient: OkHttpClient by lazy {
-        OkHttpClient.Builder()
+        getUnsafeOkHttpClientBuilder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
