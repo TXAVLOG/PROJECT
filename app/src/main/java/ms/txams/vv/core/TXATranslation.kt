@@ -390,7 +390,8 @@ object TXATranslation {
   "txamusic_permission_battery_message": "Please allow this app to ignore battery optimization for reliable update checks",
   "txamusic_settings_font": "Font Style",
   "txamusic_settings_change_font": "Change Font Style",
-  "txamusic_current_font": "Current Font"
+  "txamusic_current_font": "Current Font",
+  "txamusic_now_bar_waiting": "Choose a song to play"
 }
 """
         try {

@@ -4,7 +4,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -17,15 +17,18 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import ms.txams.vv.R
 import ms.txams.vv.core.TXATranslation
 import ms.txams.vv.data.database.SongEntity
 import ms.txams.vv.databinding.ActivityMainTxaBinding
-
 import ms.txams.vv.ui.adapter.TXAQueueAdapter
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class TXAMainActivity : BaseActivity() {
+
+    @Inject lateinit var lyricsManager: ms.txams.vv.data.manager.TXALyricsManager
 
     private lateinit var binding: ActivityMainTxaBinding
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
@@ -33,6 +36,14 @@ class TXAMainActivity : BaseActivity() {
     
     private var mediaController: MediaController? = null
     private var controllerFuture: ListenableFuture<MediaController>? = null
+
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val progressRunnable = object : Runnable {
+        override fun run() {
+            updateProgress()
+            handler.postDelayed(this, 1000)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +54,7 @@ class TXAMainActivity : BaseActivity() {
         setupNavigation()
         setupQueue()
         setupNowBar()
+        observeLyrics()
     }
     
     private fun initUI() {
@@ -50,17 +62,21 @@ class TXAMainActivity : BaseActivity() {
         binding.tvCardLibrary.text = TXATranslation.txa("txamusic_music_library_title")
         binding.tvCardSettings.text = TXATranslation.txa("txamusic_settings_title")
         binding.tvQueueTitle.text = TXATranslation.txa("txamusic_queue")
-        binding.tvNowPlayingTitle.text = TXATranslation.txa("txamusic_now_playing")
+        
+        // Initial state
+        binding.tvNowPlayingTitle.text = TXATranslation.txa("txamusic_now_bar_waiting")
     }
 
     override fun onStart() {
         super.onStart()
         initializeController()
+        handler.post(progressRunnable)
     }
 
     override fun onStop() {
         super.onStop()
         releaseController()
+        handler.removeCallbacks(progressRunnable)
     }
 
     private fun initializeController() {
@@ -86,6 +102,7 @@ class TXAMainActivity : BaseActivity() {
         mediaController?.addListener(object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 updateNowBarUI()
+                loadLyrics(mediaItem)
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -98,13 +115,85 @@ class TXAMainActivity : BaseActivity() {
         val player = mediaController ?: return
         val currentMedia = player.currentMediaItem
         
-        binding.tvNowPlayingTitle.text = currentMedia?.mediaMetadata?.title 
-            ?: TXATranslation.txa("txamusic_now_playing")
-        
-        binding.ivNowPlayingArt.load(currentMedia?.mediaMetadata?.artworkUri ?: R.drawable.ic_music_note)
+        if (currentMedia == null) {
+            binding.tvNowPlayingTitle.text = TXATranslation.txa("txamusic_now_bar_waiting")
+            binding.ivNowPlayingArt.setImageResource(R.drawable.ic_music_note)
+            binding.ivNowPlayingBackground.setImageDrawable(null)
+            binding.btnPlayPause.setImageResource(R.drawable.ic_play)
+            return
+        }
 
-        val icon = if (player.isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play
-        binding.btnPlayPause.setImageResource(icon)
+        val title = currentMedia.mediaMetadata.title?.toString() ?: "Unknown"
+        val artist = currentMedia.mediaMetadata.artist?.toString() ?: "Unknown"
+        val artworkUri = currentMedia.mediaMetadata.artworkUri
+        
+        binding.tvNowPlayingTitle.text = title
+        binding.tvLargeTitle.text = title
+        binding.tvLargeArtist.text = artist
+
+        // Load artwork
+        if (artworkUri != null) {
+            binding.ivNowPlayingArt.load(artworkUri)
+            binding.ivLargeArt.load(artworkUri)
+            binding.ivNowPlayingBackground.load(artworkUri)
+        } else {
+            binding.ivNowPlayingArt.setImageResource(R.drawable.ic_music_note)
+            binding.ivLargeArt.setImageResource(R.drawable.ic_music_note)
+            binding.ivNowPlayingBackground.setImageDrawable(null)
+        }
+
+        // Custom Icons
+        val iconRes = if (player.isPlaying) R.drawable.ic_pause else R.drawable.ic_play
+        binding.btnPlayPause.setImageResource(iconRes)
+    }
+
+    private fun updateProgress() {
+        val player = mediaController ?: return
+        if (player.isPlaying) {
+            val progress = if (player.duration > 0) (player.currentPosition * 100 / player.duration).toFloat() else 0f
+            binding.songProgress.value = progress.coerceIn(0f, 100f)
+            lyricsManager.updatePosition(player.currentPosition)
+        }
+    }
+
+    private fun loadLyrics(mediaItem: MediaItem?) {
+        if (mediaItem == null) {
+            lyricsManager.clear()
+            return
+        }
+        
+        val title = mediaItem.mediaMetadata.title?.toString()
+        val artist = mediaItem.mediaMetadata.artist?.toString()
+        val path = mediaItem.mediaMetadata.artworkUri?.toString() // Path stored in artworkUri in playSong
+
+        lifecycleScope.launch {
+            lyricsManager.loadLyrics(audioPath = path, title = title, artist = artist)
+        }
+    }
+
+    private fun observeLyrics() {
+        lifecycleScope.launch {
+            lyricsManager.lyricsState.collect { state ->
+                when (state) {
+                    is ms.txams.vv.data.manager.LyricsState.Loaded -> {
+                        // Handled by position update
+                    }
+                    is ms.txams.vv.data.manager.LyricsState.NotFound -> {
+                        binding.tvLyricsPlaceholder.text = "Lyrics not found"
+                    }
+                    else -> {}
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            lyricsManager.currentLineIndex.collect { index ->
+                val line = lyricsManager.getCurrentLine()
+                if (line != null) {
+                    binding.tvLyricsPlaceholder.text = line.content
+                }
+            }
+        }
     }
 
     private fun setupNavigation() {
@@ -120,10 +209,18 @@ class TXAMainActivity : BaseActivity() {
             val player = mediaController ?: return@setOnClickListener
             if (player.isPlaying) player.pause() else player.play()
         }
+
+        binding.songProgress.addOnChangeListener { slider, value, fromUser ->
+            if (fromUser) {
+                val player = mediaController ?: return@addOnChangeListener
+                val newPos = (value * player.duration / 100).toLong()
+                player.seekTo(newPos)
+            }
+        }
     }
 
     private fun setupQueue() {
-        bottomSheetBehavior = BottomSheetBehavior.from(binding.queueSheet)
+        bottomSheetBehavior = BottomSheetBehavior.from(binding.playerSheet)
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
         bottomSheetBehavior.peekHeight = 0 
 
@@ -142,7 +239,7 @@ class TXAMainActivity : BaseActivity() {
         val metadata = MediaMetadata.Builder()
             .setTitle(song.title)
             .setArtist(song.artist)
-            .setArtworkUri(android.net.Uri.parse(song.path))
+            .setArtworkUri(android.net.Uri.parse(song.path)) // Local path
             .build()
             
         val item = MediaItem.Builder()
@@ -176,11 +273,10 @@ class TXAMainActivity : BaseActivity() {
 
     private fun setupNowBar() {
         binding.nowBar.setOnClickListener {
-            if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_COLLAPSED || 
-                bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) {
+            if (bottomSheetBehavior.state != BottomSheetBehavior.STATE_EXPANDED) {
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             } else {
-                bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
             }
         }
     }
