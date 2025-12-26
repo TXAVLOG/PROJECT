@@ -51,8 +51,6 @@ object TXALogger {
      * Safe to call multiple times
      */
     fun init(ctx: Context) {
-        if (isInitialized) return
-        
         try {
             context = ctx.applicationContext
             
@@ -77,25 +75,43 @@ object TXALogger {
 
     /**
      * Get logs directory path - SAFE, handles null
-     * Path: Android/data/{package}/files/logs/
+     * Path Priority:
+     * 1. /sdcard/TXAMusic/logs/ (If MANAGE_EXTERNAL_STORAGE or WRITE_EXTERNAL_STORAGE granted)
+     * 2. Android/data/{package}/files/logs/ (Fallback)
+     * 3. Internal app files/logs/ (Last resort)
      */
     fun getLogsDir(): File? {
         val ctx = context ?: return null
         
         return try {
-            // Use app-specific external storage (no permission needed on Android 4.4+)
+            // Priority 1: Public External Storage (TXAMusic/logs)
+            val publicDir = File(Environment.getExternalStorageDirectory(), "TXAMusic/$LOGS_FOLDER")
+            
+            val hasPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                Environment.isExternalStorageManager()
+            } else {
+                ctx.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
+
+            if (hasPermission) {
+                if (!publicDir.exists()) publicDir.mkdirs()
+                if (publicDir.exists() && publicDir.canWrite()) {
+                    return publicDir
+                }
+            }
+
+            // Priority 2: App-specific external storage
             val filesDir = ctx.getExternalFilesDir(null)
             if (filesDir != null) {
-                File(filesDir, LOGS_FOLDER)
+                File(filesDir, LOGS_FOLDER).also { it.mkdirs() }
             } else {
-                // Fallback to internal storage if external not available
-                File(ctx.filesDir, LOGS_FOLDER)
+                // Priority 3: Internal storage fallback
+                File(ctx.filesDir, LOGS_FOLDER).also { it.mkdirs() }
             }
         } catch (e: Exception) {
             Log.e("TXAAPP", "getLogsDir failed: ${e.message}")
-            // Ultimate fallback to internal storage
             try {
-                File(ctx.filesDir, LOGS_FOLDER)
+                File(ctx.filesDir, LOGS_FOLDER).also { it.mkdirs() }
             } catch (e2: Exception) {
                 null
             }

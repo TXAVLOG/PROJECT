@@ -61,8 +61,40 @@ class TXASplashActivity : BaseActivity() {
             return
         }
 
-        // Step 2: Start initialization sequence
-        startInitSequence()
+        // Step 2: Check Permissions (All Files Access)
+        if (!ms.txams.vv.util.TXAPermissionManager.hasAllFilesAccess(this)) {
+            showPermissionExplanationDialog()
+        } else {
+            // Step 3: Start initialization sequence
+            startInitSequence()
+        }
+    }
+
+    private fun showPermissionExplanationDialog() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(TXATranslation.txa("txamusic_permission_all_files_title"))
+            .setMessage(TXATranslation.txa("txamusic_permission_all_files_message"))
+            .setPositiveButton(TXATranslation.txa("txamusic_action_ok")) { _, _ ->
+                ms.txams.vv.util.TXAPermissionManager.requestAllFilesAccess(this, REQ_ALL_FILES)
+            }
+            .setNegativeButton(TXATranslation.txa("txamusic_action_cancel")) { _, _ ->
+                startInitSequence() // Continue anyway, will use app-specific storage
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQ_ALL_FILES) {
+            // Re-initialize logger to potentially use new public path
+            TXALogger.init(this)
+            startInitSequence()
+        }
+    }
+
+    companion object {
+        private const val REQ_ALL_FILES = 1001
     }
 
     /**
