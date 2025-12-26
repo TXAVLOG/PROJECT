@@ -40,21 +40,21 @@ echo "Verifying wrapper version..."
 cat gradle/wrapper/gradle-wrapper.properties
 
 # 9. Check build.gradle doesn't have kapt
-echo "Checking for kapt in build.gradle..."
-if grep -q "kapt" app/build.gradle; then
-    echo "ERROR: kapt still found in build.gradle!"
-    grep -n "kapt" app/build.gradle
+echo "Checking for kapt in build.gradle.kts..."
+if grep -q "kapt" app/build.gradle.kts; then
+    echo "ERROR: kapt still found in build.gradle.kts!"
+    grep -n "kapt" app/build.gradle.kts
     exit 1
 else
-    echo "✓ No kapt found in build.gradle"
+    echo "✓ No kapt found in build.gradle.kts"
 fi
 
 # 10. Check for KSP
-echo "Checking for KSP in build.gradle..."
-if grep -q "ksp" app/build.gradle; then
-    echo "✓ KSP found in build.gradle"
+echo "Checking for KSP in build.gradle.kts..."
+if grep -q "ksp" app/build.gradle.kts; then
+    echo "✓ KSP found in build.gradle.kts"
 else
-    echo "ERROR: KSP not found in build.gradle!"
+    echo "ERROR: KSP not found in build.gradle.kts!"
     exit 1
 fi
 

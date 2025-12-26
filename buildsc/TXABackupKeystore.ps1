@@ -82,7 +82,7 @@ function New-KeystoreBackup {
         -C $ProjectRoot `
         "app\txamusic.keystore" `
         "version.properties" `
-        "build\.env.example"
+        "buildsc\.env.example"
     
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Failed to create archive"

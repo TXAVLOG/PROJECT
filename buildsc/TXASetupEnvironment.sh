@@ -66,10 +66,10 @@ log_info "Installing Android SDK components..."
 sdkmanager "platform-tools" "platforms;android-28" "build-tools;28.0.3"
 
 # Make scripts executable
-SCRIPT_DIR="$(pwd)/PROJECT-ANDROID/build"
+SCRIPT_DIR="$(pwd)/PROJECT-ANDROID/buildsc"
 if [ -d "$SCRIPT_DIR" ]; then
     chmod +x "$SCRIPT_DIR"/*.sh
-    log_success "Made build scripts executable"
+    log_success "Made buildsc scripts executable"
 fi
 
 log_success "Environment setup completed!"
