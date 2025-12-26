@@ -19,7 +19,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 usage() {
     cat <<EOF
-Usage: ./build/TXAQuickBuild.sh [--release|--debug]
+Usage: ./buildsc/TXAQuickBuild.sh [--release|--debug]
 
 Options:
   --release, -r      Build release APK (mặc định là debug nếu không truyền)
@@ -130,7 +130,7 @@ cp "$APK_FILE" "$OUTPUT_FILE"
 # Validate Git configuration
 if [ -z "$GIT_EMAIL" ] || [ -z "$GIT_NAME" ]; then
     log_error "Git configuration missing in .env file"
-    log_error "Please set GIT_EMAIL and GIT_NAME in build/.env"
+    log_error "Please set GIT_EMAIL and GIT_NAME in buildsc/.env"
     log_error "Example:"
     log_error "GIT_EMAIL=your-email@example.com"
     log_error "GIT_NAME=Your Name"

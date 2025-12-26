@@ -63,7 +63,7 @@ create_backup() {
         -C "$PROJECT_ROOT" \
         app/txamusic.keystore \
         version.properties \
-        build/.env.example
+        buildsc/.env.example
     
     # Add backup metadata
     echo "=== TXA Music Keystore Backup ===" > "/tmp/backup_info_$TIMESTAMP.txt"

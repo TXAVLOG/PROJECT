@@ -11,7 +11,7 @@ Complete automated build system for TXA Music Android app on Ubuntu VPS. Feature
 ## 📁 File Structure
 
 ```
-build/
+buildsc/
 ├── README.md                    # This documentation
 ├── .env.example                 # Environment template
 ├── .env                         # Environment variables (gitignored)
@@ -44,8 +44,8 @@ git clone https://github.com/TXAVLOG/PROJECT.git
 cd PROJECT
 
 # Setup VPS environment
-chmod +x build/TXASetupEnvironment.sh
-./build/TXASetupEnvironment.sh
+chmod +x buildsc/TXASetupEnvironment.sh
+./buildsc/TXASetupEnvironment.sh
 
 # Reload environment
 source ~/.bashrc
@@ -76,14 +76,14 @@ gpg --version
 
 ```bash
 # Copy environment template (Ubuntu)
-cp build/.env.example build/.env
+cp buildsc/.env.example buildsc/.env
 
 # Copy environment template (Windows)
-copy build\.env.example build\.env
+copy buildsc\.env.example buildsc\.env
 
 # Edit with your values
-nano build/.env          # Ubuntu
-notepad build\.env       # Windows
+nano buildsc/.env          # Ubuntu
+notepad buildsc\.env       # Windows
 ```
 
 **Required .env values:**
@@ -100,7 +100,7 @@ UPLOAD_TO_REPO=true        # true or false
 ### 3. Make Scripts Executable
 
 ```bash
-chmod +x build/*.sh
+chmod +x buildsc/*.sh
 ```
 
 ## 🚀 Usage
@@ -110,31 +110,31 @@ chmod +x build/*.sh
 **Ubuntu:**
 ```bash
 # Debug build (default)
-./build/TXAQuickBuild.sh
+./buildsc/TXAQuickBuild.sh
 
 # Release build
-./build/TXAQuickBuild.sh release
+./buildsc/TXAQuickBuild.sh release
 ```
 
 **Windows:**
 ```powershell
 # Debug build (default)
-.\build\TXAQuickBuild.ps1
+.\buildsc\TXAQuickBuild.ps1
 
 # Release build
-.\build\TXAQuickBuild.ps1 -BuildType release
+.\buildsc\TXAQuickBuild.ps1 -BuildType release
 ```
 
 ### Full Build with All Features
 
 **Ubuntu:**
 ```bash
-./build/TXABuild.sh
+./buildsc/TXABuild.sh
 ```
 
 **Windows:**
 ```powershell
-.\build\TXABuild.ps1
+.\buildsc\TXABuild.ps1
 ```
 
 ## 📦 Output
@@ -190,7 +190,7 @@ chmod +x build/*.sh
 
 **Permission Denied**
 ```bash
-chmod +x build/*.sh
+chmod +x buildsc/*.sh
 ```
 
 **Gradle Daemon Issues**
@@ -216,7 +216,7 @@ df -h  # Check available space
 Enable verbose logging:
 ```bash
 export DEBUG=true
-./build/TXABuild.sh
+./buildsc/TXABuild.sh
 ```
 
 ### Manual Keystore Creation
@@ -303,3 +303,4 @@ gh release create v1.0.0 TXABUILD/*.apk
 
 **Last Updated**: 2024-12-20  
 **Compatible**: Ubuntu 18.04+, Android SDK 28+
+
