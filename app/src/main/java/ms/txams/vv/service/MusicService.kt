@@ -316,11 +316,8 @@ class MusicService : MediaSessionService() {
         // Apply MediaStyle for Now Bar
         // Show first 3 actions (prev, play/pause, next) in compact view
         builder.setStyle(
-            androidx.media.app.NotificationCompat.MediaStyle()
-                .setMediaSession(mediaSession?.sessionCompatToken as? android.support.v4.media.session.MediaSessionCompat.Token)
+            androidx.media3.session.MediaStyleNotificationHelper.MediaStyle(mediaSession!!)
                 .setShowActionsInCompactView(0, 1, 2)
-                .setShowCancelButton(true)
-                .setCancelButtonIntent(createActionIntent(ACTION_CLOSE))
         )
         
         return builder.build()
