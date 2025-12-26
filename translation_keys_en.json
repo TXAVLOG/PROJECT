@@ -196,5 +196,19 @@
   "txamusic_shared_elements": "Shared Elements",
   "txamusic_glassmorphism": "Glassmorphism",
   "txamusic_app_incompatible": "Your Android version is not yet supported. We will support it soon.",
-  "txamusic_integrity_check_failed": "App integrity check failed. Please reinstall the app."
+  "txamusic_integrity_check_failed": "App integrity check failed. Please reinstall the app.",
+  "txamusic_update_resolving_url": "Resolving download URL...",
+  "txamusic_update_connecting": "Connecting to server...",
+  "txamusic_update_validating": "Validating APK file...",
+  "txamusic_update_ready_install": "Ready to install",
+  "txamusic_update_retrying": "Retrying (%d/%d)...",
+  "txamusic_update_download_failed_retry": "Download failed. Retrying in %ds...",
+  "txamusic_update_download_failed_max_retry": "Download failed after %d attempts",
+  "txamusic_update_calculating": "Calculating...",
+  "txamusic_update_release_date": "Release date: %s",
+  "txamusic_update_mandatory": "This update is required",
+  "txamusic_permission_all_files_title": "All Files Access",
+  "txamusic_permission_all_files_message": "This app needs access to all files for background update checks",
+  "txamusic_permission_battery_title": "Battery Optimization",
+  "txamusic_permission_battery_message": "Please allow this app to ignore battery optimization for reliable update checks"
 }

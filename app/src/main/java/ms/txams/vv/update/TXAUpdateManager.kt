@@ -21,19 +21,15 @@ import org.json.JSONObject
  * - Validate and install APK
  * - Retry logic for network errors
  * 
- * API Endpoints (Priority Order):
- * 1. TXAMusic dedicated: POST /txamusic/api/update/check
- * 2. Host fallback: POST https://soft.nrotxa.online/api/txa/upd/check
+ * API Endpoint:
+ * POST /txamusic/api/update/check
  * 
  * @author TXA - fb.com/vlog.txa.2311 - txavlog7@gmail.com
  */
 object TXAUpdateManager {
     
-    // API endpoints in priority order
-    private val UPDATE_ENDPOINTS = listOf(
-        "https://soft.nrotxa.online/txamusic/api/update/check",
-        "https://soft.nrotxa.online/api/txa/upd/check"
-    )
+    // API endpoint for update check
+    private const val UPDATE_ENDPOINT = "https://soft.nrotxa.online/txamusic/api/update/check"
     
     // Retry config
     private const val MAX_DOWNLOAD_RETRIES = 20
@@ -41,7 +37,6 @@ object TXAUpdateManager {
     
     /**
      * Check for updates
-     * Tries endpoints in order, returns first successful response
      */
     suspend fun checkForUpdate(context: Context): UpdateCheckResult = withContext(Dispatchers.IO) {
         TXALogger.apiI("Checking for updates...")
@@ -52,21 +47,13 @@ object TXAUpdateManager {
         
         TXALogger.apiD("Current version: $currentVersionName ($currentVersionCode)")
         
-        var lastError: String? = null
-        
-        for (endpoint in UPDATE_ENDPOINTS) {
-            try {
-                val result = checkEndpoint(endpoint, currentVersionCode, currentVersionName, locale)
-                if (result != null) {
-                    return@withContext result
-                }
-            } catch (e: Exception) {
-                lastError = e.message
-                TXALogger.apiW("Endpoint $endpoint failed: ${e.message}")
-            }
+        try {
+            val result = checkEndpoint(UPDATE_ENDPOINT, currentVersionCode, currentVersionName, locale)
+            result ?: UpdateCheckResult.Error("Empty response from server")
+        } catch (e: Exception) {
+            TXALogger.apiE("Update check failed", e)
+            UpdateCheckResult.Error(e.message ?: "Unknown error")
         }
-        
-        UpdateCheckResult.Error(lastError ?: "All endpoints failed")
     }
     
     /**

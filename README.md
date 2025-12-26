@@ -1,142 +1,91 @@
-# TXA Music – Dynamic Music Player with OTA Updates
+# TXA Music
 
-> Ứng dụng music player động với hệ thống cập nhật OTA, tải APK qua resolver và dịch đa ngôn ngữ hoàn toàn động cho TXA Music.
+> 🎵 Dynamic music player với OTA updates, đa ngôn ngữ và giao diện hiện đại.
 
-## 🧭 Tổng quan
+[![Android](https://img.shields.io/badge/Android-13%2B-green.svg)](https://developer.android.com)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.1.0-purple.svg)](https://kotlinlang.org)
 
-- **Package**: `ms.txams.vv`
-- **Target SDK**: 33 (Android 13 – Play requirement 2025)
-- **Ngôn ngữ**: Kotlin + XML
-- **Kiến trúc**: MVVM + Repository, WorkManager cho background update
+## 📱 Yêu cầu hệ thống
+
+- **Android 13** (API 33) trở lên
+- **Bộ nhớ trống**: ~50MB
+
+## 🚀 Tải và cài đặt
+
+### Cách 1: Tải APK có sẵn
+
+1. Vào [Releases](https://github.com/TXAVLOG/PROJECT/releases) trên GitHub
+2. Tải file `TXAMusic-x.x.x_txa-debug.apk` mới nhất
+3. Cài đặt APK trên điện thoại
+
+### Cách 2: Build từ source
+
+#### Windows
+
+```powershell
+# 1. Clone repo
+git clone https://github.com/TXAVLOG/PROJECT.git
+cd PROJECT-ANDROID
+
+# 2. Build debug APK
+.\gradlew.bat assembleDebug
+
+# 3. APK nằm tại: app\build\outputs\apk\debug\
+```
+
+#### Linux/macOS
+
+```bash
+# 1. Clone repo
+git clone https://github.com/TXAVLOG/PROJECT.git
+cd PROJECT-ANDROID
+
+# 2. Cấp quyền và build
+chmod +x gradlew
+./gradlew assembleDebug
+
+# 3. APK nằm tại: app/build/outputs/apk/debug/
+```
 
 ## ✨ Tính năng chính
 
-1. **Dynamic Music Player** – Music player với now bar UI và các tính năng hiện đại.
-2. **OTA Translation System** – Đồng bộ ngôn ngữ từ API (`/locales`, `/tXALocale/{locale}`) với cache `updated_at`.
-3. **Update Resolver** – Hỗ trợ MediaFire, GitHub blob/raw, Google Drive confirm page; lưu APK tại `/storage/emulated/0/Download/TXAMusic/`.
-4. **Force Test Mode** – Có thể bật trong `TXAUpdateManager` để luôn trả về bản cập nhật giả.
-5. **Music Library UI** – Thư viện bài hát native thay cho File Manager cũ, hỗ trợ mở toàn bộ media trên máy.
-6. **Legacy Storage + Logging** – Ghi log + APK tại `/storage/emulated/0/Download/TXAMusic/` để tương thích Android 13 trở xuống.
+| Tính năng | Mô tả |
+|-----------|-------|
+| 🎵 **Music Player** | Phát nhạc với Media3 ExoPlayer, hỗ trợ notification |
+| 🌐 **Đa ngôn ngữ** | EN, VI, JA, ZH, KO - tự động cập nhật từ API |
+| 🔄 **OTA Updates** | Tự động check và tải bản cập nhật mới |
+| 🎨 **Material 3** | Giao diện hiện đại với Glassmorphism |
+| 📁 **Music Library** | Quét và hiển thị toàn bộ nhạc trên máy |
 
-## 📂 Cấu trúc chính
+## 📂 Cấu trúc thư mục
 
 ```
-PROJECT-ANDROID/
-├── app/src/main/java/ms/txams/vv/
-│   ├── core/        # TXAApp, TXATranslation, TXAHttp, TXAFormat, logging helpers
-│   ├── data/        # Room entities/DAO + MusicRepository (MediaStore scan)
-│   ├── di/          # Hilt modules (DatabaseModule, Repository bindings)
-│   ├── download/    # TXADownloadService + notification + PendingIntent
-│   ├── service/     # MusicService (Media3 player + MediaSession)
-│   ├── ui/          # Splash, Settings, MusicLibraryActivity, fragments
-│   └── update/      # Resolver, Downloader, Installer, UpdateManager
-├── app/src/main/res/   # Layouts, drawables, themes (không dùng strings.xml)
-├── buildsc/              # Script build Windows/Ubuntu (TXAQuickBuild, TXABuild, setup)
-├── tools/              # TXAProcessImages.ps1 (xử lý icon/splash/notification)
-├── translation_keys_en.json
-├── version.properties
-├── README.md               # Tài liệu chính (product/devops)
-└── README_DEV.md           # Ghi chú nội bộ cho developer
+TXA Music/
+├── core/        # TXAApp, TXATranslation, TXALogger, TXAHttp
+├── ui/          # Splash, Main, Settings, MusicLibrary
+├── update/      # TXAUpdateManager, TXADownload, TXAInstall
+├── service/     # MusicService (Media3)
+└── data/        # Room DB, MusicRepository
 ```
 
-## ⚙️ Chuẩn bị môi trường
+## ⚙️ Cấu hình build
 
-| Thành phần        | Phiên bản khuyến nghị |
-|-------------------|-----------------------|
-| JDK               | 17 (Adoptium/OpenJDK) |
-| Android SDK       | Compile SDK 34 + Build Tools 34.x |
-| Target SDK        | 33 (Android 13)       |
-| Gradle Wrapper    | Gradle 8.7 (wrapper đi kèm) |
-| ImageMagick (optional) | Để resize icon chất lượng cao |
+| Thành phần | Phiên bản |
+|------------|-----------|
+| JDK | 17 |
+| Gradle | 8.7 |
+| Kotlin | 2.1.0 |
+| Compile SDK | 35 |
+| Target SDK | 34 |
+| Min SDK | 33 (Android 13) |
 
-## 🪟 Build trên Windows
-
-1. **Cài đặt**:
-   ```powershell
-   winget install GitHub.cli
-   winget install GnuPG.Gpg4win
-   winget install EclipseAdoptium.Temurin.17.JDK
-   Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-   ```
-2. **Clone & cấu hình**:
-   ```powershell
-   git clone https://github.com/TXAVLOG/PROJECT.git
-   cd PROJECT-ANDROID
-   copy buildsc\.env.example buildsc\.env   # điền thông tin keystore/Git
-   ```
-   > **Nếu clone về mà chưa có `gradlew`**: cài Gradle rồi tạo wrapper một lần (chỉ cần chạy, không cần commit)
-   > ```powershell
-   > winget install Gradle.Gradle   # hoặc choco install gradle
-   > gradle wrapper --gradle-version 8.7 --distribution-type all
-   > ```
-3. **Chạy build nhanh** (mặc định debug):
-   ```powershell
-   .\buildsc\TXAQuickBuild.ps1           # build debug
-   .\buildsc\TXAQuickBuild.ps1 -Release  # build release (thêm -Debug nếu muốn ép debug)
-   ```
-4. **Build đầy đủ với upload**:
-   ```powershell
-   .\buildsc\TXABuild.ps1                # hỗ trợ GitHub Releases + git push
-   ```
-
-## 🐧 Build trên Ubuntu (VPS)
-
-1. **Chuẩn bị**:
-   ```bash
-   sudo apt update
-    sudo apt install git curl unzip openjdk-17-jdk
-   git clone https://github.com/TXAVLOG/PROJECT.git
-   cd PROJECT-ANDROID
-   ```
-2. **Thiết lập SDK & Tools**:
-   ```bash
-   chmod +x buildsc/TXASetupEnvironment.sh
-   chmod +x buildsc/*.sh                # cấp quyền cho toàn bộ script trong build/
-   ./buildsc/TXASetupEnvironment.sh
-   source ~/.bashrc
-   cp buildsc/.env.example buildsc/.env     # cập nhật mật khẩu keystore, Git user
-   ```
-   > **Nếu thiếu file `gradlew`** (chỉ cần tạo wrapper, không cần commit):
-   > ```bash
-   > sudo apt install gradle -y
-   > gradle wrapper --gradle-version 8.7 --distribution-type all
-   > ```
-3. **Build** (mặc định debug):
-   ```bash
-   ./buildsc/TXAQuickBuild.sh            # build debug
-   ./buildsc/TXAQuickBuild.sh --release   # build release (có thể dùng --debug để ép debug)
-   ./buildsc/TXABuild.sh                  # build + upload (nếu cấu hình)
-   ```
-
-## 🖼️ Xử lý icon / splash / notification
-
-Script `tools/TXAProcessImages.ps1` hỗ trợ chỉ định đường dẫn bất kỳ (tương đối hoặc tuyệt đối):
-
-```powershell
-pwsh -File .\tools\TXAProcessImages.ps1 `
-    -LauncherPath ".\logo.png" `
-    -SplashPath ".\splash.png" `
-    -NotificationPath ".\noti.png"
-```
-
-Hoặc dùng `-SourceRoot "C:\Assets\TXA"` nếu tất cả file nằm chung thư mục. Script sẽ tạo đủ mipmap/drawable density trong `app/src/main/res/`.
-
-> **Yêu cầu ImageMagick**: để script resize chất lượng cao, cài ImageMagick trước khi chạy  
-> Windows: `winget install ImageMagick.ImageMagick` (hoặc tải từ imagemagick.org và thêm vào PATH)  
-> Ubuntu: `sudo apt install imagemagick -y`
-
-## 🔐 Lưu ý bảo mật
-
-- `build/.env`, keystore (`*.jks`, `*.keystore`), thư mục `keystore-backups/` đã nằm trong `.gitignore`.
-- `TXABuild.sh` và `.ps1` có cơ chế tự tạo keystore, backup GPG và push GitHub Releases – cần điền chính xác thông tin trước khi chạy.
-
-## 📞 Hỗ trợ
+## 📞 Liên hệ
 
 - **Developer**: TXAVLOG
 - **Email**: txavlog7@gmail.com
-- **Facebook**: https://fb.com/vlog.txa.2311
-- **Issues**: mở ticket trên repo GitHub
+- **Facebook**: [fb.com/vlog.txa.2311](https://fb.com/vlog.txa.2311)
+- **GitHub Issues**: [Tạo issue mới](https://github.com/TXAVLOG/PROJECT/issues)
 
 ---
 
-**Last updated:** December 2025 – Force test mode mặc định **ON**; Target SDK = 33 (Android 13). Hãy set `FORCE_TEST_MODE = false` khi build production.
+**© 2025 TXA - All rights reserved**
