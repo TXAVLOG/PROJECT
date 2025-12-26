@@ -41,31 +41,34 @@ abstract class BaseActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
     }
 
-    override fun onTitleChanged(title: CharSequence?, color: Int) {
-        super.onTitleChanged(title, color)
-        // Set font to toolbar if exists
-        findViewById<Toolbar>(ms.txams.vv.R.id.toolbar)?.let { toolbar ->
-            applyFontToToolbar(toolbar)
+    override fun onStart() {
+        super.onStart()
+        // Apply font to entire decor view as a secondary measure
+        window.decorView.post {
+            applyFontToViewHierarchy(window.decorView)
         }
     }
 
-    private fun applyFontToToolbar(toolbar: Toolbar) {
-        val fontResId = TXAApp.getCurrentFontResId(this)
-        val typeface = try { ResourcesCompat.getFont(this, fontResId) } catch (e: Exception) { null }
-        
-        for (i in 0 until toolbar.childCount) {
-            val view = toolbar.getChildAt(i)
-            if (view is TextView) {
-                view.typeface = typeface
+    override fun onTitleChanged(title: CharSequence?, color: Int) {
+        super.onTitleChanged(title, color)
+        findViewById<Toolbar>(ms.txams.vv.R.id.toolbar)?.let { toolbar ->
+            applyFontToViewHierarchy(toolbar)
+        }
+    }
+
+    private fun applyFontToViewHierarchy(view: View) {
+        val typeface = TXAApp.getCurrentTypeface(this)
+        if (view is TextView) {
+            view.typeface = typeface
+        }
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                applyFontToViewHierarchy(view.getChildAt(i))
             }
         }
     }
 
     private fun applyCustomFont(textView: TextView) {
-        val fontResId = TXAApp.getCurrentFontResId(this)
-        try {
-            val typeface = ResourcesCompat.getFont(this, fontResId)
-            textView.typeface = typeface
-        } catch (e: Exception) {}
+        textView.typeface = TXAApp.getCurrentTypeface(this)
     }
 }

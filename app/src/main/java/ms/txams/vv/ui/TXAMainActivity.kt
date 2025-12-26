@@ -111,20 +111,49 @@ class TXAMainActivity : BaseActivity() {
         })
     }
 
+    private var isRotating = false
+
+    private fun startRotation() {
+        if (isRotating) return
+        isRotating = true
+        binding.ivLargeArt.animate()
+            .rotationBy(360f)
+            .setDuration(12000)
+            .setInterpolator(android.view.animation.LinearInterpolator())
+            .withEndAction {
+                if (isRotating) {
+                    isRotating = false
+                    startRotation()
+                }
+            }
+            .start()
+    }
+
+    private fun stopRotation() {
+        isRotating = false
+        binding.ivLargeArt.animate().cancel()
+    }
+
     private fun updateNowBarUI() {
         val player = mediaController ?: return
         val currentMedia = player.currentMediaItem
         
         if (currentMedia == null) {
             binding.tvNowPlayingTitle.text = TXATranslation.txa("txamusic_now_bar_waiting")
-            binding.ivNowPlayingArt.setImageResource(R.drawable.ic_music_note)
+            binding.ivNowPlayingArt.setImageResource(R.drawable.txa_default_art)
+            binding.ivLargeArt.setImageResource(R.drawable.txa_default_art)
             binding.ivNowPlayingBackground.setImageDrawable(null)
             binding.btnPlayPause.setImageResource(R.drawable.ic_play)
+            binding.cpDiskProgress.progress = 0
+            binding.tvCurrentTime.text = "00:00:000"
+            binding.tvTotalTime.text = "00:00:000"
+            stopRotation()
             return
         }
 
-        val title = currentMedia.mediaMetadata.title?.toString() ?: "Unknown"
-        val artist = currentMedia.mediaMetadata.artist?.toString() ?: "Unknown"
+        val unknown = TXATranslation.txa("txamusic_unknown")
+        val title = currentMedia.mediaMetadata.title?.toString() ?: unknown
+        val artist = currentMedia.mediaMetadata.artist?.toString() ?: unknown
         val artworkUri = currentMedia.mediaMetadata.artworkUri
         
         binding.tvNowPlayingTitle.text = title
@@ -133,26 +162,47 @@ class TXAMainActivity : BaseActivity() {
 
         // Load artwork
         if (artworkUri != null) {
-            binding.ivNowPlayingArt.load(artworkUri)
-            binding.ivLargeArt.load(artworkUri)
+            binding.ivNowPlayingArt.load(artworkUri) {
+                placeholder(R.drawable.txa_default_art)
+                error(R.drawable.txa_default_art)
+            }
+            binding.ivLargeArt.load(artworkUri) {
+                placeholder(R.drawable.txa_default_art)
+                error(R.drawable.txa_default_art)
+            }
             binding.ivNowPlayingBackground.load(artworkUri)
         } else {
-            binding.ivNowPlayingArt.setImageResource(R.drawable.ic_music_note)
-            binding.ivLargeArt.setImageResource(R.drawable.ic_music_note)
+            binding.ivNowPlayingArt.setImageResource(R.drawable.txa_default_art)
+            binding.ivLargeArt.setImageResource(R.drawable.txa_default_art)
             binding.ivNowPlayingBackground.setImageDrawable(null)
         }
 
         // Custom Icons
         val iconRes = if (player.isPlaying) R.drawable.ic_pause else R.drawable.ic_play
         binding.btnPlayPause.setImageResource(iconRes)
+        
+        if (player.isPlaying) startRotation() else stopRotation()
     }
 
     private fun updateProgress() {
         val player = mediaController ?: return
+        val duration = player.duration
+        val position = player.currentPosition
+        
+        if (duration > 0) {
+            val progressPercent = (position * 100 / duration).toInt()
+            binding.songProgress.value = progressPercent.toFloat().coerceIn(0f, 100f)
+            binding.cpDiskProgress.progress = progressPercent
+            
+            binding.tvCurrentTime.text = ms.txams.vv.core.TXAFormat.formatDuration(position, true)
+            binding.tvTotalTime.text = ms.txams.vv.core.TXAFormat.formatDuration(duration, true)
+        }
+        
         if (player.isPlaying) {
-            val progress = if (player.duration > 0) (player.currentPosition * 100 / player.duration).toFloat() else 0f
-            binding.songProgress.value = progress.coerceIn(0f, 100f)
-            lyricsManager.updatePosition(player.currentPosition)
+            startRotation()
+            lyricsManager.updatePosition(position)
+        } else {
+            stopRotation()
         }
     }
 
@@ -179,7 +229,7 @@ class TXAMainActivity : BaseActivity() {
                         // Handled by position update
                     }
                     is ms.txams.vv.data.manager.LyricsState.NotFound -> {
-                        binding.tvLyricsPlaceholder.text = "Lyrics not found"
+                        binding.tvLyricsPlaceholder.text = TXATranslation.txa("txamusic_lyrics_not_found")
                     }
                     else -> {}
                 }

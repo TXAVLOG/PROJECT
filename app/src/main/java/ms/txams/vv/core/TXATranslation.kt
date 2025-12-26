@@ -55,6 +55,7 @@ object TXATranslation {
     // Current locale and cached updated_at
     private var currentLocale = "en"
     private var localUpdatedAt: String? = null
+    private var isSyncing = false
     
     private val _syncState = MutableStateFlow(SyncState.IDLE)
     val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
@@ -203,6 +204,23 @@ object TXATranslation {
   "txamusic_lang_zh": "中文",
   "txamusic_lang_ja": "日本語",
   "txamusic_lang_ko": "한국어",
+  "txamusic_theme_light": "Light",
+  "txamusic_theme_dark": "Dark",
+  "txamusic_theme_system": "System Default",
+  "txamusic_theme_title": "Theme",
+  "txamusic_font_apply_title": "Apply Font",
+  "txamusic_font_apply_message": "App needs to restart to apply new font style.",
+  "txamusic_font_restart_now": "Restart Now",
+  "txamusic_font_later": "Later",
+  "txamusic_error_lang_change": "Failed to change language",
+  "txamusic_update_latest": "You are using the latest version.",
+  "txamusic_msg_logs_cleared": "Logs cleared",
+  "txamusic_logs_title": "Logs",
+  "txamusic_logs_empty": "No logs found",
+  "txamusic_lyrics_not_found": "Lyrics not found",
+  "txamusic_unknown": "Unknown",
+  "txamusic_service_not_ready": "Service not ready",
+  "txamusic_playing": "Playing: %s",
   "txamusic_update_checking": "Checking for updates...",
   "txamusic_update_available": "Update available",
   "txamusic_update_not_available": "You are using the latest version",
@@ -372,6 +390,8 @@ object TXATranslation {
   "txamusic_now_bar": "Now Bar",
   "txamusic_shared_elements": "Shared Elements",
   "txamusic_glassmorphism": "Glassmorphism",
+  "txamusic_unsupported_title": "Not Supported",
+  "txamusic_unsupported_toast": "Android %s is not supported. TXA Music requires Android 13+",
   "txamusic_app_incompatible": "Your Android version is not yet supported. We will support it soon.",
   "txamusic_integrity_check_failed": "App integrity check failed. Please reinstall the app.",
   "txamusic_update_resolving_url": "Resolving download URL...",
@@ -391,7 +411,26 @@ object TXATranslation {
   "txamusic_settings_font": "Font Style",
   "txamusic_settings_change_font": "Change Font Style",
   "txamusic_current_font": "Current Font",
-  "txamusic_now_bar_waiting": "Choose a song to play"
+  "txamusic_now_bar_waiting": "Choose a song to play",
+  "txamusic_unknown": "Unknown",
+  "txamusic_lyrics_not_found": "Lyrics not found",
+  "txamusic_service_not_ready": "Music service not ready",
+  "txamusic_playing": "Playing: %s",
+  "txamusic_theme_light": "Light",
+  "txamusic_theme_dark": "Dark",
+  "txamusic_theme_system": "Follow System",
+  "txamusic_theme_title": "Select Theme",
+  "txamusic_font_apply_title": "Apply Font",
+  "txamusic_font_apply_message": "App needs to restart to apply the new font.",
+  "txamusic_font_restart_now": "Restart Now",
+  "txamusic_font_later": "Later",
+  "txamusic_error_lang_change": "Failed to change language",
+  "txamusic_update_latest": "You are using the latest version.",
+  "txamusic_action_update": "Update",
+  "txamusic_msg_logs_cleared": "Logs cleared",
+  "txamusic_logs_title": "Logs",
+  "txamusic_logs_empty": "No logs found",
+  "txamusic_library_empty": "No songs found. Tap refresh to scan."
 }
 """
         try {
@@ -412,6 +451,8 @@ object TXATranslation {
      * 4. Apply new translations
      */
     private suspend fun syncIfNewer(locale: String) = withContext(Dispatchers.IO) {
+        if (isSyncing) return@withContext
+        isSyncing = true
         try {
             _syncState.value = SyncState.CHECKING
             TXALogger.apiD("Starting background sync for locale: $locale")
@@ -420,7 +461,8 @@ object TXATranslation {
             val remoteUpdatedAt = getRemoteUpdatedAt(locale)
             
             if (remoteUpdatedAt == null) {
-                TXALogger.apiW("Could not get remote updated_at, keeping current")
+                // If remoteUpdatedAt is null, it might be due to API format (array)
+                // In this case, we don't log a warning, just use what we have
                 _syncState.value = if (localUpdatedAt != null) SyncState.USING_CACHE else SyncState.USING_FALLBACK
                 return@withContext
             }
@@ -457,6 +499,8 @@ object TXATranslation {
         } catch (e: Exception) {
             TXALogger.apiE("Sync failed", e)
             _syncState.value = SyncState.ERROR
+        } finally {
+            isSyncing = false
         }
     }
 
@@ -472,31 +516,23 @@ object TXATranslation {
      */
     private suspend fun getRemoteUpdatedAt(locale: String): String? = withContext(Dispatchers.IO) {
         try {
-            val url = "${TRANSLATION_API_BASE}locales"
+            val url = "${TRANSLATION_API_BASE}tXALocale/$locale"
             val request = Request.Builder().url(url).build()
             
             TXAHttp.client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
-                    val rawBody = response.body?.string() ?: ""
-                    if (rawBody.trim().startsWith("[")) {
-                        TXALogger.apiD("Locales API returned array list, skipping timestamp check")
-                        return@withContext null
-                    }
-                    val json = JSONObject(rawBody)
-                    if (json.optBoolean("ok")) {
-                        val locales = json.getJSONArray("locales")
-                        for (i in 0 until locales.length()) {
-                            val item = locales.getJSONObject(i)
-                            if (item.getString("code") == locale) {
-                                return@withContext item.getString("updated_at")
-                            }
-                        }
+                    val body = response.body?.string() ?: ""
+                    try {
+                        val json = JSONObject(body)
+                        return@withContext json.optString("updated_at", null)
+                    } catch (e: Exception) {
+                        TXALogger.apiE("Failed to parse remote updated_at for $locale", e)
                     }
                 }
                 null
             }
         } catch (e: Exception) {
-            TXALogger.apiE("Failed to get remote updated_at", e)
+            TXALogger.apiE("Failed to get remote updated_at for $locale", e)
             null
         }
     }
@@ -506,7 +542,7 @@ object TXATranslation {
      */
     private suspend fun downloadLocale(locale: String): DownloadResult? = withContext(Dispatchers.IO) {
         try {
-            val url = "${TRANSLATION_API_BASE}locale/$locale"
+            val url = "${TRANSLATION_API_BASE}tXALocale/$locale"
             TXALogger.apiD("Downloading: $url")
             val request = Request.Builder().url(url).build()
             
@@ -524,7 +560,7 @@ object TXATranslation {
                 DownloadResult(translations, updatedAt, rawJson)
             }
         } catch (e: Exception) {
-            TXALogger.apiE("Download failed", e)
+            TXALogger.apiE("Download failed for $locale", e)
             null
         }
     }
@@ -604,16 +640,33 @@ object TXATranslation {
             
             TXAHttp.client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
-                    val json = JSONObject(response.body?.string() ?: "")
-                    if (json.optBoolean("ok")) {
-                        val locales = json.getJSONArray("locales")
+                    val body = response.body?.string() ?: ""
+                    if (body.trim().startsWith("[")) {
+                        val locales = org.json.JSONArray(body)
                         val result = mutableListOf<String>()
                         for (i in 0 until locales.length()) {
-                            val item = locales.getJSONObject(i)
-                            result.add(item.getString("code"))
+                            result.add(locales.getString(i))
                         }
-                        TXALogger.apiD("Available locales: $result")
+                        TXALogger.apiD("Available locales (array): $result")
                         return@withContext result
+                    } else {
+                        val json = JSONObject(body)
+                        if (json.optBoolean("ok")) {
+                            val locales = json.getJSONArray("locales")
+                            val result = mutableListOf<String>()
+                            for (i in 0 until locales.length()) {
+                                try {
+                                    val item = locales.get(i)
+                                    if (item is JSONObject) {
+                                        result.add(item.getString("code"))
+                                    } else if (item is String) {
+                                        result.add(item)
+                                    }
+                                } catch (e: Exception) {}
+                            }
+                            TXALogger.apiD("Available locales (object): $result")
+                            return@withContext result
+                        }
                     }
                 }
                 null

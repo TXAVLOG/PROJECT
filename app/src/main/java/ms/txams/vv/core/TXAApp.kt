@@ -42,6 +42,9 @@ class TXAApp : Application() {
         }
 
         // --- NEW: Font Helper ---
+        private var cachedTypeface: android.graphics.Typeface? = null
+        private var cachedFontResId: Int = -1
+
         fun getCurrentFontResId(context: android.content.Context): Int {
             val prefs = context.getSharedPreferences("txa_prefs", android.content.Context.MODE_PRIVATE)
             val locale = prefs.getString("locale", "en") ?: "en"
@@ -53,6 +56,26 @@ class TXAApp : Application() {
                 "Inter" -> ms.txams.vv.R.font.inter
                 else -> ms.txams.vv.R.font.soyuz_grotesk
             }
+        }
+
+        fun getCurrentTypeface(context: android.content.Context): android.graphics.Typeface? {
+            val resId = getCurrentFontResId(context)
+            if (resId == cachedFontResId && cachedTypeface != null) {
+                return cachedTypeface
+            }
+            
+            cachedFontResId = resId
+            cachedTypeface = try {
+                androidx.core.content.res.ResourcesCompat.getFont(context.applicationContext, resId)
+            } catch (e: Exception) {
+                android.graphics.Typeface.DEFAULT
+            }
+            return cachedTypeface
+        }
+
+        fun clearFontCache() {
+            cachedTypeface = null
+            cachedFontResId = -1
         }
     }
     
