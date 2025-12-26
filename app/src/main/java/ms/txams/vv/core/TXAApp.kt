@@ -45,6 +45,11 @@ class TXAApp : Application() {
     override fun onCreate() {
         super.onCreate()
         
+        // Apply theme from preferences
+        val prefs = getSharedPreferences("txa_prefs", android.content.Context.MODE_PRIVATE)
+        val themeMode = prefs.getInt("theme_mode", androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(themeMode)
+        
         // Step 1: Initialize logger FIRST (for crash logging)
         try {
             TXALogger.init(this)

@@ -1,0 +1,32 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Background Gradient Circle -->
+    <path android:pathData="M54,54m-45,0a45,45 0,1 1,90 0a45,45 0,1 1,-90 0">
+        <aapt:attr name="android:fillColor">
+            <gradient 
+                android:centerX="54"
+                android:centerY="54"
+                android:gradientRadius="45"
+                android:type="radial">
+                <item android:offset="0.0" android:color="#FF6200EE"/>
+                <item android:offset="1.0" android:color="#FF3700B3"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    
+    <!-- Stylish 't' in corner -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M35,35 L35,50 C35,65 45,75 60,75 L65,75 L65,65 L60,65 C50,65 45,60 45,50 L45,45 L55,45 L55,35 L45,35 L45,25 L35,30 L35,35 Z" />
+        
+    <!-- Decorative dots -->
+    <path
+        android:fillColor="#FF03DAC5"
+        android:pathData="M70,35m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    
+</vector>

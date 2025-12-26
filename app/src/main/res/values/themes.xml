@@ -12,10 +12,26 @@
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
+        
+        <!-- Custom Fonts -->
+        <!-- Default font (Vietnamese) -->
+        <item name="fontFamily">@font/soyuz_grotesk</item>
+        <item name="android:fontFamily">@font/soyuz_grotesk</item>
+    </style>
+    
+    <!-- Base Text Style -->
+    <style name="TextAppearance.TXA" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="fontFamily">@font/soyuz_grotesk</item>
+        <item name="android:fontFamily">@font/soyuz_grotesk</item>
+    </style>
+
+    <!-- Style for English text (apply manually where needed) -->
+    <style name="TextAppearance.TXA.English" parent="TextAppearance.TXA">
+        <item name="fontFamily">@font/lobster</item>
+        <item name="android:fontFamily">@font/lobster</item>
     </style>
     
     <style name="Theme.TXAMusic.Splash" parent="Theme.TXAMusic">
-        <item name="android:windowBackground">@color/white</item>
+        <item name="android:windowBackground">?attr/colorSurface</item>
     </style>
 </resources>

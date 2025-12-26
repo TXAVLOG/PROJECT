@@ -4,7 +4,10 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
@@ -15,7 +18,6 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
-import androidx.media3.session.MediaStyleNotificationHelper
 import dagger.hilt.android.AndroidEntryPoint
 import ms.txams.vv.R
 import ms.txams.vv.core.TXALogger
@@ -29,8 +31,8 @@ import javax.inject.Inject
  * - Media3 ExoPlayer for playback
  * - MediaSession for system integration
  * - Samsung Now Bar support (OneUI 7+)
+ * - Custom notification with action buttons
  * - Lock screen controls
- * - Notification with album art
  * 
  * @author TXA - fb.com/vlog.txa.2311 - txavlog7@gmail.com
  */
@@ -41,11 +43,19 @@ class MusicService : MediaSessionService() {
         private const val CHANNEL_ID = "txa_music_playback"
         private const val CHANNEL_NAME = "Music Playback"
         private const val NOTIFICATION_ID = 1
+        
+        // Action constants
+        const val ACTION_PLAY = "ms.txams.vv.ACTION_PLAY"
+        const val ACTION_PAUSE = "ms.txams.vv.ACTION_PAUSE"
+        const val ACTION_PREV = "ms.txams.vv.ACTION_PREV"
+        const val ACTION_NEXT = "ms.txams.vv.ACTION_NEXT"
+        const val ACTION_CLOSE = "ms.txams.vv.ACTION_CLOSE"
     }
     
     private var mediaSession: MediaSession? = null
     private var player: ExoPlayer? = null
     private var currentAlbumArt: Bitmap? = null
+    private var notificationReceiver: NotificationActionReceiver? = null
     
     override fun onCreate() {
         super.onCreate()
@@ -57,9 +67,11 @@ class MusicService : MediaSessionService() {
         // Create notification channel
         createNotificationChannel()
         
+        // Register broadcast receiver for notification actions
+        registerNotificationReceiver()
+        
         // Create ExoPlayer
         player = ExoPlayer.Builder(this).build().also { exo ->
-            // Add player listener for state changes
             exo.addListener(object : Player.Listener {
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
                     updateNotification()
@@ -70,9 +82,14 @@ class MusicService : MediaSessionService() {
                 }
                 
                 override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
-                    // Load album art if available
                     loadAlbumArt(mediaMetadata)
                     updateNotification()
+                }
+                
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    if (playbackState == Player.STATE_ENDED) {
+                        updateNotification()
+                    }
                 }
             })
         }
@@ -86,7 +103,62 @@ class MusicService : MediaSessionService() {
     }
     
     /**
-     * Create notification channel for music playback
+     * Register broadcast receiver for notification button clicks
+     */
+    private fun registerNotificationReceiver() {
+        notificationReceiver = NotificationActionReceiver()
+        val filter = IntentFilter().apply {
+            addAction(ACTION_PLAY)
+            addAction(ACTION_PAUSE)
+            addAction(ACTION_PREV)
+            addAction(ACTION_NEXT)
+            addAction(ACTION_CLOSE)
+        }
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(notificationReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(notificationReceiver, filter)
+        }
+        
+        TXALogger.appD("Notification action receiver registered")
+    }
+    
+    /**
+     * Broadcast receiver for notification actions
+     */
+    inner class NotificationActionReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val currentPlayer = player ?: return
+            
+            when (intent?.action) {
+                ACTION_PLAY -> {
+                    TXALogger.appD("Notification: Play")
+                    currentPlayer.play()
+                }
+                ACTION_PAUSE -> {
+                    TXALogger.appD("Notification: Pause")
+                    currentPlayer.pause()
+                }
+                ACTION_PREV -> {
+                    TXALogger.appD("Notification: Previous")
+                    currentPlayer.seekToPreviousMediaItem()
+                }
+                ACTION_NEXT -> {
+                    TXALogger.appD("Notification: Next")
+                    currentPlayer.seekToNextMediaItem()
+                }
+                ACTION_CLOSE -> {
+                    TXALogger.appD("Notification: Close")
+                    currentPlayer.stop()
+                    stopSelf()
+                }
+            }
+        }
+    }
+    
+    /**
+     * Create notification channel
      */
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
@@ -101,8 +173,6 @@ class MusicService : MediaSessionService() {
         
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(channel)
-        
-        TXALogger.appD("Notification channel created: $CHANNEL_ID")
     }
     
     /**
@@ -120,15 +190,26 @@ class MusicService : MediaSessionService() {
     }
     
     /**
+     * Create action PendingIntent
+     */
+    private fun createActionIntent(action: String): PendingIntent {
+        val intent = Intent(action).setPackage(packageName)
+        return PendingIntent.getBroadcast(
+            this,
+            action.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+    
+    /**
      * Load album art from metadata
      */
     private fun loadAlbumArt(metadata: MediaMetadata) {
-        // Try to get artwork from metadata
         val artworkData = metadata.artworkData
         if (artworkData != null) {
             try {
                 currentAlbumArt = BitmapFactory.decodeByteArray(artworkData, 0, artworkData.size)
-                TXALogger.appD("Album art loaded from metadata")
             } catch (e: Exception) {
                 TXALogger.appE("Failed to decode album art", e)
             }
@@ -137,25 +218,22 @@ class MusicService : MediaSessionService() {
     
     /**
      * Update notification with current playback state
-     * This is auto-converted to Now Bar on Samsung OneUI 7+
      */
     private fun updateNotification() {
         val session = mediaSession ?: return
         val currentPlayer = player ?: return
         
         val metadata = currentPlayer.mediaMetadata
-        val title = metadata.title?.toString() ?: "Unknown"
+        val title = metadata.title?.toString() ?: "TXA Music"
         val artist = metadata.artist?.toString() ?: "Unknown Artist"
         val album = metadata.albumTitle?.toString()
         val isPlaying = currentPlayer.isPlaying
         
-        val notification = buildNotification(session, title, artist, album, isPlaying)
+        val notification = buildNotification(title, artist, album, isPlaying)
         
-        // Start foreground if playing
         if (isPlaying) {
             startForeground(NOTIFICATION_ID, notification)
         } else {
-            // Stop foreground but keep notification
             stopForeground(STOP_FOREGROUND_DETACH)
             val manager = getSystemService(NotificationManager::class.java)
             manager.notify(NOTIFICATION_ID, notification)
@@ -163,10 +241,9 @@ class MusicService : MediaSessionService() {
     }
     
     /**
-     * Build media notification optimized for Samsung Now Bar
+     * Build notification with custom action buttons
      */
     private fun buildNotification(
-        session: MediaSession,
         title: String,
         artist: String,
         album: String?,
@@ -182,24 +259,69 @@ class MusicService : MediaSessionService() {
             .setShowWhen(false)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
+            .setDeleteIntent(createActionIntent(ACTION_CLOSE))
         
-        // Set album as subtext if available
+        // Set album as subtext
         album?.let { builder.setSubText(it) }
         
-        // Set album art (important for Now Bar display)
+        // Set album art
         currentAlbumArt?.let { builder.setLargeIcon(it) }
         
-        // Apply MediaStyle - this is what makes Now Bar work on Samsung
-        // The MediaStyle connects notification controls to MediaSession
-        builder.setStyle(
-            MediaStyleNotificationHelper.MediaStyle(session)
-                .setShowActionsInCompactView(0, 1, 2)
+        // Add action buttons with custom icons
+        // Previous
+        builder.addAction(
+            NotificationCompat.Action.Builder(
+                R.drawable.ic_skip_previous,
+                "Previous",
+                createActionIntent(ACTION_PREV)
+            ).build()
         )
         
-        // Log Samsung optimization
-        if (TXASamsungNowBar.isSamsungDevice()) {
-            TXALogger.appD("Building Now Bar optimized notification")
+        // Play/Pause
+        if (isPlaying) {
+            builder.addAction(
+                NotificationCompat.Action.Builder(
+                    R.drawable.ic_pause,
+                    "Pause",
+                    createActionIntent(ACTION_PAUSE)
+                ).build()
+            )
+        } else {
+            builder.addAction(
+                NotificationCompat.Action.Builder(
+                    R.drawable.ic_play,
+                    "Play",
+                    createActionIntent(ACTION_PLAY)
+                ).build()
+            )
         }
+        
+        // Next
+        builder.addAction(
+            NotificationCompat.Action.Builder(
+                R.drawable.ic_skip_next,
+                "Next",
+                createActionIntent(ACTION_NEXT)
+            ).build()
+        )
+        
+        // Close
+        builder.addAction(
+            NotificationCompat.Action.Builder(
+                R.drawable.ic_close,
+                "Close",
+                createActionIntent(ACTION_CLOSE)
+            ).build()
+        )
+        // Apply MediaStyle for Now Bar
+        // Show first 3 actions (prev, play/pause, next) in compact view
+        builder.setStyle(
+            androidx.media.app.NotificationCompat.MediaStyle()
+                .setMediaSession(mediaSession?.sessionCompatToken as? android.support.v4.media.session.MediaSessionCompat.Token)
+                .setShowActionsInCompactView(0, 1, 2)
+                .setShowCancelButton(true)
+                .setCancelButtonIntent(createActionIntent(ACTION_CLOSE))
+        )
         
         return builder.build()
     }
@@ -209,7 +331,6 @@ class MusicService : MediaSessionService() {
     }
     
     override fun onTaskRemoved(rootIntent: Intent?) {
-        // Stop playback if user swipes away app
         val currentPlayer = player
         if (currentPlayer != null && !currentPlayer.playWhenReady) {
             stopSelf()
@@ -219,6 +340,16 @@ class MusicService : MediaSessionService() {
 
     override fun onDestroy() {
         TXALogger.appI("MusicService: onDestroy")
+        
+        // Unregister receiver
+        notificationReceiver?.let {
+            try {
+                unregisterReceiver(it)
+            } catch (e: Exception) {
+                TXALogger.appE("Failed to unregister receiver", e)
+            }
+        }
+        notificationReceiver = null
         
         mediaSession?.run {
             player.release()
