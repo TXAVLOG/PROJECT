@@ -478,36 +478,23 @@ object TXATranslation {
      */
     private suspend fun getRemoteUpdatedAt(locale: String): String? = withContext(Dispatchers.IO) {
         try {
-            val url = "${TRANSLATION_API_BASE}locales"
+            val url = "${TRANSLATION_API_BASE}tXALocale/$locale"
             val request = Request.Builder().url(url).build()
             
             TXAHttp.client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
                     val body = response.body?.string() ?: ""
-                    if (body.trim().startsWith("[")) {
-                        // Silent return for array format
-                        return@withContext null
-                    }
                     try {
                         val json = JSONObject(body)
-                        if (json.optBoolean("ok")) {
-                            val locales = json.getJSONArray("locales")
-                            for (i in 0 until locales.length()) {
-                                val item = locales.getJSONObject(i)
-                                if (item.getString("code") == locale) {
-                                    return@withContext item.getString("updated_at")
-                                }
-                            }
-                        }
+                        return@withContext json.optString("updated_at", null)
                     } catch (e: Exception) {
-                        // If it's not a valid JSONObject but we have a success response,
-                        // it might just be the array or something else, return null silently
+                        TXALogger.apiE("Failed to parse remote updated_at for $locale", e)
                     }
                 }
                 null
             }
         } catch (e: Exception) {
-            TXALogger.apiE("Failed to get remote updated_at", e)
+            TXALogger.apiE("Failed to get remote updated_at for $locale", e)
             null
         }
     }
@@ -517,7 +504,7 @@ object TXATranslation {
      */
     private suspend fun downloadLocale(locale: String): DownloadResult? = withContext(Dispatchers.IO) {
         try {
-            val url = "${TRANSLATION_API_BASE}locale/$locale"
+            val url = "${TRANSLATION_API_BASE}tXALocale/$locale"
             TXALogger.apiD("Downloading: $url")
             val request = Request.Builder().url(url).build()
             
@@ -535,7 +522,7 @@ object TXATranslation {
                 DownloadResult(translations, updatedAt, rawJson)
             }
         } catch (e: Exception) {
-            TXALogger.apiE("Download failed", e)
+            TXALogger.apiE("Download failed for $locale", e)
             null
         }
     }
