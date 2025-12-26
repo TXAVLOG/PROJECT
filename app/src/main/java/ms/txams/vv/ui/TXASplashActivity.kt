@@ -10,12 +10,24 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import ms.txams.vv.core.TXAFormat
+import ms.txams.vv.core.TXALogger
 import ms.txams.vv.core.TXATranslation
 import ms.txams.vv.data.manager.TXAAudioInjectionManager
 import ms.txams.vv.databinding.ActivitySplashBinding
 import javax.inject.Inject
 
+/**
+ * TXA Splash Activity
+ * 
+ * Flow:
+ * 1. Version Check (Android 13+)
+ * 2. Integrity Check (intro_txa.mp3)
+ * 3. Brief initialization delay
+ * 4. Navigate to Main
+ * 
+ * Note: Translation is already loaded synchronously in TXAApp.onCreate()
+ * txa() is always available and returns text immediately
+ */
 @AndroidEntryPoint
 class TXASplashActivity : AppCompatActivity() {
 
@@ -26,26 +38,29 @@ class TXASplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySplashBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        TXALogger.appI("TXASplashActivity started")
 
-        // Step 1: Version Filtering - Check Android version
+        // Step 1: Version Check
         if (Build.VERSION.SDK_INT < 33) {
+            TXALogger.appW("Android version not supported: ${Build.VERSION.SDK_INT}")
             showIncompatibleDialog()
             return
         }
 
-        // Step 2: Integrity Check - Verify intro_txa.mp3
+        // Step 2: Integrity Check
         if (!performIntegrityCheck()) {
+            TXALogger.appE("Integrity check failed")
             showIntegrityErrorDialog()
             return
         }
 
-        // Step 3: Start Loading Sequence
-        startLoadingSequence()
+        // Step 3: Start initialization sequence
+        startInitSequence()
     }
 
     /**
-     * Version Filtering: Show Material 3 Dialog for incompatible Android versions
-     * Key: txamusic_app_incompatible
+     * Show dialog for incompatible Android version
      */
     private fun showIncompatibleDialog() {
         MaterialAlertDialogBuilder(this)
@@ -59,7 +74,7 @@ class TXASplashActivity : AppCompatActivity() {
     }
 
     /**
-     * Integrity Check: Verify assets/intro_txa.mp3 exists and is valid
+     * Perform integrity check on assets
      */
     private fun performIntegrityCheck(): Boolean {
         updateStatus(TXATranslation.txa("txamusic_splash_checking_permissions"))
@@ -67,12 +82,12 @@ class TXASplashActivity : AppCompatActivity() {
         val integrityResult = audioInjectionManager.getIntegrityDetail()
         
         if (!integrityResult.isValid) {
-            // Log details for debugging
-            android.util.Log.e("TXASplash", "Integrity check failed: ${integrityResult.errorMessage}")
-            android.util.Log.e("TXASplash", "File exists: ${integrityResult.exists}, Size: ${integrityResult.size}, MD5: ${integrityResult.md5Hash}")
+            TXALogger.appE("Integrity check failed: ${integrityResult.errorMessage}")
+            TXALogger.appE("File exists: ${integrityResult.exists}, Size: ${integrityResult.size}, MD5: ${integrityResult.md5Hash}")
             return false
         }
         
+        TXALogger.appD("Integrity check passed: MD5=${integrityResult.md5Hash}")
         return true
     }
 
@@ -91,41 +106,34 @@ class TXASplashActivity : AppCompatActivity() {
     }
 
     /**
-     * Main Loading Sequence with Language Loading and Cache Check
+     * Initialization sequence
+     * - Brief delay for Hilt/ExoPlayer initialization
+     * - Navigate to main activity
      */
-    private fun startLoadingSequence() {
+    private fun startInitSequence() {
         lifecycleScope.launch {
-            // Show progress bar
+            // Show initializing status
+            updateStatus(TXATranslation.txa("txamusic_splash_initializing"))
             binding.progressBar?.visibility = View.VISIBLE
             
-            val result = TXATranslation.loadLanguageWithProgress("en") { current, total, message ->
-                runOnUiThread {
-                    updateStatus(message)
-                    updateProgress(current, total)
-                }
+            // Brief initialization delay (2 seconds for Hilt/ExoPlayer)
+            val totalDelay = 2000L
+            val steps = 20
+            val stepDelay = totalDelay / steps
+            
+            for (i in 1..steps) {
+                delay(stepDelay)
+                val progress = (i * 100) / steps
+                binding.progressBar?.progress = progress
+                binding.tvProgress?.text = "$progress%"
             }
             
-            when (result) {
-                is TXATranslation.LoadResult.Success -> {
-                    if (result.usedFallback) {
-                        // Show fallback notification briefly
-                        updateStatus(TXATranslation.txa("txamusic_splash_connection_error"))
-                        delay(1500)
-                    }
-                    
-                    updateStatus(TXATranslation.txa("txamusic_splash_entering_app"))
-                    delay(500)
-                    
-                    // Navigate to main activity
-                    navigateToMain()
-                }
-                is TXATranslation.LoadResult.Error -> {
-                    updateStatus("${TXATranslation.txa("txamusic_msg_error")}: ${result.message}")
-                    
-                    // Show error dialog with retry option
-                    showErrorDialog(result.message)
-                }
-            }
+            // Ready to navigate
+            updateStatus(TXATranslation.txa("txamusic_splash_entering_app"))
+            TXALogger.appI("Splash complete, navigating to main")
+            
+            delay(300) // Brief pause before navigation
+            navigateToMain()
         }
     }
 
@@ -134,36 +142,6 @@ class TXASplashActivity : AppCompatActivity() {
      */
     private fun updateStatus(message: String) {
         binding.tvStatus.text = message
-    }
-
-    /**
-     * Update progress bar and percentage text
-     */
-    private fun updateProgress(current: Long, total: Long) {
-        binding.progressBar?.let { progressBar ->
-            val progress = if (total > 0) ((current * 100) / total).toInt() else 0
-            progressBar.progress = progress
-        }
-        
-        // Update progress text if available
-        binding.tvProgress?.text = TXAFormat.formatPercent(current, total)
-    }
-
-    /**
-     * Show error dialog with retry option
-     */
-    private fun showErrorDialog(errorMessage: String) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(TXATranslation.txa("txamusic_msg_error"))
-            .setMessage(errorMessage)
-            .setPositiveButton(TXATranslation.txa("txamusic_action_retry")) { _, _ ->
-                startLoadingSequence()
-            }
-            .setNegativeButton(TXATranslation.txa("txamusic_action_close")) { _, _ ->
-                finishAffinity()
-            }
-            .setCancelable(false)
-            .show()
     }
 
     /**

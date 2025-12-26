@@ -1,62 +1,184 @@
 package ms.txams.vv.core
 
 import android.content.Context
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import java.io.File
-import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
 /**
  * TXA Translation Manager
  * 
+ * Architecture:
+ * ```
+ * App Start
+ *   ↓
+ * TXAApp.onCreate()
+ *   ↓ init()
+ * TXATranslation
+ *   ↓ readLocalLocale() → null?
+ *   ↓ YES: loadFallbackStrings()
+ *   ↓ NO: applyPayload(cache)
+ *   ↓
+ * UI Ready (txa() always returns text)
+ *   ↓
+ * Background: syncIfNewer()
+ *   ↓ API check
+ *   ↓ ts > localTs?
+ *   ↓ YES: download + cache + apply
+ *   ↓ NO: keep current
+ * ```
+ * 
  * Fallback Logic (3 layers):
  * 1. OTA Cache (downloaded from API)
  * 2. Hardcoded Fallback Map (embedded in app)
  * 3. Key itself (last resort)
+ * 
+ * @author TXA - fb.com/vlog.txa.2311 - txavlog7@gmail.com
  */
 object TXATranslation {
-    private var otaTranslations: Map<String, String> = emptyMap()
+    
+    // Current translations (from cache or fallback)
+    private var currentTranslations: Map<String, String> = emptyMap()
     private var fallbackTranslations: Map<String, String> = emptyMap()
     private var context: Context? = null
     
-    private val _currentLocale = MutableStateFlow("en")
-    val currentLocale: StateFlow<String> = _currentLocale.asStateFlow()
+    // Current locale and cached updated_at
+    private var currentLocale = "en"
+    private var localUpdatedAt: String? = null
     
-    private val _loadingState = MutableStateFlow(LoadingState.IDLE)
-    val loadingState: StateFlow<LoadingState> = _loadingState.asStateFlow()
+    private val _syncState = MutableStateFlow(SyncState.IDLE)
+    val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
     
-    // API endpoint for translation files - TXAMusic Backend
+    // Background scope for sync
+    private val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    
+    // API endpoint
     private const val TRANSLATION_API_BASE = "https://soft.nrotxa.online/txamusic/api/"
     
     private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
         .build()
 
-    enum class LoadingState {
-        IDLE,
-        CHECKING_CACHE,
-        DOWNLOADING,
-        VERIFYING,
-        COMPLETE,
-        ERROR,
-        USING_FALLBACK
+    enum class SyncState {
+        IDLE,           // Not syncing
+        CHECKING,       // Checking for updates
+        DOWNLOADING,    // Downloading new translations
+        SYNCED,         // Successfully synced
+        USING_CACHE,    // Using cached data
+        USING_FALLBACK, // Using fallback data
+        ERROR           // Sync failed
     }
 
-    fun init(ctx: Context) {
+    /**
+     * Initialize translation system
+     * This is SYNCHRONOUS - UI is ready immediately after this returns
+     * 
+     * Flow:
+     * 1. Load embedded fallback strings
+     * 2. Try to read local cache
+     * 3. If cache exists -> apply it
+     * 4. If no cache -> use fallback
+     * 5. Start background sync
+     */
+    fun init(ctx: Context, locale: String = "en") {
         context = ctx.applicationContext
-        // 1. Load Hardcoded Fallback (Layer 2)
-        loadEmbeddedFallback()
+        currentLocale = locale
+        
+        TXALogger.appI("TXATranslation init (locale: $locale)")
+        
+        // Step 1: Load embedded fallback (always available)
+        loadFallbackStrings()
+        
+        // Step 2: Try to read local cache
+        val cacheData = readLocalLocale(locale)
+        
+        if (cacheData != null) {
+            // Step 3a: Cache exists -> apply it
+            applyPayload(cacheData.translations)
+            localUpdatedAt = cacheData.updatedAt
+            _syncState.value = SyncState.USING_CACHE
+            TXALogger.appI("Using cached translations (updated_at: ${cacheData.updatedAt})")
+        } else {
+            // Step 3b: No cache -> use fallback
+            currentTranslations = fallbackTranslations
+            _syncState.value = SyncState.USING_FALLBACK
+            TXALogger.appI("Using fallback translations (no cache)")
+        }
+        
+        // Step 4: Start background sync
+        syncScope.launch {
+            syncIfNewer(locale)
+        }
     }
 
-    private fun loadEmbeddedFallback() {
+    /**
+     * Get translated string - ALWAYS returns text immediately
+     * 
+     * Fallback order:
+     * 1. currentTranslations (cache or OTA)
+     * 2. fallbackTranslations (embedded)
+     * 3. key itself
+     */
+    fun txa(key: String): String {
+        return currentTranslations[key] 
+            ?: fallbackTranslations[key] 
+            ?: key
+    }
+
+    /**
+     * Read local cached locale data
+     * @return CacheData if exists, null otherwise
+     */
+    private fun readLocalLocale(locale: String): CacheData? {
+        return try {
+            val langCacheDir = TXALogger.getLangCacheDir()
+            val cacheFile = File(langCacheDir, "lang_$locale.json")
+            val updatedAtFile = File(langCacheDir, "lang_${locale}_updated_at.txt")
+            
+            if (!cacheFile.exists()) {
+                TXALogger.appD("No cache file for locale: $locale")
+                return null
+            }
+            
+            val content = cacheFile.readText()
+            val updatedAt = if (updatedAtFile.exists()) updatedAtFile.readText() else null
+            val translations = parseJsonToMap(content)
+            
+            if (translations.isEmpty()) {
+                TXALogger.appW("Cache file empty or invalid for locale: $locale")
+                return null
+            }
+            
+            CacheData(translations, updatedAt)
+        } catch (e: Exception) {
+            TXALogger.appE("Failed to read local cache", e)
+            null
+        }
+    }
+
+    /**
+     * Apply downloaded/cached translations
+     */
+    private fun applyPayload(translations: Map<String, String>) {
+        currentTranslations = translations
+        TXALogger.appD("Applied ${translations.size} translations")
+    }
+
+    /**
+     * Load embedded fallback strings (hardcoded)
+     */
+    private fun loadFallbackStrings() {
         val jsonString = """
 {
   "txamusic_app_name": "TXA Music",
@@ -261,214 +383,83 @@ object TXATranslation {
 """
         try {
             fallbackTranslations = parseJsonToMap(jsonString)
-            // Initialize OTA with fallback if no cache exists
-            if (otaTranslations.isEmpty()) {
-                otaTranslations = fallbackTranslations
-            }
+            TXALogger.appD("Loaded ${fallbackTranslations.size} fallback strings")
         } catch (e: Exception) {
-            e.printStackTrace()
+            TXALogger.appE("Failed to load fallback strings", e)
         }
     }
 
     /**
-     * Get translated string with 3-layer fallback
-     * Layer 1: OTA Cache (downloaded translations)
-     * Layer 2: Hardcoded Fallback (embedded in app)
-     * Layer 3: Key itself (last resort)
-     */
-    fun txa(key: String): String {
-        return otaTranslations[key] 
-            ?: fallbackTranslations[key] 
-            ?: key
-    }
-
-    private fun parseJsonToMap(json: String): Map<String, String> {
-        val map = mutableMapOf<String, String>()
-        try {
-            val jsonObject = JSONObject(json)
-            jsonObject.keys().forEach { key ->
-                map[key] = jsonObject.getString(key)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return map
-    }
-
-    /**
-     * Load language with progress reporting
+     * Background sync - check if newer version available and download
      * 
-     * First Time Scenario:
-     * - Display "Loading language data..."
-     * - Download JSON from API
-     * - If success -> Save Cache -> Enter App
-     * - If error -> Display "Connection error, using fallback data" -> Use Fallback -> Enter App
-     * 
-     * Subsequent Scenario:
-     * - Display "Checking data..."
-     * - Compare MD5 of cache with API
-     * - If match -> Display "Entering app" -> Delay 5s (init Hilt/ExoPlayer) -> Enter App
-     * - If update available -> Run download progress like first time
+     * Flow:
+     * 1. Get remote updated_at from API
+     * 2. Compare with local updated_at
+     * 3. If remote > local: download new translations
+     * 4. Apply new translations
      */
-    suspend fun loadLanguageWithProgress(
-        locale: String, 
-        onProgress: (current: Long, total: Long, message: String) -> Unit
-    ): LoadResult = withContext(Dispatchers.IO) {
-        val ctx = context ?: return@withContext LoadResult.Error("Context not initialized")
-        
-        // Use TXALogger cache dir: Android/data/{package}/files/cache/lang/
-        val langCacheDir = TXALogger.getLangCacheDir()
-        langCacheDir.mkdirs()
-        val cacheFile = File(langCacheDir, "lang_$locale.json")
-        val cacheUpdatedAtFile = File(langCacheDir, "lang_${locale}_updated_at.txt")
-        val isFirstTime = !cacheFile.exists()
-
+    private suspend fun syncIfNewer(locale: String) = withContext(Dispatchers.IO) {
         try {
-            if (isFirstTime) {
-                // First Time Scenario
-                _loadingState.value = LoadingState.DOWNLOADING
-                onProgress(0L, 100L, txa("txamusic_splash_loading_data"))
-                
-                // Try to download from API
-                val downloadResult = downloadTranslationFile(locale) { current, total ->
-                    onProgress(current, total, "${txa("txamusic_splash_downloading_language")} ${TXAFormat.formatPercent(current, total)}")
-                }
-                
-                if (downloadResult != null) {
-                    // Parse response to get updated_at
-                    val json = JSONObject(downloadResult)
-                    val updatedAt = json.optString("updated_at", "")
-                    
-                    // Save to cache
-                    cacheFile.writeText(downloadResult)
-                    cacheUpdatedAtFile.writeText(updatedAt)
-                    TXALogger.apiI("Locale $locale saved to cache (updated_at: $updatedAt)")
-                    
-                    // Parse and use downloaded translations
-                    otaTranslations = parseJsonToMap(downloadResult)
-                    _loadingState.value = LoadingState.COMPLETE
-                    onProgress(100L, 100L, txa("txamusic_splash_language_updated"))
-                    LoadResult.Success(isUpdated = true)
-                } else {
-                    // Download failed, use fallback
-                    _loadingState.value = LoadingState.USING_FALLBACK
-                    onProgress(100L, 100L, txa("txamusic_splash_connection_error"))
-                    // Save fallback to cache for next time
-                    cacheFile.writeText(JSONObject(fallbackTranslations).toString())
-                    cacheUpdatedAtFile.writeText("fallback")
-                    TXALogger.apiW("Using fallback translations")
-                    LoadResult.Success(isUpdated = false, usedFallback = true)
-                }
-            } else {
-                // Subsequent Scenario
-                _loadingState.value = LoadingState.CHECKING_CACHE
-                onProgress(0L, 100L, txa("txamusic_splash_checking_data"))
-                
-                // Load cached translations first
-                val cachedContent = cacheFile.readText()
-                otaTranslations = parseJsonToMap(cachedContent)
-                val cachedUpdatedAt = cacheUpdatedAtFile.takeIf { it.exists() }?.readText() ?: ""
-                
-                // Try to get API updated_at
-                val apiUpdatedAt = getRemoteUpdatedAt(locale)
-                TXALogger.apiD("Cache updated_at: $cachedUpdatedAt, API updated_at: $apiUpdatedAt")
-                
-                if (apiUpdatedAt != null && cachedUpdatedAt != apiUpdatedAt) {
-                    // Update available - download new version
-                    _loadingState.value = LoadingState.DOWNLOADING
-                    val downloadResult = downloadTranslationFile(locale) { current, total ->
-                        onProgress(current, total, "${txa("txamusic_splash_downloading_language")} ${TXAFormat.formatPercent(current, total)}")
-                    }
-                    
-                    if (downloadResult != null) {
-                        // Parse response to get updated_at
-                        val json = JSONObject(downloadResult)
-                        val updatedAt = json.optString("updated_at", apiUpdatedAt ?: "")
-                        
-                        cacheFile.writeText(downloadResult)
-                        cacheUpdatedAtFile.writeText(updatedAt)
-                        otaTranslations = parseJsonToMap(downloadResult)
-                        _loadingState.value = LoadingState.COMPLETE
-                        onProgress(100L, 100L, txa("txamusic_splash_language_updated"))
-                        TXALogger.apiI("Locale $locale updated (updated_at: $updatedAt)")
-                        LoadResult.Success(isUpdated = true)
-                    } else {
-                        // Update download failed, continue with cache
-                        _loadingState.value = LoadingState.COMPLETE
-                        onProgress(100L, 100L, txa("txamusic_splash_entering_app"))
-                        LoadResult.Success(isUpdated = false)
-                    }
-                } else {
-                    // No update needed - proceed to app with initialization delay
-                    _loadingState.value = LoadingState.VERIFYING
-                    onProgress(50L, 100L, txa("txamusic_splash_entering_app"))
-                    
-                    // Simulate initialization delay (5 seconds for Hilt/ExoPlayer)
-                    val delaySteps = 50
-                    val delayPerStep = 100L // 5000ms / 50 = 100ms per step
-                    for (i in 1..delaySteps) {
-                        kotlinx.coroutines.delay(delayPerStep)
-                        onProgress((50 + i).toLong(), 100L, txa("txamusic_splash_initializing"))
-                    }
-                    
-                    _loadingState.value = LoadingState.COMPLETE
-                    onProgress(100L, 100L, txa("txamusic_splash_entering_app"))
-                    LoadResult.Success(isUpdated = false)
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            _loadingState.value = LoadingState.ERROR
-            onProgress(0L, 100L, txa("txamusic_msg_error"))
-            LoadResult.Error(e.message ?: "Unknown error")
-        }
-    }
-
-    private suspend fun downloadTranslationFile(
-        locale: String,
-        onProgress: (current: Long, total: Long) -> Unit
-    ): String? = withContext(Dispatchers.IO) {
-        try {
-            val url = "${TRANSLATION_API_BASE}locale/$locale"
-            TXALogger.apiD("Downloading locale: $url")
-            val request = Request.Builder().url(url).build()
+            _syncState.value = SyncState.CHECKING
+            TXALogger.apiD("Starting background sync for locale: $locale")
             
-            httpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@withContext null
+            // Step 1: Get remote updated_at
+            val remoteUpdatedAt = getRemoteUpdatedAt(locale)
+            
+            if (remoteUpdatedAt == null) {
+                TXALogger.apiW("Could not get remote updated_at, keeping current")
+                _syncState.value = if (localUpdatedAt != null) SyncState.USING_CACHE else SyncState.USING_FALLBACK
+                return@withContext
+            }
+            
+            TXALogger.apiD("Remote updated_at: $remoteUpdatedAt, Local: $localUpdatedAt")
+            
+            // Step 2: Compare timestamps
+            if (localUpdatedAt != null && localUpdatedAt == remoteUpdatedAt) {
+                TXALogger.apiD("Translations up to date, no sync needed")
+                _syncState.value = SyncState.SYNCED
+                return@withContext
+            }
+            
+            // Step 3: Download new translations
+            _syncState.value = SyncState.DOWNLOADING
+            TXALogger.apiI("Downloading new translations...")
+            
+            val newTranslations = downloadLocale(locale)
+            
+            if (newTranslations != null) {
+                // Step 4: Save to cache
+                saveToCache(locale, newTranslations.rawJson, newTranslations.updatedAt)
                 
-                val body = response.body ?: return@withContext null
-                val contentLength = body.contentLength().takeIf { it > 0 } ?: 10000L
+                // Step 5: Apply new translations
+                applyPayload(newTranslations.translations)
+                localUpdatedAt = newTranslations.updatedAt
                 
-                val source = body.source()
-                val buffer = StringBuilder()
-                var bytesRead = 0L
-                val charBuffer = ByteArray(1024)
-                
-                while (true) {
-                    val read = source.read(charBuffer)
-                    if (read == -1) break
-                    
-                    buffer.append(String(charBuffer, 0, read))
-                    bytesRead += read
-                    onProgress(bytesRead, contentLength)
-                }
-                
-                buffer.toString()
+                _syncState.value = SyncState.SYNCED
+                TXALogger.apiI("Translations synced successfully (updated_at: ${newTranslations.updatedAt})")
+            } else {
+                TXALogger.apiW("Download failed, keeping current translations")
+                _syncState.value = SyncState.ERROR
             }
         } catch (e: Exception) {
-            TXALogger.apiE("Failed to download translation file", e)
-            null
+            TXALogger.apiE("Sync failed", e)
+            _syncState.value = SyncState.ERROR
         }
     }
 
     /**
-     * Get remote updated_at timestamp for locale
-     * Calls GET /locales and finds the updated_at for specific locale
+     * Force sync - manually trigger sync
+     */
+    suspend fun forceSync(locale: String = currentLocale) {
+        syncIfNewer(locale)
+    }
+
+    /**
+     * Get remote updated_at from API
      */
     private suspend fun getRemoteUpdatedAt(locale: String): String? = withContext(Dispatchers.IO) {
         try {
             val url = "${TRANSLATION_API_BASE}locales"
-            TXALogger.apiD("Checking locales: $url")
             val request = Request.Builder().url(url).build()
             
             httpClient.newCall(request).execute().use { response ->
@@ -492,20 +483,116 @@ object TXATranslation {
         }
     }
 
-    private fun calculateMD5(content: String): String {
-        return try {
-            val md = MessageDigest.getInstance("MD5")
-            val digest = md.digest(content.toByteArray())
-            digest.joinToString("") { "%02x".format(it) }
+    /**
+     * Download locale from API
+     */
+    private suspend fun downloadLocale(locale: String): DownloadResult? = withContext(Dispatchers.IO) {
+        try {
+            val url = "${TRANSLATION_API_BASE}locale/$locale"
+            TXALogger.apiD("Downloading: $url")
+            val request = Request.Builder().url(url).build()
+            
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    TXALogger.apiE("Download failed: HTTP ${response.code}")
+                    return@withContext null
+                }
+                
+                val rawJson = response.body?.string() ?: return@withContext null
+                val json = JSONObject(rawJson)
+                val updatedAt = json.optString("updated_at", "")
+                val translations = parseJsonToMap(rawJson)
+                
+                DownloadResult(translations, updatedAt, rawJson)
+            }
         } catch (e: Exception) {
-            ""
+            TXALogger.apiE("Download failed", e)
+            null
         }
     }
 
-    sealed class LoadResult {
-        data class Success(val isUpdated: Boolean, val usedFallback: Boolean = false) : LoadResult()
-        data class Error(val message: String) : LoadResult()
+    /**
+     * Save translations to cache
+     */
+    private fun saveToCache(locale: String, rawJson: String, updatedAt: String) {
+        try {
+            val langCacheDir = TXALogger.getLangCacheDir()
+            langCacheDir.mkdirs()
+            
+            val cacheFile = File(langCacheDir, "lang_$locale.json")
+            val updatedAtFile = File(langCacheDir, "lang_${locale}_updated_at.txt")
+            
+            cacheFile.writeText(rawJson)
+            updatedAtFile.writeText(updatedAt)
+            
+            TXALogger.apiD("Saved to cache: ${cacheFile.absolutePath}")
+        } catch (e: Exception) {
+            TXALogger.apiE("Failed to save cache", e)
+        }
     }
+
+    /**
+     * Parse JSON string to Map
+     */
+    private fun parseJsonToMap(json: String): Map<String, String> {
+        val map = mutableMapOf<String, String>()
+        try {
+            val jsonObject = JSONObject(json)
+            jsonObject.keys().forEach { key ->
+                if (key != "updated_at") { // Skip metadata fields
+                    map[key] = jsonObject.getString(key)
+                }
+            }
+        } catch (e: Exception) {
+            TXALogger.appE("Failed to parse JSON", e)
+        }
+        return map
+    }
+
+    /**
+     * Get current locale
+     */
+    fun getCurrentLocale(): String = currentLocale
+
+    /**
+     * Check if using fallback
+     */
+    fun isUsingFallback(): Boolean = _syncState.value == SyncState.USING_FALLBACK
+
+    /**
+     * Get cache info
+     */
+    fun getCacheInfo(): CacheInfo {
+        val langCacheDir = TXALogger.getLangCacheDir()
+        val cacheFile = File(langCacheDir, "lang_$currentLocale.json")
+        return CacheInfo(
+            locale = currentLocale,
+            updatedAt = localUpdatedAt,
+            cacheExists = cacheFile.exists(),
+            cacheSize = if (cacheFile.exists()) cacheFile.length() else 0,
+            translationCount = currentTranslations.size
+        )
+    }
+
+    // Data classes
+    data class CacheData(
+        val translations: Map<String, String>,
+        val updatedAt: String?
+    )
+
+    data class DownloadResult(
+        val translations: Map<String, String>,
+        val updatedAt: String,
+        val rawJson: String
+    )
+
+    data class CacheInfo(
+        val locale: String,
+        val updatedAt: String?,
+        val cacheExists: Boolean,
+        val cacheSize: Long,
+        val translationCount: Int
+    )
 }
 
 // Extension function for easy access
