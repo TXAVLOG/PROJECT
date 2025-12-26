@@ -168,7 +168,12 @@ class TXASettingsActivity : BaseActivity() {
                 val font = getItem(position)
                 if (font != null) {
                     view.text = font.name
-                    view.typeface = androidx.core.content.res.ResourcesCompat.getFont(context, font.resId)
+                    try {
+                        view.typeface = androidx.core.content.res.ResourcesCompat.getFont(this@TXASettingsActivity, font.resId)
+                    } catch (e: Exception) {
+                        // Use default typeface if font fails to load
+                        view.typeface = android.graphics.Typeface.DEFAULT
+                    }
                 }
                 return view
             }

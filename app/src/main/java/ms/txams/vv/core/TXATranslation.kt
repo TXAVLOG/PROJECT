@@ -477,7 +477,12 @@ object TXATranslation {
             
             TXAHttp.client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
-                    val json = JSONObject(response.body?.string() ?: "")
+                    val rawBody = response.body?.string() ?: ""
+                    if (rawBody.trim().startsWith("[")) {
+                        TXALogger.apiD("Locales API returned array list, skipping timestamp check")
+                        return@withContext null
+                    }
+                    val json = JSONObject(rawBody)
                     if (json.optBoolean("ok")) {
                         val locales = json.getJSONArray("locales")
                         for (i in 0 until locales.length()) {
