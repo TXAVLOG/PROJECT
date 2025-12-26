@@ -324,7 +324,7 @@ object TXATranslation {
             if (isFirstTime) {
                 // First Time Scenario
                 _loadingState.value = LoadingState.DOWNLOADING
-                onProgress(0, 100, txa("txamusic_splash_loading_data"))
+                onProgress(0L, 100L, txa("txamusic_splash_loading_data"))
                 
                 // Try to download from API
                 val downloadResult = downloadTranslationFile(locale) { current, total ->
@@ -339,12 +339,12 @@ object TXATranslation {
                     // Parse and use downloaded translations
                     otaTranslations = parseJsonToMap(downloadResult)
                     _loadingState.value = LoadingState.COMPLETE
-                    onProgress(100, 100, txa("txamusic_splash_language_updated"))
+                    onProgress(100L, 100L, txa("txamusic_splash_language_updated"))
                     LoadResult.Success(isUpdated = true)
                 } else {
                     // Download failed, use fallback
                     _loadingState.value = LoadingState.USING_FALLBACK
-                    onProgress(100, 100, txa("txamusic_splash_connection_error"))
+                    onProgress(100L, 100L, txa("txamusic_splash_connection_error"))
                     // Save fallback to cache for next time
                     cacheFile.writeText(JSONObject(fallbackTranslations).toString())
                     cacheHashFile.writeText(calculateMD5(JSONObject(fallbackTranslations).toString()))
@@ -353,7 +353,7 @@ object TXATranslation {
             } else {
                 // Subsequent Scenario
                 _loadingState.value = LoadingState.CHECKING_CACHE
-                onProgress(0, 100, txa("txamusic_splash_checking_data"))
+                onProgress(0L, 100L, txa("txamusic_splash_checking_data"))
                 
                 // Load cached translations first
                 val cachedContent = cacheFile.readText()
@@ -375,36 +375,36 @@ object TXATranslation {
                         cacheHashFile.writeText(calculateMD5(downloadResult))
                         otaTranslations = parseJsonToMap(downloadResult)
                         _loadingState.value = LoadingState.COMPLETE
-                        onProgress(100, 100, txa("txamusic_splash_language_updated"))
+                        onProgress(100L, 100L, txa("txamusic_splash_language_updated"))
                         LoadResult.Success(isUpdated = true)
                     } else {
                         // Update download failed, continue with cache
                         _loadingState.value = LoadingState.COMPLETE
-                        onProgress(100, 100, txa("txamusic_splash_entering_app"))
+                        onProgress(100L, 100L, txa("txamusic_splash_entering_app"))
                         LoadResult.Success(isUpdated = false)
                     }
                 } else {
                     // No update needed - proceed to app with initialization delay
                     _loadingState.value = LoadingState.VERIFYING
-                    onProgress(50, 100, txa("txamusic_splash_entering_app"))
+                    onProgress(50L, 100L, txa("txamusic_splash_entering_app"))
                     
                     // Simulate initialization delay (5 seconds for Hilt/ExoPlayer)
                     val delaySteps = 50
                     val delayPerStep = 100L // 5000ms / 50 = 100ms per step
                     for (i in 1..delaySteps) {
                         kotlinx.coroutines.delay(delayPerStep)
-                        onProgress(50 + i, 100, txa("txamusic_splash_initializing"))
+                        onProgress((50 + i).toLong(), 100L, txa("txamusic_splash_initializing"))
                     }
                     
                     _loadingState.value = LoadingState.COMPLETE
-                    onProgress(100, 100, txa("txamusic_splash_entering_app"))
+                    onProgress(100L, 100L, txa("txamusic_splash_entering_app"))
                     LoadResult.Success(isUpdated = false)
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
             _loadingState.value = LoadingState.ERROR
-            onProgress(0, 100, txa("txamusic_msg_error"))
+            onProgress(0L, 100L, txa("txamusic_msg_error"))
             LoadResult.Error(e.message ?: "Unknown error")
         }
     }
@@ -430,9 +430,9 @@ object TXATranslation {
                 
                 while (true) {
                     val read = source.read(charBuffer)
-                    if (read == -1L) break
+                    if (read == -1) break
                     
-                    buffer.append(String(charBuffer, 0, read.toInt()))
+                    buffer.append(String(charBuffer, 0, read))
                     bytesRead += read
                     onProgress(bytesRead, contentLength)
                 }

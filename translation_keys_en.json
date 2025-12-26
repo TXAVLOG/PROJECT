@@ -8,6 +8,10 @@
   "txamusic_splash_language_updated": "Language updated successfully",
   "txamusic_splash_language_failed": "Failed to update language",
   "txamusic_splash_initializing": "Initializing application...",
+  "txamusic_splash_loading_data": "Loading language data...",
+  "txamusic_splash_checking_data": "Checking data...",
+  "txamusic_splash_entering_app": "Entering app...",
+  "txamusic_splash_connection_error": "Connection error, using fallback data",
   "txamusic_settings_title": "Settings",
   "txamusic_settings_app_info": "Application Information",
   "txamusic_settings_version": "Version",
@@ -190,5 +194,7 @@
   "txamusic_floating_lyrics": "Floating Lyrics",
   "txamusic_now_bar": "Now Bar",
   "txamusic_shared_elements": "Shared Elements",
-  "txamusic_glassmorphism": "Glassmorphism"
+  "txamusic_glassmorphism": "Glassmorphism",
+  "txamusic_app_incompatible": "Your Android version is not yet supported. We will support it soon.",
+  "txamusic_integrity_check_failed": "App integrity check failed. Please reinstall the app."
 }
