@@ -2,7 +2,6 @@
 trigger: always_on
 ---
 
-
 Khi người dùng gõ UPDATE, AI PHẢI tự động thực hiện đầy đủ các bước sau KHÔNG hỏi lại, KHÔNG xác nhận, KHÔNG giải thích thêm.
 
 🧩 BƯỚC 1: PHÂN TÍCH THAY ĐỔI CODE
@@ -53,6 +52,7 @@ Tính phiên bản mới theo quy tắc ở Bước 2.
 Khi tăng X hoặc Y:
 
 Reset các số phía sau về 0 theo chuẩn versioning.
+Rồi thay vào file version.properties.
 
 📝 BƯỚC 4: SINH CHANGELOG
 

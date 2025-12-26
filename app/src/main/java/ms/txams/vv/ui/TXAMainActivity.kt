@@ -151,8 +151,9 @@ class TXAMainActivity : BaseActivity() {
             return
         }
 
-        val title = currentMedia.mediaMetadata.title?.toString() ?: "Unknown"
-        val artist = currentMedia.mediaMetadata.artist?.toString() ?: "Unknown"
+        val unknown = TXATranslation.txa("txamusic_unknown")
+        val title = currentMedia.mediaMetadata.title?.toString() ?: unknown
+        val artist = currentMedia.mediaMetadata.artist?.toString() ?: unknown
         val artworkUri = currentMedia.mediaMetadata.artworkUri
         
         binding.tvNowPlayingTitle.text = title
@@ -228,7 +229,7 @@ class TXAMainActivity : BaseActivity() {
                         // Handled by position update
                     }
                     is ms.txams.vv.data.manager.LyricsState.NotFound -> {
-                        binding.tvLyricsPlaceholder.text = "Lyrics not found"
+                        binding.tvLyricsPlaceholder.text = TXATranslation.txa("txamusic_lyrics_not_found")
                     }
                     else -> {}
                 }

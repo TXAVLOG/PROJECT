@@ -64,6 +64,8 @@ class TXAMusicLibraryActivity : BaseActivity() {
         setupRecyclerView()
         observeData()
         checkPermissionAndScan()
+
+        binding.tvEmpty.text = TXATranslation.txa("txamusic_library_empty")
     }
     
     override fun onStart() {
@@ -87,7 +89,7 @@ class TXAMusicLibraryActivity : BaseActivity() {
     private fun playSong(song: SongEntity) {
         val player = mediaController
         if (player == null) {
-            Toast.makeText(this, "Service not ready", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, TXATranslation.txa("txamusic_service_not_ready"), Toast.LENGTH_SHORT).show()
             return
         }
         
@@ -108,7 +110,7 @@ class TXAMusicLibraryActivity : BaseActivity() {
         player.play()
         
         // Show simplified feedback
-        Toast.makeText(this, "Playing: ${song.title}", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, TXATranslation.txa("txamusic_playing").format(song.title), Toast.LENGTH_SHORT).show()
     }
 
     private fun setupRecyclerView() {

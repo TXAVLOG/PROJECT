@@ -79,9 +79,9 @@ class TXASettingsActivity : BaseActivity() {
     private fun setupThemeSection() {
         val currentTheme = getSavedThemeMode()
         binding.tvCurrentTheme.text = when (currentTheme) {
-            THEME_LIGHT -> "Light"
-            THEME_DARK -> "Dark"
-            else -> "System Default"
+            THEME_LIGHT -> TXATranslation.txa("txamusic_theme_light")
+            THEME_DARK -> TXATranslation.txa("txamusic_theme_dark")
+            else -> TXATranslation.txa("txamusic_theme_system")
         }
         
         binding.layoutTheme.setOnClickListener {
@@ -91,9 +91,9 @@ class TXASettingsActivity : BaseActivity() {
     
     private fun showThemeSelectionDialog() {
         val themes = arrayOf(
-            "System Default",
-            "Light",
-            "Dark"
+            TXATranslation.txa("txamusic_theme_system"),
+            TXATranslation.txa("txamusic_theme_light"),
+            TXATranslation.txa("txamusic_theme_dark")
         )
         
         val currentTheme = getSavedThemeMode()
@@ -104,7 +104,7 @@ class TXASettingsActivity : BaseActivity() {
         }
         
         MaterialAlertDialogBuilder(this)
-            .setTitle("Theme")
+            .setTitle(TXATranslation.txa("txamusic_theme_title"))
             .setSingleChoiceItems(themes, checkedItem) { dialog, which ->
                 val selectedTheme = when (which) {
                     1 -> THEME_LIGHT
@@ -195,12 +195,12 @@ class TXASettingsActivity : BaseActivity() {
         binding.tvCurrentFont.text = font.name
         
         MaterialAlertDialogBuilder(this)
-            .setTitle("Apply Font")
-            .setMessage("App needs to restart to apply new font style.")
-            .setPositiveButton("Restart Now") { _, _ ->
+            .setTitle(TXATranslation.txa("txamusic_font_apply_title"))
+            .setMessage(TXATranslation.txa("txamusic_font_apply_message"))
+            .setPositiveButton(TXATranslation.txa("txamusic_font_restart_now")) { _, _ ->
                 restartApp()
             }
-            .setNegativeButton("Later", null)
+            .setNegativeButton(TXATranslation.txa("txamusic_font_later"), null)
             .show()
     }
 
@@ -272,7 +272,7 @@ class TXASettingsActivity : BaseActivity() {
                 TXATranslation.forceSync(locale.code)
                 restartApp()
             } catch (e: Exception) {
-                Toast.makeText(this@TXASettingsActivity, "Failed to change language", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@TXASettingsActivity, TXATranslation.txa("txamusic_error_lang_change"), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -323,8 +323,8 @@ class TXASettingsActivity : BaseActivity() {
                         loadingDialog.dismiss()
                         MaterialAlertDialogBuilder(this@TXASettingsActivity)
                             .setTitle(TXATranslation.txa("txamusic_update_not_available"))
-                            .setMessage("You are using the latest version.")
-                            .setPositiveButton("OK", null)
+                            .setMessage(TXATranslation.txa("txamusic_update_latest"))
+                            .setPositiveButton(TXATranslation.txa("txamusic_action_ok"), null)
                             .show()
                     }
                     is UpdateCheckResult.Error -> {
@@ -335,7 +335,7 @@ class TXASettingsActivity : BaseActivity() {
             } catch (e: Exception) {
                 loadingDialog.dismiss()
                 TXALogger.appE("Update check failed", e)
-                Toast.makeText(this@TXASettingsActivity, "Update check failed", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@TXASettingsActivity, TXATranslation.txa("txamusic_error_update_check_failed"), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -360,7 +360,7 @@ class TXASettingsActivity : BaseActivity() {
     private fun startUpdateDownload(updateInfo: ms.txams.vv.update.UpdateInfo) {
         val progressDialog = MaterialAlertDialogBuilder(this)
             .setTitle(TXATranslation.txa("txamusic_update_downloading"))
-            .setMessage("Please wait...")
+            .setMessage(TXATranslation.txa("txamusic_msg_please_wait"))
             .setCancelable(false)
             .create()
             
@@ -401,7 +401,7 @@ class TXASettingsActivity : BaseActivity() {
         binding.btnViewLogs.setOnClickListener { showLogsDialog() }
         binding.btnClearLogs.setOnClickListener {
             TXALogger.clearAllLogs()
-            Toast.makeText(this, "Logs cleared", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, TXATranslation.txa("txamusic_msg_logs_cleared"), Toast.LENGTH_SHORT).show()
         }
     }
     
@@ -413,9 +413,9 @@ class TXASettingsActivity : BaseActivity() {
             
             withContext(Dispatchers.Main) {
                 MaterialAlertDialogBuilder(this@TXASettingsActivity)
-                    .setTitle("Logs")
-                    .setMessage(logSummary.ifEmpty { "No logs found" })
-                    .setPositiveButton("Close", null)
+                    .setTitle(TXATranslation.txa("txamusic_logs_title"))
+                    .setMessage(logSummary.ifEmpty { TXATranslation.txa("txamusic_logs_empty") })
+                    .setPositiveButton(TXATranslation.txa("txamusic_action_close"), null)
                     .show()
             }
         }
