@@ -1,5 +1,6 @@
 package ms.txams.vv.ui
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -10,6 +11,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import ms.txams.vv.core.TXAApp
 import ms.txams.vv.core.TXALogger
 import ms.txams.vv.core.TXATranslation
 import ms.txams.vv.data.manager.TXAAudioInjectionManager
@@ -20,13 +22,15 @@ import javax.inject.Inject
  * TXA Splash Activity
  * 
  * Flow:
- * 1. Version Check (Android 13+)
+ * 1. Version Check (Android 13+) - FIRST, before anything else
  * 2. Integrity Check (intro_txa.mp3)
  * 3. Brief initialization delay
  * 4. Navigate to Main
  * 
- * Note: Translation is already loaded synchronously in TXAApp.onCreate()
- * txa() is always available and returns text immediately
+ * If device is not supported, show dialog and exit.
+ * Translation is already loaded in TXAApp.onCreate()
+ * 
+ * @author TXA - fb.com/vlog.txa.2311 - txavlog7@gmail.com
  */
 @AndroidEntryPoint
 class TXASplashActivity : AppCompatActivity() {
@@ -36,41 +40,59 @@ class TXASplashActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Step 0: Check device support IMMEDIATELY (before any other code)
+        if (!TXAApp.isDeviceSupported()) {
+            // Show unsupported dialog using basic AlertDialog (not Material)
+            // because Material components might not work on old Android
+            showUnsupportedDialogAndExit()
+            return
+        }
+        
         binding = ActivitySplashBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
         TXALogger.appI("TXASplashActivity started")
 
-        // Step 1: Version Check
-        if (Build.VERSION.SDK_INT < 33) {
-            TXALogger.appW("Android version not supported: ${Build.VERSION.SDK_INT}")
-            showIncompatibleDialog()
-            return
-        }
-
-        // Step 2: Integrity Check
+        // Step 1: Integrity Check
         if (!performIntegrityCheck()) {
             TXALogger.appE("Integrity check failed")
             showIntegrityErrorDialog()
             return
         }
 
-        // Step 3: Start initialization sequence
+        // Step 2: Start initialization sequence
         startInitSequence()
     }
 
     /**
-     * Show dialog for incompatible Android version
+     * Show unsupported device dialog and exit
+     * Uses basic AlertDialog for maximum compatibility with old Android versions
      */
-    private fun showIncompatibleDialog() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(TXATranslation.txa("txamusic_msg_warning"))
-            .setMessage(TXATranslation.txa("txamusic_app_incompatible"))
-            .setPositiveButton(TXATranslation.txa("txamusic_action_ok")) { _, _ ->
-                finishAffinity()
-            }
-            .setCancelable(false)
-            .show()
+    private fun showUnsupportedDialogAndExit() {
+        try {
+            // Use basic AlertDialog for compatibility
+            AlertDialog.Builder(this)
+                .setTitle("Not Supported")
+                .setMessage(TXAApp.getUnsupportedMessage())
+                .setPositiveButton("OK") { _, _ ->
+                    finishAffinity()
+                }
+                .setCancelable(false)
+                .setOnDismissListener {
+                    finishAffinity()
+                }
+                .show()
+        } catch (e: Exception) {
+            // If dialog fails, just log and exit
+            TXALogger.appE("Failed to show unsupported dialog", e)
+            android.widget.Toast.makeText(
+                this,
+                "Android ${Build.VERSION.RELEASE} is not supported. TXA Music requires Android 13+",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+            finishAffinity()
+        }
     }
 
     /**
@@ -79,30 +101,40 @@ class TXASplashActivity : AppCompatActivity() {
     private fun performIntegrityCheck(): Boolean {
         updateStatus(TXATranslation.txa("txamusic_splash_checking_permissions"))
         
-        val integrityResult = audioInjectionManager.getIntegrityDetail()
-        
-        if (!integrityResult.isValid) {
-            TXALogger.appE("Integrity check failed: ${integrityResult.errorMessage}")
-            TXALogger.appE("File exists: ${integrityResult.exists}, Size: ${integrityResult.size}, MD5: ${integrityResult.md5Hash}")
-            return false
+        return try {
+            val integrityResult = audioInjectionManager.getIntegrityDetail()
+            
+            if (!integrityResult.isValid) {
+                TXALogger.appE("Integrity check failed: ${integrityResult.errorMessage}")
+                TXALogger.appE("File exists: ${integrityResult.exists}, Size: ${integrityResult.size}, MD5: ${integrityResult.md5Hash}")
+                false
+            } else {
+                TXALogger.appD("Integrity check passed: MD5=${integrityResult.md5Hash}")
+                true
+            }
+        } catch (e: Exception) {
+            TXALogger.appE("Integrity check exception", e)
+            false
         }
-        
-        TXALogger.appD("Integrity check passed: MD5=${integrityResult.md5Hash}")
-        return true
     }
 
     /**
      * Show dialog when integrity check fails
      */
     private fun showIntegrityErrorDialog() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(TXATranslation.txa("txamusic_msg_error"))
-            .setMessage(TXATranslation.txa("txamusic_integrity_check_failed"))
-            .setPositiveButton(TXATranslation.txa("txamusic_action_ok")) { _, _ ->
-                finishAffinity()
-            }
-            .setCancelable(false)
-            .show()
+        try {
+            MaterialAlertDialogBuilder(this)
+                .setTitle(TXATranslation.txa("txamusic_msg_error"))
+                .setMessage(TXATranslation.txa("txamusic_integrity_check_failed"))
+                .setPositiveButton(TXATranslation.txa("txamusic_action_ok")) { _, _ ->
+                    finishAffinity()
+                }
+                .setCancelable(false)
+                .show()
+        } catch (e: Exception) {
+            TXALogger.appE("Failed to show integrity error dialog", e)
+            finishAffinity()
+        }
     }
 
     /**
@@ -112,28 +144,34 @@ class TXASplashActivity : AppCompatActivity() {
      */
     private fun startInitSequence() {
         lifecycleScope.launch {
-            // Show initializing status
-            updateStatus(TXATranslation.txa("txamusic_splash_initializing"))
-            binding.progressBar?.visibility = View.VISIBLE
-            
-            // Brief initialization delay (2 seconds for Hilt/ExoPlayer)
-            val totalDelay = 2000L
-            val steps = 20
-            val stepDelay = totalDelay / steps
-            
-            for (i in 1..steps) {
-                delay(stepDelay)
-                val progress = (i * 100) / steps
-                binding.progressBar?.progress = progress
-                binding.tvProgress?.text = "$progress%"
+            try {
+                // Show initializing status
+                updateStatus(TXATranslation.txa("txamusic_splash_initializing"))
+                binding.progressBar?.visibility = View.VISIBLE
+                
+                // Brief initialization delay (2 seconds for Hilt/ExoPlayer)
+                val totalDelay = 2000L
+                val steps = 20
+                val stepDelay = totalDelay / steps
+                
+                for (i in 1..steps) {
+                    delay(stepDelay)
+                    val progress = (i * 100) / steps
+                    binding.progressBar?.progress = progress
+                    binding.tvProgress?.text = "$progress%"
+                }
+                
+                // Ready to navigate
+                updateStatus(TXATranslation.txa("txamusic_splash_entering_app"))
+                TXALogger.appI("Splash complete, navigating to main")
+                
+                delay(300) // Brief pause before navigation
+                navigateToMain()
+            } catch (e: Exception) {
+                TXALogger.appE("Init sequence failed", e)
+                // Try to navigate anyway
+                navigateToMain()
             }
-            
-            // Ready to navigate
-            updateStatus(TXATranslation.txa("txamusic_splash_entering_app"))
-            TXALogger.appI("Splash complete, navigating to main")
-            
-            delay(300) // Brief pause before navigation
-            navigateToMain()
         }
     }
 
@@ -141,14 +179,23 @@ class TXASplashActivity : AppCompatActivity() {
      * Update status text
      */
     private fun updateStatus(message: String) {
-        binding.tvStatus.text = message
+        try {
+            binding.tvStatus.text = message
+        } catch (e: Exception) {
+            // Ignore if binding not ready
+        }
     }
 
     /**
      * Navigate to main activity
      */
     private fun navigateToMain() {
-        startActivity(Intent(this@TXASplashActivity, TXAMainActivity::class.java))
-        finish()
+        try {
+            startActivity(Intent(this@TXASplashActivity, TXAMainActivity::class.java))
+            finish()
+        } catch (e: Exception) {
+            TXALogger.appE("Failed to navigate to main", e)
+            finishAffinity()
+        }
     }
 }

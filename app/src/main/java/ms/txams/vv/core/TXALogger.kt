@@ -1,12 +1,9 @@
 package ms.txams.vv.core
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Environment
 import android.util.Log
-import androidx.core.content.ContextCompat
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
@@ -23,112 +20,125 @@ import java.util.Locale
  * - Max file size 1MB (auto-rotate)
  * - Log types: CRASH, APP, API, DOWNLOAD
  * - ADB tag format: TXA+{type} (e.g., TXACRASH, TXAAPP, TXAAPI, TXADOWNLOAD)
- * - Storage: 
- *   - With permission: {APP_NAME}/logs/
- *   - Without permission: Android/data/{package}/files/logs/
+ * - Storage: Always uses app-specific storage (no extra permission needed)
+ *   - Android/data/{package}/files/logs/
+ *   - Android/data/{package}/files/cache/lang/
+ * 
+ * Compatibility: Android 6+ (API 23+)
  * 
  * @author TXA - fb.com/vlog.txa.2311 - txavlog7@gmail.com
  */
 object TXALogger {
     
     private const val MAX_FILE_SIZE_BYTES = 1 * 1024 * 1024 // 1MB
-    private const val APP_FOLDER_NAME = "TXA Music"
     private const val LOGS_FOLDER = "logs"
     private const val CACHE_FOLDER = "cache"
     private const val LANG_CACHE_FOLDER = "lang"
     
     private var context: Context? = null
-    private var hasStoragePermission = false
+    private var isInitialized = false
     
-    // Log types
+    // Log types with ADB tags
     enum class LogType(val tag: String, val prefix: String) {
         CRASH("TXACRASH", "crash"),
         APP("TXAAPP", "app"),
         API("TXAAPI", "api"),
         DOWNLOAD("TXADOWNLOAD", "download")
     }
-    
+
     /**
      * Initialize logger with context
+     * Safe to call multiple times
      */
     fun init(ctx: Context) {
-        context = ctx.applicationContext
-        hasStoragePermission = checkStoragePermission()
+        if (isInitialized) return
         
-        // Setup uncaught exception handler for crash logs
-        setupCrashHandler()
-        
-        // Create necessary directories
-        createDirectories()
-        
-        d(LogType.APP, "TXALogger initialized. Storage permission: $hasStoragePermission")
-    }
-    
-    /**
-     * Update permission status (call after permission granted)
-     */
-    fun updatePermissionStatus() {
-        hasStoragePermission = checkStoragePermission()
-        createDirectories()
-        d(LogType.APP, "Permission status updated: $hasStoragePermission")
-    }
-    
-    /**
-     * Check if storage permission is granted
-     */
-    private fun checkStoragePermission(): Boolean {
-        val ctx = context ?: return false
-        
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // Android 11+ - check MANAGE_EXTERNAL_STORAGE
-            Environment.isExternalStorageManager()
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // Android 6-10 - check WRITE_EXTERNAL_STORAGE
-            ContextCompat.checkSelfPermission(ctx, Manifest.permission.WRITE_EXTERNAL_STORAGE) == 
-                PackageManager.PERMISSION_GRANTED
-        } else {
-            // Android 5 and below - permission granted by default
-            true
+        try {
+            context = ctx.applicationContext
+            
+            // Setup uncaught exception handler for crash logs
+            setupCrashHandler()
+            
+            // Create directories safely
+            createDirectoriesSafe()
+            
+            isInitialized = true
+            d(LogType.APP, "TXALogger initialized successfully")
+        } catch (e: Exception) {
+            // Log to logcat only if init fails
+            Log.e("TXAAPP", "TXALogger init failed: ${e.message}", e)
         }
     }
     
     /**
-     * Check if permission is needed
+     * Check if logger is initialized
      */
-    fun needsPermission(): Boolean {
-        return !hasStoragePermission
-    }
-    
+    fun isReady(): Boolean = isInitialized && context != null
+
     /**
-     * Get logs directory path
+     * Get logs directory path - SAFE, handles null
+     * Path: Android/data/{package}/files/logs/
      */
-    fun getLogsDir(): File {
-        val ctx = context ?: throw IllegalStateException("TXALogger not initialized")
+    fun getLogsDir(): File? {
+        val ctx = context ?: return null
         
-        return if (hasStoragePermission) {
-            // With permission: /storage/emulated/0/TXA Music/logs/
-            File(Environment.getExternalStorageDirectory(), "$APP_FOLDER_NAME/$LOGS_FOLDER")
-        } else {
-            // Without permission: Android/data/{package}/files/logs/
-            File(ctx.getExternalFilesDir(null), LOGS_FOLDER)
+        return try {
+            // Use app-specific external storage (no permission needed on Android 4.4+)
+            val filesDir = ctx.getExternalFilesDir(null)
+            if (filesDir != null) {
+                File(filesDir, LOGS_FOLDER)
+            } else {
+                // Fallback to internal storage if external not available
+                File(ctx.filesDir, LOGS_FOLDER)
+            }
+        } catch (e: Exception) {
+            Log.e("TXAAPP", "getLogsDir failed: ${e.message}")
+            // Ultimate fallback to internal storage
+            try {
+                File(ctx.filesDir, LOGS_FOLDER)
+            } catch (e2: Exception) {
+                null
+            }
         }
     }
     
     /**
-     * Get language cache directory (always in app-specific storage)
+     * Get language cache directory - SAFE, handles null
      * Path: Android/data/{package}/files/cache/lang/
+     * 
+     * NOTE: This is app-specific storage, no special permission needed on Android 4.4+
      */
     fun getLangCacheDir(): File {
-        val ctx = context ?: throw IllegalStateException("TXALogger not initialized")
-        return File(ctx.getExternalFilesDir(null), "$CACHE_FOLDER/$LANG_CACHE_FOLDER")
+        val ctx = context ?: throw IllegalStateException("TXALogger not initialized. Call TXALogger.init() first.")
+        
+        return try {
+            val filesDir = ctx.getExternalFilesDir(null)
+            if (filesDir != null) {
+                File(filesDir, "$CACHE_FOLDER/$LANG_CACHE_FOLDER")
+            } else {
+                // Fallback to internal storage
+                File(ctx.filesDir, "$CACHE_FOLDER/$LANG_CACHE_FOLDER")
+            }
+        } catch (e: Exception) {
+            Log.e("TXAAPP", "getLangCacheDir failed, using internal: ${e.message}")
+            // Ultimate fallback to internal storage
+            File(ctx.filesDir, "$CACHE_FOLDER/$LANG_CACHE_FOLDER")
+        }
     }
     
     /**
-     * Create necessary directories
+     * Get internal cache directory (always available)
      */
-    private fun createDirectories() {
+    fun getInternalCacheDir(): File? {
+        return context?.cacheDir
+    }
+
+    /**
+     * Create necessary directories safely
+     */
+    private fun createDirectoriesSafe() {
         try {
-            getLogsDir().mkdirs()
+            getLogsDir()?.mkdirs()
             getLangCacheDir().mkdirs()
         } catch (e: Exception) {
             Log.e("TXAAPP", "Failed to create directories: ${e.message}")
@@ -143,7 +153,7 @@ object TXALogger {
         
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {
-                // Log crash
+                // Log crash to file and logcat
                 crash("Uncaught exception in thread ${thread.name}", throwable)
             } catch (e: Exception) {
                 Log.e("TXACRASH", "Failed to log crash: ${e.message}")
@@ -157,20 +167,26 @@ object TXALogger {
     /**
      * Get log file for specific type and date
      */
-    private fun getLogFile(type: LogType): File {
-        val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.US)
-        val dateStr = dateFormat.format(Date())
-        val fileName = "TXA_${type.prefix}_$dateStr.log"
-        return File(getLogsDir(), fileName)
+    private fun getLogFile(type: LogType): File? {
+        val logsDir = getLogsDir() ?: return null
+        
+        return try {
+            val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.US)
+            val dateStr = dateFormat.format(Date())
+            val fileName = "TXA_${type.prefix}_$dateStr.log"
+            File(logsDir, fileName)
+        } catch (e: Exception) {
+            null
+        }
     }
     
     /**
-     * Write log to file
+     * Write log to file - SAFE, handles all errors
      */
     @Synchronized
     private fun writeToFile(type: LogType, level: String, message: String, throwable: Throwable? = null) {
         try {
-            val logFile = getLogFile(type)
+            val logFile = getLogFile(type) ?: return
             
             // Check file size, rotate if needed
             if (logFile.exists() && logFile.length() > MAX_FILE_SIZE_BYTES) {
@@ -199,7 +215,8 @@ object TXALogger {
                 fos.write(logEntry.toString().toByteArray())
             }
         } catch (e: Exception) {
-            Log.e(type.tag, "Failed to write log: ${e.message}")
+            // Silent fail - don't crash app because of logging failure
+            Log.e(type.tag, "Failed to write log to file: ${e.message}")
         }
     }
     
@@ -210,7 +227,9 @@ object TXALogger {
      */
     fun d(type: LogType, message: String) {
         Log.d(type.tag, message)
-        writeToFile(type, "DEBUG", message)
+        if (isInitialized) {
+            writeToFile(type, "DEBUG", message)
+        }
     }
     
     /**
@@ -218,7 +237,9 @@ object TXALogger {
      */
     fun i(type: LogType, message: String) {
         Log.i(type.tag, message)
-        writeToFile(type, "INFO", message)
+        if (isInitialized) {
+            writeToFile(type, "INFO", message)
+        }
     }
     
     /**
@@ -230,7 +251,9 @@ object TXALogger {
         } else {
             Log.w(type.tag, message)
         }
-        writeToFile(type, "WARN", message, throwable)
+        if (isInitialized) {
+            writeToFile(type, "WARN", message, throwable)
+        }
     }
     
     /**
@@ -242,15 +265,23 @@ object TXALogger {
         } else {
             Log.e(type.tag, message)
         }
-        writeToFile(type, "ERROR", message, throwable)
+        if (isInitialized) {
+            writeToFile(type, "ERROR", message, throwable)
+        }
     }
     
     /**
      * Crash log (always writes, even during startup)
+     * This logs to both file and logcat
      */
     fun crash(message: String, throwable: Throwable) {
         Log.e(LogType.CRASH.tag, message, throwable)
-        writeToFile(LogType.CRASH, "CRASH", message, throwable)
+        // Try to write even if not fully initialized
+        try {
+            writeToFile(LogType.CRASH, "CRASH", message, throwable)
+        } catch (e: Exception) {
+            Log.e(LogType.CRASH.tag, "Could not write crash to file: ${e.message}")
+        }
     }
     
     // ==================== Shortcut Methods ====================
@@ -280,7 +311,7 @@ object TXALogger {
      */
     fun getAllLogFiles(): List<File> {
         return try {
-            getLogsDir().listFiles()?.filter { it.isFile && it.name.endsWith(".log") } ?: emptyList()
+            getLogsDir()?.listFiles()?.filter { it.isFile && it.name.endsWith(".log") } ?: emptyList()
         } catch (e: Exception) {
             emptyList()
         }
@@ -297,7 +328,9 @@ object TXALogger {
      * Clear all log files
      */
     fun clearAllLogs() {
-        getAllLogFiles().forEach { it.delete() }
+        getAllLogFiles().forEach { 
+            try { it.delete() } catch (e: Exception) { /* ignore */ }
+        }
         appI("All logs cleared")
     }
     
@@ -307,10 +340,27 @@ object TXALogger {
     fun clearOldLogs(daysToKeep: Int = 7) {
         val cutoffTime = System.currentTimeMillis() - (daysToKeep * 24 * 60 * 60 * 1000L)
         getAllLogFiles().forEach { file ->
-            if (file.lastModified() < cutoffTime) {
-                file.delete()
-            }
+            try {
+                if (file.lastModified() < cutoffTime) {
+                    file.delete()
+                }
+            } catch (e: Exception) { /* ignore */ }
         }
         appI("Old logs cleared (kept last $daysToKeep days)")
+    }
+    
+    /**
+     * Get device and app info for debugging
+     */
+    fun getDeviceInfo(): String {
+        return buildString {
+            appendLine("=== Device Info ===")
+            appendLine("Device: ${Build.MANUFACTURER} ${Build.MODEL}")
+            appendLine("Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
+            appendLine("Storage State: ${Environment.getExternalStorageState()}")
+            appendLine("Logs Dir: ${getLogsDir()?.absolutePath ?: "null"}")
+            appendLine("Cache Dir: ${getLangCacheDir().absolutePath}")
+            appendLine("==================")
+        }
     }
 }
