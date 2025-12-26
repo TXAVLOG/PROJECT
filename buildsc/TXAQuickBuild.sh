@@ -144,7 +144,11 @@ git config user.name "$GIT_NAME"
 # Force add APK file bypassing gitignore
 git add -f "$OUTPUT_FILE"
 git commit -m "build: TXAMusic-$VERSION_NAME-$BUILD_TYPE" || true
-git push origin main || true
+
+# Auto-detect current branch and push
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+log_info "Pushing to branch: $CURRENT_BRANCH"
+git push origin "$CURRENT_BRANCH" || true
 
 log_success "Build completed!"
 log_info "Output: $OUTPUT_FILE"

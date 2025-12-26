@@ -151,7 +151,11 @@ function Publish-Repository {
     
     & git add $APKFile
     & git commit -m "build: TXAMusic-$VersionName-$BuildType" > $null 2>&1
-    & git push origin main > $null 2>&1
+    
+    # Auto-detect current branch and push
+    $CurrentBranch = (& git rev-parse --abbrev-ref HEAD).Trim()
+    Write-Info "Pushing to branch: $CurrentBranch"
+    & git push origin $CurrentBranch > $null 2>&1
     
     if ($LASTEXITCODE -eq 0) {
         Write-Success "Uploaded to repository"
