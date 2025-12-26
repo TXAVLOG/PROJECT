@@ -8,15 +8,15 @@
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
     
-    <!-- TXA Brand Colors -->
+    <!-- TXA Brand Colors - Light Mode -->
     <color name="txa_primary">#FF6750A4</color>
     <color name="txa_primary_variant">#FF7F67BE</color>
     <color name="txa_secondary">#FF625B71</color>
-    <color name="txa_background">#FF1C1B1F</color>
-    <color name="txa_surface">#FF2B2930</color>
-    <color name="txa_on_background">#FFE6E1E5</color>
-    <color name="txa_on_surface">#FFE6E1E5</color>
-    <color name="txa_on_surface_variant">#FF938F99</color>
-    <color name="txa_error">#FFF2B8B5</color>
-    <color name="txa_accent">#FFD0BCFF</color>
+    <color name="txa_background">#FFFFFBFF</color>
+    <color name="txa_surface">#FFFEF7FF</color>
+    <color name="txa_on_background">#FF1C1B1F</color>
+    <color name="txa_on_surface">#FF1C1B1F</color>
+    <color name="txa_on_surface_variant">#FF49454F</color>
+    <color name="txa_error">#FFB3261E</color>
+    <color name="txa_accent">#FF6750A4</color>
 </resources>

@@ -71,8 +71,9 @@ class TXAApp : Application() {
         
         // Step 3: Initialize translation system (sync - instant)
         try {
-            TXATranslation.init(this)
-            TXALogger.appI("Translation system initialized")
+            val locale = prefs.getString("locale", "en") ?: "en"
+            TXATranslation.init(this, locale)
+            TXALogger.appI("Translation system initialized for: $locale")
         } catch (e: Exception) {
             TXALogger.appE("Translation init failed", e)
             // App can still work with fallback strings

@@ -13,6 +13,13 @@
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         
+        <!-- Surface and Background -->
+        <item name="android:windowBackground">@color/txa_background</item>
+        <item name="colorSurface">@color/txa_surface</item>
+        <item name="colorOnSurface">@color/txa_on_surface</item>
+        <item name="android:textColorPrimary">@color/txa_on_background</item>
+        <item name="android:textColorSecondary">@color/txa_on_surface_variant</item>
+        
         <!-- Custom Fonts -->
         <!-- Default font (Vietnamese) -->
         <item name="fontFamily">@font/soyuz_grotesk</item>
@@ -27,8 +34,8 @@
 
     <!-- Style for English text (apply manually where needed) -->
     <style name="TextAppearance.TXA.English" parent="TextAppearance.TXA">
-        <item name="fontFamily">@font/lobster</item>
-        <item name="android:fontFamily">@font/lobster</item>
+        <item name="fontFamily">@font/outfit</item>
+        <item name="android:fontFamily">@font/outfit</item>
     </style>
     
     <style name="Theme.TXAMusic.Splash" parent="Theme.TXAMusic">
