@@ -50,6 +50,7 @@
                     android:padding="16dp">
 
                     <TextView
+                        android:id="@+id/tvAppInfoTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Application Information"
@@ -72,6 +73,7 @@
                         android:layout_marginBottom="8dp">
 
                         <TextView
+                            android:id="@+id/tvVersionTitle"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -94,6 +96,7 @@
                         android:orientation="horizontal">
 
                         <TextView
+                            android:id="@+id/tvAppSetIdTitle"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -128,6 +131,7 @@
                     android:padding="16dp">
 
                     <TextView
+                        android:id="@+id/tvLanguageTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Language"
@@ -153,6 +157,7 @@
                         android:focusable="true">
 
                         <TextView
+                            android:id="@+id/tvChangeLanguageTitle"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -251,6 +256,7 @@
                     android:padding="16dp">
 
                     <TextView
+                        android:id="@+id/tvAppearanceTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Appearance"
@@ -276,6 +282,7 @@
                         android:focusable="true">
 
                         <TextView
+                            android:id="@+id/tvThemeTitle"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -311,6 +318,7 @@
                     android:padding="16dp">
 
                     <TextView
+                        android:id="@+id/tvUpdateTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Update"
@@ -353,6 +361,7 @@
                     android:padding="16dp">
 
                     <TextView
+                        android:id="@+id/tvDeveloperTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Developer"
@@ -405,6 +414,7 @@
                     android:gravity="center">
 
                     <TextView
+                        android:id="@+id/tvAboutAppTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="TXA Music"
@@ -413,6 +423,7 @@
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/tvAboutBuildBy"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"

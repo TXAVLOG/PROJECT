@@ -59,9 +59,10 @@ class TXASettingsActivity : BaseActivity() {
         setupAppInfo()
         setupLanguageSection()
         setupFontSection()
-        setupThemeSection()
+        setupAppearanceSection()
         setupUpdateSection()
         setupLogsSection()
+        setupAboutSection()
     }
     
     private fun setupToolbar() {
@@ -72,11 +73,18 @@ class TXASettingsActivity : BaseActivity() {
     }
     
     private fun setupAppInfo() {
+        binding.tvAppInfoTitle.text = TXATranslation.txa("txamusic_settings_app_info")
+        binding.tvVersionTitle.text = TXATranslation.txa("txamusic_settings_version")
+        binding.tvAppSetIdTitle.text = TXATranslation.txa("txamusic_settings_app_set_id")
+        
         binding.tvVersion.text = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
         binding.tvAppSetId.text = packageName
     }
     
-    private fun setupThemeSection() {
+    private fun setupAppearanceSection() {
+        binding.tvAppearanceTitle.text = TXATranslation.txa("txamusic_settings_appearance")
+        binding.tvThemeTitle.text = TXATranslation.txa("txamusic_settings_theme_mode")
+
         val currentTheme = getSavedThemeMode()
         binding.tvCurrentTheme.text = when (currentTheme) {
             THEME_LIGHT -> TXATranslation.txa("txamusic_theme_light")
@@ -221,6 +229,9 @@ class TXASettingsActivity : BaseActivity() {
     }
 
     private fun setupLanguageSection() {
+        binding.tvLanguageTitle.text = TXATranslation.txa("txamusic_settings_language")
+        binding.tvChangeLanguageTitle.text = TXATranslation.txa("txamusic_settings_change_language")
+
         val currentLocale = TXATranslation.getCurrentLocale()
         val currentLangName = defaultLocales.find { it.code == currentLocale }?.name ?: currentLocale
         binding.tvCurrentLanguage.text = currentLangName
@@ -290,12 +301,10 @@ class TXASettingsActivity : BaseActivity() {
         startActivity(intent)
         finishAffinity()
     }
-    
+
     private fun setupUpdateSection() {
+        binding.tvUpdateTitle.text = TXATranslation.txa("txamusic_settings_update")
         binding.btnCheckUpdate.text = TXATranslation.txa("txamusic_settings_check_update")
-        
-        // Background update toggle logic would go here if UI existed
-        // TXAUpdateWorker.setBackgroundEnabled(this, isChecked)
         
         binding.btnCheckUpdate.setOnClickListener {
             checkForUpdate()
@@ -396,13 +405,22 @@ class TXASettingsActivity : BaseActivity() {
             else -> String.format("%.2f MB", bytes.toDouble() / (1024 * 1024))
         }
     }
-    
+
     private fun setupLogsSection() {
+        binding.tvDeveloperTitle.text = TXATranslation.txa("txamusic_settings_developer")
+        binding.btnViewLogs.text = TXATranslation.txa("txamusic_settings_view_logs")
+        binding.btnClearLogs.text = TXATranslation.txa("txamusic_settings_clear_logs")
+
         binding.btnViewLogs.setOnClickListener { showLogsDialog() }
         binding.btnClearLogs.setOnClickListener {
             TXALogger.clearAllLogs()
             Toast.makeText(this, TXATranslation.txa("txamusic_msg_logs_cleared"), Toast.LENGTH_SHORT).show()
         }
+    }
+    
+    private fun setupAboutSection() {
+        binding.tvAboutAppTitle.text = TXATranslation.txa("txamusic_app_name")
+        binding.tvAboutBuildBy.text = TXATranslation.txa("txamusic_settings_build_by").format("TXA")
     }
     
     private fun showLogsDialog() {

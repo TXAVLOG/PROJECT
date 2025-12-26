@@ -430,7 +430,13 @@ object TXATranslation {
   "txamusic_msg_logs_cleared": "Logs cleared",
   "txamusic_logs_title": "Logs",
   "txamusic_logs_empty": "No logs found",
-  "txamusic_library_empty": "No songs found. Tap refresh to scan."
+  "txamusic_library_empty": "No songs found. Tap refresh to scan.",
+  "txamusic_settings_appearance": "Appearance",
+  "txamusic_settings_theme_mode": "Theme Mode",
+  "txamusic_settings_developer": "Developer",
+  "txamusic_settings_view_logs": "View Logs",
+  "txamusic_settings_clear_logs": "Clear Logs",
+  "txamusic_settings_build_by": "Build by %s"
 }
 """
         try {
