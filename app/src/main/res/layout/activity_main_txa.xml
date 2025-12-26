@@ -159,48 +159,104 @@
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="24dp"/>
 
-            <!-- Big Artwork -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                app:cardCornerRadius="24dp"
-                app:cardBackgroundColor="#1A1A1A"
-                android:layout_marginBottom="24dp">
-                <ImageView
+            <!-- Rotating Disk Artwork Section -->
+            <FrameLayout
+                android:layout_width="280dp"
+                android:layout_height="280dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="32dp">
+
+                <!-- Progress Border -->
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/cpDiskProgress"
+                    android:layout_width="280dp"
+                    android:layout_height="280dp"
+                    app:indicatorSize="280dp"
+                    app:trackThickness="4dp"
+                    app:trackColor="#26FFFFFF"
+                    app:indicatorColor="@android:color/white"
+                    android:progress="0"
+                    app:trackCornerRadius="2dp"/>
+
+                <!-- The Disk -->
+                <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/ivLargeArt"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_width="260dp"
+                    android:layout_height="260dp"
+                    android:layout_gravity="center"
                     android:scaleType="centerCrop"
-                    android:src="@drawable/ic_music_note"/>
-            </com.google.android.material.card.MaterialCardView>
+                    app:shapeAppearanceOverlay="@style/CircleImage"
+                    android:src="@drawable/ic_music_note"
+                    android:padding="2dp"
+                    android:background="@android:color/black"/>
+            </FrameLayout>
 
             <!-- Song Info -->
             <TextView
                 android:id="@+id/tvLargeTitle"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@android:color/white"
-                android:textSize="26sp"
+                android:textSize="24sp"
                 android:textStyle="bold"
+                android:textAlignment="center"
+                android:ellipsize="marquee"
+                android:singleLine="true"
                 android:text="Song Title"/>
             
             <TextView
                 android:id="@+id/tvLargeArtist"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="#AAAAAA"
-                android:textSize="18sp"
+                android:textSize="16sp"
+                android:textAlignment="center"
                 android:layout_marginBottom="24dp"
                 android:text="Artist Name"/>
 
-            <!-- Progress Bar -->
-            <com.google.android.material.slider.Slider
-                android:id="@+id/songProgress"
+            <!-- Detailed Progress Section -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:valueFrom="0"
-                android:valueTo="100"/>
+                android:orientation="vertical">
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/songProgress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="0"
+                    android:valueTo="100"
+                    app:labelBehavior="gone"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp"
+                    android:layout_marginTop="-8dp">
+                    
+                    <TextView
+                        android:id="@+id/tvCurrentTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#88FFFFFF"
+                        android:textSize="12sp"
+                        android:text="00:00:000"/>
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1"/>
+
+                    <TextView
+                        android:id="@+id/tvTotalTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#88FFFFFF"
+                        android:textSize="12sp"
+                        android:text="00:00:000"/>
+                </LinearLayout>
+            </LinearLayout>
             
             <!-- Detailed Lyrics Section (Placeholder) -->
             <TextView

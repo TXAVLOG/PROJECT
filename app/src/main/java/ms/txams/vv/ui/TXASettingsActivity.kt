@@ -18,6 +18,7 @@ import ms.txams.vv.core.TXATranslation
 import ms.txams.vv.databinding.TxaActivitySettingsBinding
 import ms.txams.vv.update.TXAUpdateManager
 import ms.txams.vv.update.TXAUpdateWorker
+import ms.txams.vv.core.TXAApp
 import ms.txams.vv.update.UpdateCheckResult
 
 /**
@@ -215,6 +216,8 @@ class TXASettingsActivity : BaseActivity() {
             .edit()
             .putString("font_selection_$locale", fontName)
             .apply()
+        
+        TXAApp.clearFontCache()
     }
 
     private fun setupLanguageSection() {

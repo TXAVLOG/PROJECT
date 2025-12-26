@@ -604,16 +604,33 @@ object TXATranslation {
             
             TXAHttp.client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
-                    val json = JSONObject(response.body?.string() ?: "")
-                    if (json.optBoolean("ok")) {
-                        val locales = json.getJSONArray("locales")
+                    val body = response.body?.string() ?: ""
+                    if (body.trim().startsWith("[")) {
+                        val locales = org.json.JSONArray(body)
                         val result = mutableListOf<String>()
                         for (i in 0 until locales.length()) {
-                            val item = locales.getJSONObject(i)
-                            result.add(item.getString("code"))
+                            result.add(locales.getString(i))
                         }
-                        TXALogger.apiD("Available locales: $result")
+                        TXALogger.apiD("Available locales (array): $result")
                         return@withContext result
+                    } else {
+                        val json = JSONObject(body)
+                        if (json.optBoolean("ok")) {
+                            val locales = json.getJSONArray("locales")
+                            val result = mutableListOf<String>()
+                            for (i in 0 until locales.length()) {
+                                try {
+                                    val item = locales.get(i)
+                                    if (item is JSONObject) {
+                                        result.add(item.getString("code"))
+                                    } else if (item is String) {
+                                        result.add(item)
+                                    }
+                                } catch (e: Exception) {}
+                            }
+                            TXALogger.apiD("Available locales (object): $result")
+                            return@withContext result
+                        }
                     }
                 }
                 null

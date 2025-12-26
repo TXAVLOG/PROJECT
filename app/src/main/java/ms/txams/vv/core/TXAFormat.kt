@@ -14,13 +14,26 @@ object TXAFormat {
     }
 
     /**
-     * Format duration from milliseconds to MM:SS format
+     * Format number with 3 digits (leading zeros if needed)
      */
-    fun formatDuration(durationMs: Long): String {
+    fun formatThreeDigits(number: Int): String {
+        return String.format(Locale.US, "%03d", number)
+    }
+
+    /**
+     * Format duration from milliseconds to MM:SS:SSS format
+     */
+    fun formatDuration(durationMs: Long, includeMillis: Boolean = true): String {
         val seconds = durationMs / 1000
+        val remainingMillis = (durationMs % 1000).toInt()
         val minutes = seconds / 60
         val remainingSeconds = (seconds % 60).toInt()
-        return "${minutes}:${formatTwoDigits(remainingSeconds)}"
+        
+        return if (includeMillis) {
+            "${formatTwoDigits(minutes.toInt())}:${formatTwoDigits(remainingSeconds)}.${formatThreeDigits(remainingMillis)}"
+        } else {
+            "${formatTwoDigits(minutes.toInt())}:${formatTwoDigits(remainingSeconds)}"
+        }
     }
 
     /**

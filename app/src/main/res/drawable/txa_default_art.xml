@@ -1,0 +1,37 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    
+    <!-- Background Gradient -->
+    <path android:pathData="M0,0 h200 v200 h-200 z">
+        <aapt:attr name="android:fillColor">
+            <gradient 
+                android:startX="0" 
+                android:startY="0" 
+                android:endX="200" 
+                android:endY="200" 
+                android:type="linear">
+                <item android:offset="0" android:color="#FF2C3E50"/>
+                <item android:offset="1" android:color="#FF000000"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Subtle Texture / Pattern -->
+    <path
+        android:fillColor="#10FFFFFF"
+        android:pathData="M100,100 m-70,0 a70,70 0 1,1 140,0 a70,70 0 1,1 -140,0"/>
+    
+    <!-- Music Icon -->
+    <path
+        android:fillColor="#40FFFFFF"
+        android:pathData="M115,65 v45.3 c-1.5,-0.8 -3.2,-1.3 -5,-1.3 c-5.5,0 -10,4.5 -10,10 s4.5,10 10,10 s10,-4.5 10,-10 V82 h20 V65 H115 z"/>
+
+    <!-- App Identity -->
+    <path
+        android:fillColor="#20FFFFFF"
+        android:pathData="M40,160 h120 v2 h-120 z"/>
+</vector>
