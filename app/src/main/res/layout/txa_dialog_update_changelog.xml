@@ -29,7 +29,7 @@
             android:layout_marginTop="4dp"
             android:text="Version 1.0.0"
             android:textSize="14sp"
-            android:textColor="?attr/colorOnSurfaceVariant"/>
+            android:textColor="@color/txa_text_secondary"/>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -43,13 +43,13 @@
                 android:layout_height="wrap_content"
                 android:text="Size: 10 MB"
                 android:textSize="12sp"
-                android:textColor="?attr/colorOnSurfaceVariant"/>
+                android:textColor="@color/txa_text_secondary"/>
 
             <View
                 android:layout_width="1dp"
                 android:layout_height="match_parent"
                 android:layout_marginHorizontal="8dp"
-                android:background="?attr/colorOnSurfaceVariant"/>
+                android:background="@color/txa_divider"/>
 
             <TextView
                 android:id="@+id/tvUpdateDate"
@@ -57,7 +57,7 @@
                 android:layout_height="wrap_content"
                 android:text="Release: 2024-01-01"
                 android:textSize="12sp"
-                android:textColor="?attr/colorOnSurfaceVariant"/>
+                android:textColor="@color/txa_text_secondary"/>
 
         </LinearLayout>
 
@@ -67,7 +67,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="?attr/colorOutlineVariant"/>
+        android:background="@color/txa_divider"/>
 
     <!-- Changelog WebView Container -->
     <FrameLayout
@@ -96,7 +96,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="?attr/colorOutlineVariant"/>
+        android:background="@color/txa_divider"/>
 
     <!-- Action buttons -->
     <LinearLayout

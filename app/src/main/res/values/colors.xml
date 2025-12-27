@@ -20,4 +20,6 @@
     <color name="txa_error">#FFB3261E</color>
     <color name="txa_accent">#FF6750A4</color>
     <color name="txa_surface_variant">#FFE7E0EC</color>
+    <color name="txa_text_secondary">#FF757575</color>
+    <color name="txa_divider">#FFE0E0E0</color>
 </resources>
