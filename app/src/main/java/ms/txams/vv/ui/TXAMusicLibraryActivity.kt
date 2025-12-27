@@ -417,15 +417,21 @@ class TXAMusicLibraryActivity : BaseActivity() {
                 try {
                     filePickerLauncher.launch(arrayOf("audio/*"))
                 } catch (e: android.content.ActivityNotFoundException) {
-                    // No document picker available (common on emulators or older devices)
-                    Toast.makeText(
-                        this,
-                        TXATranslation.txa("txamusic_no_file_picker"),
-                        Toast.LENGTH_LONG
-                    ).show()
+                    // No document picker available - use custom file picker fallback
+                    showCustomFilePicker()
                 }
             }
         }
         return super.onOptionsItemSelected(item)
     }
+    
+    private fun showCustomFilePicker() {
+        TXAFilePickerDialog.newInstance { file ->
+            // Convert File to Uri and add to library
+            val uri = android.net.Uri.fromFile(file)
+            viewModel.addManualSong(uri)
+            Toast.makeText(this, TXATranslation.txa("txamusic_playing").format(file.name), Toast.LENGTH_SHORT).show()
+        }.show(supportFragmentManager, TXAFilePickerDialog.TAG)
+    }
 }
+
