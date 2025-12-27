@@ -8,154 +8,210 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingBottom="80dp">
+        android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/tvHeader"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="TXA Music"
-            android:textSize="32sp"
-            android:textStyle="bold"
-            android:padding="24dp"
-            app:layout_constraintTop_toTopOf="parent"/>
-
-        <LinearLayout
+        <!-- CONTENT CONTAINER -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:orientation="vertical"
-            android:padding="16dp"
-            app:layout_constraintTop_toBottomOf="@+id/tvHeader"
-            app:layout_constraintBottom_toBottomOf="parent">
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/liquidTabBar">
+
+            <!-- TAB 1: HOME -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/tab_home"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/tvHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="TXA Music"
+                    android:textSize="32sp"
+                    android:textStyle="bold"
+                    android:padding="24dp"
+                    app:layout_constraintTop_toTopOf="parent"/>
+
+                <!-- Use a simplified list or grid for Home -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    app:layout_constraintTop_toBottomOf="@+id/tvHeader">
+                    
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardLibrary"
+                        android:layout_width="match_parent"
+                        android:layout_height="100dp"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="2dp"
+                        app:cardBackgroundColor="#2A2A2A"
+                        android:layout_marginBottom="16dp"
+                        android:clickable="true"
+                        android:focusable="true">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:orientation="horizontal">
+                            <ImageView
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:src="@drawable/ic_music_note"
+                                app:tint="@android:color/white"
+                                android:layout_marginEnd="16dp"/>
+                            <TextView
+                                android:id="@+id/tvCardLibrary"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textSize="18sp"
+                                android:textColor="@android:color/white"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Add Quick Actions or Stats here -->
+                     <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Recent"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="12dp"/>
+                        
+                     <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="No recent songs"
+                        android:alpha="0.5"/>
+
+                </LinearLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- TAB 2: SETTINGS (Placeholder for inclusion/injection) -->
+            <FrameLayout
+                android:id="@+id/tab_settings"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone">
+                 <!-- We will attach the functionality in Activity -->
+                 <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="Settings loaded here"/>
+            </FrameLayout>
+
+        </FrameLayout>
+
+        <!-- NOW PLAYING BAR (Floating above TabBar) -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/nowBar"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="32dp"
+            app:cardBackgroundColor="#222222"
+            app:cardElevation="8dp"
+            app:layout_constraintBottom_toTopOf="@+id/liquidTabBar"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
             
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardLibrary"
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
-                android:layout_height="120dp"
-                app:cardCornerRadius="28dp"
-                app:cardElevation="4dp"
-                android:layout_marginBottom="16dp"
-                android:clickable="true"
-                android:focusable="true">
-                <TextView
-                    android:id="@+id/tvCardLibrary"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="20sp"
-                    android:layout_gravity="center"/>
-            </com.google.android.material.card.MaterialCardView>
+                android:layout_height="match_parent">
 
-             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardSettings"
-                android:layout_width="match_parent"
-                android:layout_height="120dp"
-                app:cardCornerRadius="28dp"
-                app:cardElevation="4dp"
-                android:clickable="true"
-                android:focusable="true">
-                <TextView
-                    android:id="@+id/tvCardSettings"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="20sp"
-                    android:layout_gravity="center"/>
-            </com.google.android.material.card.MaterialCardView>
+                <ImageView
+                    android:id="@+id/ivNowPlayingBackground"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:alpha="0.3"
+                    tools:src="@drawable/ic_music_note"/>
 
-        </LinearLayout>
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingHorizontal="12dp">
+                    
+                    <FrameLayout
+                        android:id="@+id/flNowPlayingArt"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent">
+
+                        <com.google.android.material.progressindicator.CircularProgressIndicator
+                            android:id="@+id/cpNowBarProgress"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:layout_gravity="center"
+                            app:indicatorSize="48dp"
+                            app:trackThickness="2dp"
+                            app:trackColor="#40FFFFFF"
+                            app:indicatorColor="@android:color/white"
+                            android:progress="0"
+                            app:trackCornerRadius="1dp"/>
+
+                        <com.google.android.material.imageview.ShapeableImageView
+                            android:id="@+id/ivNowPlayingArt"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_music_note"
+                            android:scaleType="centerCrop"
+                            app:shapeAppearanceOverlay="@style/CircleImage"/>
+                    </FrameLayout>
+                        
+                    <TextView
+                        android:id="@+id/tvNowPlayingTitle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:textColor="@android:color/white"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="8dp"
+                        android:ellipsize="marquee"
+                        android:singleLine="true"
+                        android:marqueeRepeatLimit="marquee_forever"
+                        android:textStyle="bold"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toEndOf="@+id/flNowPlayingArt"
+                        app:layout_constraintEnd_toStartOf="@+id/btnPlayPause"/>
+        
+                     <ImageView
+                        android:id="@+id/btnPlayPause"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:src="@drawable/ic_play"
+                        android:padding="4dp"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:tint="@android:color/white"/>
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- LIQUID TAB BAR -->
+        <ms.txams.vv.ui.widget.TXALiquidTabBar
+            android:id="@+id/liquidTabBar"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/nowBar"
-        android:layout_width="match_parent"
-        android:layout_height="72dp"
-        android:layout_gravity="bottom"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="36dp"
-        app:cardBackgroundColor="#222222"
-        app:cardElevation="8dp">
-        
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
 
-            <!-- Album Art Background -->
-            <ImageView
-                android:id="@+id/ivNowPlayingBackground"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                android:alpha="0.3"
-                tools:src="@drawable/ic_music_note"/>
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingHorizontal="16dp">
-                
-                <!-- Album Art with Progress Circle -->
-                <FrameLayout
-                    android:id="@+id/flNowPlayingArt"
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent">
-
-                    <com.google.android.material.progressindicator.CircularProgressIndicator
-                        android:id="@+id/cpNowBarProgress"
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        android:layout_gravity="center"
-                        app:indicatorSize="56dp"
-                        app:trackThickness="3dp"
-                        app:trackColor="#40FFFFFF"
-                        app:indicatorColor="@android:color/white"
-                        android:progress="0"
-                        app:trackCornerRadius="2dp"/>
-
-                    <com.google.android.material.imageview.ShapeableImageView
-                        android:id="@+id/ivNowPlayingArt"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_music_note"
-                        android:scaleType="centerCrop"
-                        app:shapeAppearanceOverlay="@style/CircleImage"/>
-
-                </FrameLayout>
-                    
-                <TextView
-                    android:id="@+id/tvNowPlayingTitle"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:textColor="@android:color/white"
-                    android:layout_marginStart="12dp"
-                    android:layout_marginEnd="8dp"
-                    android:ellipsize="marquee"
-                    android:singleLine="true"
-                    android:marqueeRepeatLimit="marquee_forever"
-                    android:textStyle="bold"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toEndOf="@+id/flNowPlayingArt"
-                    app:layout_constraintEnd_toStartOf="@+id/btnPlayPause"/>
-    
-                 <ImageView
-                    android:id="@+id/btnPlayPause"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:src="@drawable/ic_play"
-                    android:padding="4dp"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:tint="@android:color/white"/>
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </androidx.cardview.widget.CardView>
 
     <!-- Renamed from queueSheet to playerSheet -->
     <androidx.core.widget.NestedScrollView

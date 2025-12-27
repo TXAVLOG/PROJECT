@@ -183,7 +183,6 @@ class TXAMainActivity : BaseActivity() {
     private fun initUI() {
         binding.tvHeader.text = TXATranslation.txa("txamusic_app_name")
         binding.tvCardLibrary.text = TXATranslation.txa("txamusic_music_library_title")
-        binding.tvCardSettings.text = TXATranslation.txa("txamusic_settings_title")
         binding.tvQueueTitle.text = TXATranslation.txa("txamusic_queue")
         
         // Initial state
@@ -378,13 +377,27 @@ class TXAMainActivity : BaseActivity() {
     }
 
     private fun setupNavigation() {
+        // Handle Liquid Tab Bar
+        binding.liquidTabBar.onTabSelected = { index ->
+            when (index) {
+                0 -> { // Home
+                    binding.tabHome.visibility = View.VISIBLE
+                    binding.tabSettings.visibility = View.GONE
+                }
+                1 -> { // Settings
+                    binding.tabHome.visibility = View.GONE
+                    binding.tabSettings.visibility = View.VISIBLE
+                    loadSettingsContent()
+                }
+            }
+        }
+
+        // Home Tab Interactions
         binding.cardLibrary.setOnClickListener {
             startActivity(Intent(this, TXAMusicLibraryActivity::class.java))
         }
         
-        binding.cardSettings.setOnClickListener {
-            startActivity(Intent(this, TXASettingsActivity::class.java))
-        }
+
         
         binding.btnPlayPause.setOnClickListener {
             val player = mediaController ?: return@setOnClickListener
@@ -392,12 +405,86 @@ class TXAMainActivity : BaseActivity() {
         }
 
         binding.songProgress.addOnChangeListener { slider, value, fromUser ->
-            if (fromUser) {
-                val player = mediaController ?: return@addOnChangeListener
-                val newPos = (value * player.duration / 100).toLong()
-                player.seekTo(newPos)
-            }
+             if (fromUser) {
+                 val player = mediaController ?: return@addOnChangeListener
+                 val newPos = (value * player.duration / 100).toLong()
+                 player.seekTo(newPos)
+             }
+         }
+    }
+
+    private fun loadSettingsContent() {
+        // Check if already loaded to avoid inflation overhead
+        if (binding.tabSettings.childCount > 1) return 
+        
+        // Clear placeholder
+        binding.tabSettings.removeAllViews()
+        
+        // Inflate simple settings dashboard
+        val settingsView = layoutInflater.inflate(R.layout.item_setting_choice, binding.tabSettings, false)
+        // Adjust style manually since we are reusing a layout designed for something else, 
+        // OR better: Create a programmatic view structure here.
+        
+        val context = this
+        val container = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(32, 120, 32, 32)
+            layoutParams = android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+            )
         }
+        
+        // Title
+        container.addView(android.widget.TextView(context).apply {
+            text = TXATranslation.txa("txamusic_settings_title")
+            textSize = 32f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(android.graphics.Color.WHITE)
+            setPadding(0, 0, 0, 48)
+        })
+
+        // Full Settings Button
+        container.addView(com.google.android.material.button.MaterialButton(context).apply {
+            text = TXATranslation.txa("txamusic_settings_title") 
+            setOnClickListener { startActivity(Intent(context, TXASettingsActivity::class.java)) }
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = 24 }
+        })
+        
+        // Music Library Button
+        container.addView(com.google.android.material.button.MaterialButton(context).apply {
+            text = TXATranslation.txa("txamusic_music_library_title")
+            setOnClickListener { startActivity(Intent(context, TXAMusicLibraryActivity::class.java)) }
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = 24 }
+        })
+
+        // Changelog Button
+        container.addView(com.google.android.material.button.MaterialButton(context).apply {
+            text = TXATranslation.txa("txamusic_changelog")
+            setOnClickListener { showChangelog() }
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = 24 }
+        })
+
+        binding.tabSettings.addView(container)
+    }
+
+    private fun showChangelog() {
+        // Reuse Splash Activity logic or create simple dialog
+        // Quick dialog
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(TXATranslation.txa("txamusic_changelog"))
+            .setMessage("Version 1.5.0\n\n- New Player UI\n- Waveform\n- Liquid Tabs")
+            .setPositiveButton("OK", null)
+            .show()
     }
 
     private fun setupQueue() {
