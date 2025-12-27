@@ -1,0 +1,156 @@
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+        color: #e4e4e7;
+        padding: 24px;
+        min-height: 100vh;
+    }
+
+    .container {
+        max-width: 600px;
+        margin: 0 auto;
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .version-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-size: 24px;
+        font-weight: 700;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.02);
+        }
+    }
+
+    .title {
+        font-size: 18px;
+        margin-top: 12px;
+        color: #a1a1aa;
+    }
+
+    .section {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .section:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 12px;
+    }
+
+    .new .section-title {
+        color: #34d399;
+    }
+
+    .fix .section-title {
+        color: #fbbf24;
+    }
+
+    .perf .section-title {
+        color: #60a5fa;
+    }
+
+    ul {
+        list-style: none;
+        padding-left: 8px;
+    }
+
+    li {
+        padding: 8px 0;
+        padding-left: 20px;
+        position: relative;
+        color: #d4d4d8;
+        line-height: 1.5;
+    }
+
+    li::before {
+        content: '•';
+        position: absolute;
+        left: 4px;
+        color: #6366f1;
+    }
+</style>
+
+<div class="container">
+    <div class="header">
+        <div class="version-badge">📱 1.2.0</div>
+        <div class="title">Cập nhật phiên bản</div>
+    </div>
+
+    <div class="section new">
+        <div class="section-title">✨ Có gì mới?</div>
+        <ul>
+            <li>Chế độ chọn nhiều bài hát - Nhấn giữ để chọn, chọn nhiều bài cùng lúc</li>
+            <li>Giao diện thư viện nhạc mới theo phong cách ZingMp3</li>
+            <li>Menu ngữ cảnh cho từng bài hát</li>
+            <li>Màn hình tải xuống chi tiết</li>
+            <li>Xem changelog trong cửa sổ cuộn được</li>
+        </ul>
+    </div>
+
+    <div class="section fix">
+        <div class="section-title">🐛 Sửa lỗi</div>
+        <ul>
+            <li>Loại bỏ nhạc chuông và thông báo khỏi thư viện nhạc</li>
+            <li>Bỏ qua các file audio ngắn dưới 30 giây</li>
+            <li>Sửa lỗi hiển thị ngày phát hành</li>
+        </ul>
+    </div>
+
+    <div class="section perf">
+        <div class="section-title">⚡ Cải thiện hiệu suất</div>
+        <ul>
+            <li>Quét thư viện nhạc nhanh hơn</li>
+            <li>Giao diện mượt mà với animation</li>
+            <li>Thanh tiến trình cập nhật chính xác đến mili giây</li>
+        </ul>
+    </div>
+</div>
