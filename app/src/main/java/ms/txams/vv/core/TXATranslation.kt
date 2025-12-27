@@ -447,7 +447,8 @@ object TXATranslation {
   "txamusic_library_empty": "No music found",
   "txamusic_refresh_library": "Refresh Library",
   "txamusic_songs": "songs",
-  "txamusic_songs_count": "%d songs"
+  "txamusic_songs_count": "%d songs",
+  "txamusic_no_file_picker": "No file picker available on this device. Install a file manager app to add music manually."
 }
 """
         try {
