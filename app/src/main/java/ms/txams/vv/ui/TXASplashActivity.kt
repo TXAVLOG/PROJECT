@@ -306,8 +306,8 @@ class TXASplashActivity : BaseActivity() {
                             tvPercent.text = "${phase.progressPercent}%"
                             
                             tvSizeInfo.text = TXAFormat.formatProgressDetail(phase.downloadedBytes, phase.totalBytes)
-                            tvSpeed.text = TXAFormat.formatSpeed(phase.speed)
-                            tvEta.text = TXAFormat.formatTimeRemaining(phase.etaSeconds)
+                            tvSpeed.text = TXAFormat.formatSpeed(phase.speed.toLong())
+                            tvEta.text = TXAFormat.formatTimeRemaining(phase.etaSeconds.toLong() * 1000)
                             
                             tvStatus.text = "Downloading..."
                         }

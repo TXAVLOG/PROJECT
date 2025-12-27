@@ -120,13 +120,17 @@ object TXAUpdateManager {
             
             val latest = json.optJSONObject("latest") ?: return UpdateCheckResult.Error("Missing latest info")
             
-            val latestVersionCode = latest.optInt("versionCode", 0)
-            val latestVersionName = latest.optString("versionName", "")
+            val latestVersionCode = latest.optInt("code", 0)
+            val latestVersionName = latest.optString("name", "")
             val downloadUrl = latest.optString("downloadUrl", "")
             val changelog = latest.optString("changelog", "")
             val releaseDate = latest.optString("releaseDate", "")
-            val mandatory = latest.optBoolean("mandatory", false)
-            val downloadSize = latest.optLong("downloadSizeBytes", 0)
+            
+            // Force update priority: root > latest.force
+            var mandatory = json.optBoolean("force_update", false)
+            if (!mandatory) mandatory = latest.optBoolean("force", false)
+            
+            val downloadSize = latest.optLong("size_bytes", 0)
             
             // Validate
             if (downloadUrl.isEmpty()) {
