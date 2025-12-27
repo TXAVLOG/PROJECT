@@ -55,6 +55,67 @@ class TXAMainActivity : BaseActivity() {
         setupQueue()
         setupNowBar()
         observeLyrics()
+
+        // Initial intent check
+        if (intent != null) {
+            handleIntent(intent)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        if (Intent.ACTION_VIEW == intent.action) {
+            val uri = intent.data
+            if (uri != null) {
+                // If controller is ready, play immediately.
+                // Otherwise, it will be played in initializeController.
+                mediaController?.let {
+                    playUri(uri)
+                } ?: run {
+                    pendingUri = uri
+                }
+            }
+        }
+    }
+
+    private var pendingUri: android.net.Uri? = null
+
+    private fun playUri(uri: android.net.Uri) {
+        val player = mediaController ?: return
+        
+        // Get file name from URI
+        val fileName = try {
+            val cursor = contentResolver.query(uri, null, null, null, null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (nameIndex != -1) it.getString(nameIndex) else null
+                } else null
+            }
+        } catch (e: Exception) {
+            null
+        } ?: uri.lastPathSegment ?: TXATranslation.txa("txamusic_unknown")
+
+        val metadata = MediaMetadata.Builder()
+            .setTitle(fileName)
+            .setArtist(TXATranslation.txa("txamusic_unknown"))
+            .setArtworkUri(uri)
+            .build()
+            
+        val item = MediaItem.Builder()
+            .setUri(uri)
+            .setMediaId(uri.toString())
+            .setMediaMetadata(metadata)
+            .build()
+            
+        player.setMediaItem(item)
+        player.prepare()
+        player.play()
     }
     
     private fun initUI() {
@@ -87,6 +148,12 @@ class TXAMainActivity : BaseActivity() {
                 mediaController = controllerFuture?.get()
                 setupControllerListener()
                 updateNowBarUI()
+                
+                // Handle pending URI if any
+                pendingUri?.let {
+                    playUri(it)
+                    pendingUri = null
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }

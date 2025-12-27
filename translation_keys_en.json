@@ -256,5 +256,9 @@
   "txamusic_update_status_idle": "Idle",
   "txamusic_update_status_resolving": "Resolving download URL...",
   "txamusic_error_prefix": "Error: %s",
-  "txamusic_update_version_label": "Version %s"
+  "txamusic_update_version_label": "Version %s",
+  "txamusic_settings_default_player": "Default Music Player",
+  "txamusic_settings_status_default": "App is set as default player",
+  "txamusic_settings_status_not_default": "App is not the default player",
+  "txamusic_settings_set_default": "Set as Default"
 }
