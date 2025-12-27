@@ -448,7 +448,27 @@ object TXATranslation {
   "txamusic_refresh_library": "Refresh Library",
   "txamusic_songs": "songs",
   "txamusic_songs_count": "%d songs",
-  "txamusic_no_file_picker": "No file picker available on this device. Install a file manager app to add music manually."
+  "txamusic_no_file_picker": "No file picker available on this device. Install a file manager app to add music manually.",
+  "txamusic_copyright_license": "Licensed under MIT License",
+  "txamusic_follow_us_facebook": "Follow us on Facebook",
+  "txamusic_settings_now_bar": "Now Bar Settings",
+  "txamusic_settings_now_bar_desc": "Customize notification buttons",
+  "txamusic_nowbar_show_previous": "Show Previous",
+  "txamusic_nowbar_show_next": "Show Next",
+  "txamusic_nowbar_show_stop": "Show Stop",
+  "txamusic_nowbar_show_shuffle": "Show Shuffle",
+  "txamusic_nowbar_show_repeat": "Show Repeat",
+  "txamusic_nowbar_show_like": "Show Like",
+  "txamusic_nowbar_show_sleep_timer": "Show Sleep Timer",
+  "txamusic_nowbar_show_lyrics": "Show Lyrics",
+  "txamusic_nowbar_reset_defaults": "Reset to Defaults",
+  "txamusic_nowbar_compact_buttons": "Compact View Buttons",
+  "txamusic_nowbar_album_art_style": "Album Art Style",
+  "txamusic_nowbar_style_square": "Square",
+  "txamusic_nowbar_style_rounded": "Rounded",
+  "txamusic_nowbar_style_circle": "Circle",
+  "txamusic_stop": "Stop",
+  "txamusic_file_browser_title": "TXA File Browser"
 }
 """
         try {

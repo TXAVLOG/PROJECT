@@ -81,6 +81,7 @@ class TXAFilePickerDialog : BottomSheetDialogFragment() {
         tvEmpty = view.findViewById(R.id.tvEmpty)
         tvCopyright = view.findViewById(R.id.tvCopyright)
         btnBack = view.findViewById(R.id.btnBack)
+        val btnFacebook: ImageView = view.findViewById(R.id.btnFacebook)
         
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         
@@ -88,15 +89,29 @@ class TXAFilePickerDialog : BottomSheetDialogFragment() {
             navigateUp()
         }
         
-        // Copyright notice
+        // Copyright notice with dynamic year
+        val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
         tvCopyright.text = """
             TXA Music File Browser
-            © 2024 TXA - All Rights Reserved
-            fb.com/vlog.txa.2311
+            © $currentYear TXA - All Rights Reserved
             
-            This file picker is part of TXA Music.
-            Licensed under MIT License.
+            ${TXATranslation.txa("txamusic_copyright_license")}
         """.trimIndent()
+        
+        // Facebook button click handler
+        val openFacebookAction: () -> Unit = {
+            try {
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW)
+                intent.data = android.net.Uri.parse("https://fb.com/vlog.txa.2311")
+                startActivity(intent)
+            } catch (e: Exception) {
+                TXABackgroundLogger.e("Failed to open Facebook", e)
+            }
+        }
+        
+        // Make copyright clickable to open Facebook
+        tvCopyright.setOnClickListener { openFacebookAction() }
+        btnFacebook.setOnClickListener { openFacebookAction() }
         
         checkPermissionAndLoad()
     }

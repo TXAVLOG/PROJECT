@@ -1,31 +1,101 @@
 <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #E0E0E0; background-color: transparent; margin: 0; padding: 0; }
-    h2 { color: #BB86FC; margin-bottom: 0.5em; border-bottom: 1px solid #333; padding-bottom: 0.3em; }
-    ul { list-style-type: none; padding: 0; margin-top: 0; }
-    li { margin-bottom: 0.5em; padding-left: 1.2em; position: relative; }
-    li::before { content: "•"; color: #03DAC6; position: absolute; left: 0; font-weight: bold; }
-    .section-title { font-weight: bold; margin-top: 1.2em; margin-bottom: 0.5em; color: #03DAC6; display: flex; align-items: center; }
-    .emoji { margin-right: 0.5em; font-size: 1.2em; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.6;
+        color: #E0E0E0;
+        background-color: transparent;
+        margin: 0;
+        padding: 0;
+    }
+
+    h2 {
+        color: #BB86FC;
+        margin-bottom: 0.5em;
+        border-bottom: 1px solid #333;
+        padding-bottom: 0.3em;
+        animation: fadeIn 0.5s ease-in;
+    }
+
+    ul {
+        list-style-type: none;
+        padding: 0;
+        margin-top: 0;
+    }
+
+    li {
+        margin-bottom: 0.5em;
+        padding-left: 1.2em;
+        position: relative;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    li::before {
+        content: "•";
+        color: #03DAC6;
+        position: absolute;
+        left: 0;
+        font-weight: bold;
+    }
+
+    .section-title {
+        font-weight: bold;
+        margin-top: 1.2em;
+        margin-bottom: 0.5em;
+        color: #03DAC6;
+        display: flex;
+        align-items: center;
+    }
+
+    .emoji {
+        margin-right: 0.5em;
+        font-size: 1.2em;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
 </style>
 
-<h2>📱 Cập nhật phiên bản 1.3.0</h2>
+<h2>📱 Cập nhật phiên bản 1.4.0</h2>
 
 <div class="section-title"><span class="emoji">✨</span>Có gì mới?</div>
 <ul>
-    <li>Đặt TXA Music làm trình phát nhạc mặc định của hệ thống</li>
-    <li>Thêm bài hát thủ công từ bộ nhớ máy vào thư viện</li>
-    <li>Tự động phát đoạn giới thiệu độc quyền trước mỗi bài hát</li>
-    <li>Hệ thống thông báo cập nhật mới thông minh hơn</li>
+    <li>Hiệu ứng mượt mà khi phát nhạc: Fade in 3 giây lúc bắt đầu và fade out khi dừng</li>
+    <li>Intro độc quyền của TXA được phát to và rõ hơn</li>
+    <li>Trình duyệt file tích hợp khi không có ứng dụng quản lý file</li>
+    <li>Cài đặt thanh Now Bar: Tùy chỉnh nút hiển thị trên thông báo</li>
+    <li>Đĩa album art xoay khi đang phát nhạc như đĩa vinyl thực</li>
+    <li>Nút Facebook để theo dõi nhà phát triển</li>
 </ul>
 
 <div class="section-title"><span class="emoji">🐛</span>Sửa lỗi</div>
 <ul>
-    <li>Khắc phục lỗi quyền truy cập file trên các dòng máy Android mới</li>
-    <li>Sửa lỗi thoát ứng dụng đột ngột khi mở cài đặt</li>
+    <li>Khắc phục lỗi crash trên giả lập Android 9 khi thêm nhạc thủ công</li>
+    <li>Sửa lỗi hiển thị màu sắc trên Android 9 và One UI cũ</li>
 </ul>
 
 <div class="section-title"><span class="emoji">⚡</span>Cải thiện hiệu suất</div>
 <ul>
-    <li>Quét thư viện nhạc nhanh và bỏ qua các file không cần thiết</li>
-    <li>Tối ưu hóa quy trình kiểm tra cập nhật ngầm</li>
+    <li>Hiệu ứng chuyển cảnh mượt mà hơn với animation CSS</li>
+    <li>Tối ưu hóa việc cache file nhạc đã ghép intro</li>
 </ul>
