@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">TXA Music</string>
+    <string name="txamusic_play_selected">Play Selected</string>
+    <string name="txamusic_add_to_queue">Add to Queue</string>
+    <string name="txamusic_select_all">Select All</string>
 </resources>

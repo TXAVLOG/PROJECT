@@ -5,10 +5,13 @@ import android.content.ComponentName
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -28,8 +31,21 @@ import kotlinx.coroutines.launch
 import ms.txams.vv.core.TXATranslation
 import ms.txams.vv.data.database.SongEntity
 import ms.txams.vv.databinding.ActivityMusicLibraryBinding
+import ms.txams.vv.R
+import android.content.ContentUris
+import android.net.Uri
 
 
+/**
+ * TXA Music Library Activity
+ * Inspired by Namida music player
+ * 
+ * Features:
+ * - Click: Play song immediately  
+ * - Long press: Enable multi-selection mode
+ * - Menu: Show context actions for each song
+ * - Selection actions: Add to queue, play all selected, etc.
+ */
 @AndroidEntryPoint
 class TXAMusicLibraryActivity : BaseActivity() {
     private lateinit var binding: ActivityMusicLibraryBinding
@@ -38,9 +54,19 @@ class TXAMusicLibraryActivity : BaseActivity() {
     private var mediaController: MediaController? = null
     private var controllerFuture: ListenableFuture<MediaController>? = null
 
-    private val adapter = MusicAdapter { song ->
-        playSong(song)
-    }
+    private var actionMode: ActionMode? = null
+
+    private val adapter = MusicAdapter(
+        onItemClick = { song -> 
+            playSong(song)
+        },
+        onItemLongClick = { song, position ->
+            startSelectionMode()
+        },
+        onMenuClick = { song, view, position ->
+            showSongContextMenu(song, view)
+        }
+    )
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -62,6 +88,8 @@ class TXAMusicLibraryActivity : BaseActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         setupRecyclerView()
+        setupSelectionListener()
+        setupBackPressHandler()
         observeData()
         checkPermissionAndScan()
 
@@ -86,6 +114,103 @@ class TXAMusicLibraryActivity : BaseActivity() {
         controllerFuture?.let { MediaController.releaseFuture(it) }
     }
 
+    private fun setupBackPressHandler() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (adapter.isSelectionMode) {
+                    exitSelectionMode()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
+    }
+
+    private fun setupSelectionListener() {
+        adapter.onSelectionChanged = { selectedIds ->
+            if (selectedIds.isEmpty()) {
+                actionMode?.finish()
+            } else {
+                actionMode?.title = "${selectedIds.size} ${TXATranslation.txa("txamusic_selected")}"
+            }
+        }
+    }
+
+    private fun startSelectionMode() {
+        if (actionMode == null) {
+            actionMode = startActionMode(selectionActionModeCallback)
+        }
+    }
+
+    private fun exitSelectionMode() {
+        adapter.exitSelectionMode()
+        actionMode?.finish()
+        actionMode = null
+    }
+
+    private val selectionActionModeCallback = object : ActionMode.Callback {
+        override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+            menuInflater.inflate(R.menu.menu_selection, menu)
+            return true
+        }
+
+        override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean = false
+
+        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+            val selectedSongs = adapter.getSelectedSongs()
+            when (item.itemId) {
+                R.id.action_play_all -> {
+                    playAllSelected(selectedSongs)
+                    mode.finish()
+                    return true
+                }
+                R.id.action_add_to_queue -> {
+                    addToQueue(selectedSongs)
+                    mode.finish()
+                    return true
+                }
+                R.id.action_select_all -> {
+                    adapter.selectAll()
+                    return true
+                }
+            }
+            return false
+        }
+
+        override fun onDestroyActionMode(mode: ActionMode) {
+            adapter.exitSelectionMode()
+            actionMode = null
+        }
+    }
+
+    private fun showSongContextMenu(song: SongEntity, anchorView: View) {
+        val popup = PopupMenu(this, anchorView)
+        popup.menu.add(0, 1, 0, TXATranslation.txa("txamusic_play"))
+        popup.menu.add(0, 2, 1, TXATranslation.txa("txamusic_add_to_queue"))
+        popup.menu.add(0, 3, 2, TXATranslation.txa("txamusic_add_to_playlist"))
+        
+        popup.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                1 -> {
+                    playSong(song)
+                    true
+                }
+                2 -> {
+                    addToQueue(listOf(song))
+                    true
+                }
+                3 -> {
+                    // TODO: Implement add to playlist
+                    Toast.makeText(this, "Coming soon", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
     private fun playSong(song: SongEntity) {
         val player = mediaController
         if (player == null) {
@@ -93,10 +218,20 @@ class TXAMusicLibraryActivity : BaseActivity() {
             return
         }
         
+        // Get album art URI
+        val albumArtUri = try {
+            ContentUris.withAppendedId(
+                Uri.parse("content://media/external/audio/albumart"),
+                song.albumId
+            )
+        } catch (e: Exception) {
+            null
+        }
+        
         val metadata = MediaMetadata.Builder()
             .setTitle(song.title)
             .setArtist(song.artist)
-             .setArtworkUri(android.net.Uri.parse(song.path)) // Or album art
+            .setArtworkUri(albumArtUri)
             .build()
             
         val item = MediaItem.Builder()
@@ -109,8 +244,81 @@ class TXAMusicLibraryActivity : BaseActivity() {
         player.prepare()
         player.play()
         
-        // Show simplified feedback
         Toast.makeText(this, TXATranslation.txa("txamusic_playing").format(song.title), Toast.LENGTH_SHORT).show()
+    }
+
+    private fun playAllSelected(songs: List<SongEntity>) {
+        val player = mediaController
+        if (player == null) {
+            Toast.makeText(this, TXATranslation.txa("txamusic_service_not_ready"), Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        if (songs.isEmpty()) return
+        
+        val mediaItems = songs.map { song ->
+            val albumArtUri = try {
+                ContentUris.withAppendedId(
+                    Uri.parse("content://media/external/audio/albumart"),
+                    song.albumId
+                )
+            } catch (e: Exception) {
+                null
+            }
+            
+            MediaItem.Builder()
+                .setUri(song.path)
+                .setMediaId(song.id.toString())
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(song.title)
+                        .setArtist(song.artist)
+                        .setArtworkUri(albumArtUri)
+                        .build()
+                )
+                .build()
+        }
+        
+        player.setMediaItems(mediaItems)
+        player.prepare()
+        player.play()
+        
+        Toast.makeText(this, "${songs.size} ${TXATranslation.txa("txamusic_songs")} playing", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun addToQueue(songs: List<SongEntity>) {
+        val player = mediaController
+        if (player == null) {
+            Toast.makeText(this, TXATranslation.txa("txamusic_service_not_ready"), Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        songs.forEach { song ->
+            val albumArtUri = try {
+                ContentUris.withAppendedId(
+                    Uri.parse("content://media/external/audio/albumart"),
+                    song.albumId
+                )
+            } catch (e: Exception) {
+                null
+            }
+            
+            val mediaItem = MediaItem.Builder()
+                .setUri(song.path)
+                .setMediaId(song.id.toString())
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(song.title)
+                        .setArtist(song.artist)
+                        .setArtworkUri(albumArtUri)
+                        .build()
+                )
+                .build()
+            
+            player.addMediaItem(mediaItem)
+        }
+        
+        Toast.makeText(this, "${songs.size} ${TXATranslation.txa("txamusic_add_to_queue")}", Toast.LENGTH_SHORT).show()
     }
 
     private fun setupRecyclerView() {
@@ -161,7 +369,13 @@ class TXAMusicLibraryActivity : BaseActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            android.R.id.home -> finish()
+            android.R.id.home -> {
+                if (adapter.isSelectionMode) {
+                    exitSelectionMode()
+                } else {
+                    finish()
+                }
+            }
             1 -> checkPermissionAndScan()
         }
         return super.onOptionsItemSelected(item)

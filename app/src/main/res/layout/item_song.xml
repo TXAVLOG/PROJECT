@@ -5,61 +5,114 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground"
-    android:padding="8dp">
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="8dp">
 
-    <ImageView
-        android:id="@+id/ivAlbumArt"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:src="@drawable/ic_music_note"
+    <!-- Selection Checkbox (Hidden by default) -->
+    <com.google.android.material.checkbox.MaterialCheckBox
+        android:id="@+id/cbSelect"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:visibility="gone"
+        android:button="@null"
+        android:background="@drawable/ic_check_circle"
+        app:buttonTint="@color/txa_primary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:background="#E0E0E0"
-        android:scaleType="centerCrop"/>
+        app:layout_constraintTop_toTopOf="parent"/>
 
-    <TextView
-        android:id="@+id/tvTitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="8dp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:text="Song Title"
-        android:textColor="?android:attr/textColorPrimary"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/tvArtist"
-        app:layout_constraintEnd_toStartOf="@+id/tvDuration"
-        app:layout_constraintStart_toEndOf="@+id/ivAlbumArt"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_chainStyle="packed" />
-
-    <TextView
-        android:id="@+id/tvArtist"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="8dp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:text="Artist Name"
-        android:textColor="?android:attr/textColorSecondary"
-        android:textSize="14sp"
+    <!-- Album Art (Circle) -->
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivAlbumArt"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_marginStart="0dp"
+        android:src="@drawable/ic_music_note"
+        android:scaleType="centerCrop"
+        android:background="@color/txa_surface_variant"
+        app:shapeAppearanceOverlay="@style/CircleImage"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/tvDuration"
-        app:layout_constraintStart_toEndOf="@+id/ivAlbumArt"
-        app:layout_constraintTop_toBottomOf="@+id/tvTitle" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
 
-    <TextView
-        android:id="@+id/tvDuration"
-        android:layout_width="wrap_content"
+    <!-- Track Info Container -->
+    <LinearLayout
+        android:id="@+id/trackInfo"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="3:45"
-        android:textSize="12sp"
+        android:orientation="vertical"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btnMenu"
+        app:layout_constraintStart_toEndOf="@+id/ivAlbumArt"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Song Title"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="2dp">
+
+            <TextView
+                android:id="@+id/tvArtist"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Artist Name"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3:45"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="12sp"
+                android:layout_marginStart="8dp"/>
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Menu Button (3 dots) -->
+    <ImageView
+        android:id="@+id/btnMenu"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:src="@drawable/ic_more_vert"
+        android:padding="6dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Menu"
+        app:tint="?android:attr/textColorSecondary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <!-- Selection Overlay -->
+    <View
+        android:id="@+id/selectionOverlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/txa_primary"
+        android:alpha="0.15"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

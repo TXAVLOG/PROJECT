@@ -438,14 +438,14 @@ object TXATranslation {
   "txamusic_settings_clear_logs": "Clear Logs",
   "txamusic_settings_build_by": "Build by %s",
   "txamusic_update_size": "Size",
-  "txamusic_update_release_date": "Release date",
   "txamusic_download_starting": "Starting download...",
   "txamusic_download_resolving": "Resolving URL...",
   "txamusic_download_connecting": "Connecting...",
   "txamusic_download_downloading": "Downloading...",
   "txamusic_download_retrying": "Retrying",
   "txamusic_download_validating": "Validating file...",
-  "txamusic_download_error": "Download error"
+  "txamusic_download_error": "Download error",
+  "txamusic_selected": "selected"
 }
 """
         try {

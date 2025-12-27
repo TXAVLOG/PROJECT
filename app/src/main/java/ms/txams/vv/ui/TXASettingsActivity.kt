@@ -368,7 +368,7 @@ class TXASettingsActivity : BaseActivity() {
         dialogBinding.tvUpdateTitle.text = TXATranslation.txa("txamusic_update_available")
         dialogBinding.tvUpdateVersion.text = "Version ${updateInfo.versionName}"
         dialogBinding.tvUpdateSize.text = "${TXATranslation.txa("txamusic_update_size")}: ${TXAFormat.formatBytes(updateInfo.downloadSizeBytes)}"
-        dialogBinding.tvUpdateDate.text = "${TXATranslation.txa("txamusic_update_release_date")}: ${updateInfo.releaseDate}"
+        dialogBinding.tvUpdateDate.text = TXATranslation.txa("txamusic_update_release_date").format(updateInfo.releaseDate)
         
         // Setup buttons with translations
         dialogBinding.btnCancel.text = TXATranslation.txa("txamusic_action_cancel")
