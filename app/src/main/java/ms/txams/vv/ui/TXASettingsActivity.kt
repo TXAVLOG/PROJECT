@@ -19,7 +19,15 @@ import ms.txams.vv.databinding.TxaActivitySettingsBinding
 import ms.txams.vv.update.TXAUpdateManager
 import ms.txams.vv.update.TXAUpdateWorker
 import ms.txams.vv.core.TXAApp
+import ms.txams.vv.core.TXAFormat
 import ms.txams.vv.update.UpdateCheckResult
+import ms.txams.vv.update.TXAUpdatePhase
+import ms.txams.vv.databinding.TxaDialogDownloadProgressBinding
+import ms.txams.vv.databinding.TxaDialogUpdateChangelogBinding
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.app.AlertDialog
+import android.view.LayoutInflater
 
 /**
  * TXA Settings Activity
@@ -350,59 +358,124 @@ class TXASettingsActivity : BaseActivity() {
     }
     
     private fun showUpdateDialog(updateInfo: ms.txams.vv.update.UpdateInfo) {
-        val message = buildString {
-            append("Version: ${updateInfo.versionName}\n")
-            append("Size: ${formatBytes(updateInfo.downloadSizeBytes)}\n\n")
-            append("Changelog:\n${updateInfo.changelog}")
+        val dialogBinding = TxaDialogUpdateChangelogBinding.inflate(layoutInflater)
+        
+        val dialog = AlertDialog.Builder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+        
+        // Setup header with translations
+        dialogBinding.tvUpdateTitle.text = TXATranslation.txa("txamusic_update_available")
+        dialogBinding.tvUpdateVersion.text = "Version ${updateInfo.versionName}"
+        dialogBinding.tvUpdateSize.text = "${TXATranslation.txa("txamusic_update_size")}: ${TXAFormat.formatBytes(updateInfo.downloadSizeBytes)}"
+        dialogBinding.tvUpdateDate.text = "${TXATranslation.txa("txamusic_update_release_date")}: ${updateInfo.releaseDate}"
+        
+        // Setup buttons with translations
+        dialogBinding.btnCancel.text = TXATranslation.txa("txamusic_action_cancel")
+        dialogBinding.btnUpdate.text = TXATranslation.txa("txamusic_action_update")
+        
+        // Setup WebView for changelog
+        dialogBinding.webViewChangelog.apply {
+            settings.javaScriptEnabled = false
+            settings.domStorageEnabled = true
+            settings.builtInZoomControls = false
+            settings.displayZoomControls = false
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            
+            webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    dialogBinding.progressChangelog.visibility = android.view.View.GONE
+                }
+            }
+            
+            // Load changelog HTML content
+            val changelogHtml = buildString {
+                append("<!DOCTYPE html><html><head>")
+                append("<meta charset='UTF-8'>")
+                append("<meta name='viewport' content='width=device-width, initial-scale=1.0'>")
+                append("<style>")
+                append("body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 16px; margin: 0; color: #E0E0E0; background: transparent; line-height: 1.6; }")
+                append("h1, h2, h3 { color: #BB86FC; margin-top: 0; }")
+                append("ul { padding-left: 20px; }")
+                append("li { margin-bottom: 8px; }")
+                append(".emoji { font-size: 1.1em; }")
+                append("</style></head><body>")
+                append(updateInfo.changelog)
+                append("</body></html>")
+            }
+            loadDataWithBaseURL(null, changelogHtml, "text/html", "UTF-8", null)
         }
         
-        MaterialAlertDialogBuilder(this)
-            .setTitle(TXATranslation.txa("txamusic_update_available"))
-            .setMessage(message)
-            .setPositiveButton(TXATranslation.txa("txamusic_action_update")) { _, _ ->
-                startUpdateDownload(updateInfo)
-            }
-            .setNegativeButton(TXATranslation.txa("txamusic_action_cancel"), null)
-            .show()
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+        
+        dialogBinding.btnUpdate.setOnClickListener {
+            dialog.dismiss()
+            startUpdateDownload(updateInfo)
+        }
+        
+        dialog.show()
     }
     
     private fun startUpdateDownload(updateInfo: ms.txams.vv.update.UpdateInfo) {
-        val progressDialog = MaterialAlertDialogBuilder(this)
-            .setTitle(TXATranslation.txa("txamusic_update_downloading"))
-            .setMessage(TXATranslation.txa("txamusic_msg_please_wait"))
+        val dialogBinding = TxaDialogDownloadProgressBinding.inflate(layoutInflater)
+        
+        val dialog = AlertDialog.Builder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
+            .setView(dialogBinding.root)
             .setCancelable(false)
             .create()
-            
-        progressDialog.show()
+        
+        // Setup initial UI with translations
+        dialogBinding.tvDownloadTitle.text = TXATranslation.txa("txamusic_update_downloading")
+        dialogBinding.tvDownloadStatus.text = TXATranslation.txa("txamusic_download_connecting")
+        dialogBinding.tvProgressPercent.text = "0%"
+        dialogBinding.tvDownloadSizeInfo.text = "0 KB / 0 KB"
+        dialogBinding.tvDownloadSpeed.text = "0 KB/s"
+        dialogBinding.tvDownloadEta.text = "--:--"
+        
+        dialog.show()
         
         lifecycleScope.launch {
             TXAUpdateManager.downloadUpdate(this@TXASettingsActivity, updateInfo)
                 .collect { phase ->
                     when (phase) {
-                        is ms.txams.vv.update.TXAUpdatePhase.Downloading -> {
-                            progressDialog.setMessage("Downloading: ${phase.progressPercent}%")
+                        is TXAUpdatePhase.Starting -> {
+                            dialogBinding.tvDownloadStatus.text = TXATranslation.txa("txamusic_download_starting")
                         }
-                        is ms.txams.vv.update.TXAUpdatePhase.ReadyToInstall -> {
-                            progressDialog.dismiss()
+                        is TXAUpdatePhase.Resolving -> {
+                            dialogBinding.tvDownloadStatus.text = TXATranslation.txa("txamusic_download_resolving")
+                        }
+                        is TXAUpdatePhase.Connecting -> {
+                            dialogBinding.tvDownloadStatus.text = TXATranslation.txa("txamusic_download_connecting")
+                        }
+                        is TXAUpdatePhase.Downloading -> {
+                            val percent = phase.progressPercent
+                            dialogBinding.tvProgressPercent.text = "${TXAFormat.formatTwoDigits(percent)}%"
+                            dialogBinding.progressBar.progress = percent
+                            dialogBinding.cpDownloadProgress.progress = percent
+                            dialogBinding.tvDownloadSizeInfo.text = TXAFormat.formatProgressDetail(phase.downloadedBytes, phase.totalBytes)
+                            dialogBinding.tvDownloadSpeed.text = TXAFormat.formatSpeed(phase.speed.toLong())
+                            dialogBinding.tvDownloadEta.text = TXAFormat.formatTimeRemaining(phase.etaSeconds * 1000L)
+                            dialogBinding.tvDownloadStatus.text = TXATranslation.txa("txamusic_download_downloading")
+                        }
+                        is TXAUpdatePhase.Retrying -> {
+                            dialogBinding.tvDownloadStatus.text = "${TXATranslation.txa("txamusic_download_retrying")} (${phase.attempt}/${phase.maxAttempts})"
+                        }
+                        is TXAUpdatePhase.Validating -> {
+                            dialogBinding.tvDownloadStatus.text = TXATranslation.txa("txamusic_download_validating")
+                            dialogBinding.progressBar.isIndeterminate = true
+                        }
+                        is TXAUpdatePhase.ReadyToInstall -> {
+                            dialog.dismiss()
                             TXAUpdateManager.installUpdate(this@TXASettingsActivity)
                         }
-                        is ms.txams.vv.update.TXAUpdatePhase.Error -> {
-                            progressDialog.dismiss()
-                            Toast.makeText(this@TXASettingsActivity, "Error: ${phase.message}", Toast.LENGTH_LONG).show()
-                        }
-                        else -> {
-                            // Other phases (Connecting, etc.)
+                        is TXAUpdatePhase.Error -> {
+                            dialog.dismiss()
+                            Toast.makeText(this@TXASettingsActivity, "${TXATranslation.txa("txamusic_download_error")}: ${phase.message}", Toast.LENGTH_LONG).show()
                         }
                     }
                 }
-        }
-    }
-    
-    private fun formatBytes(bytes: Long): String {
-        return when {
-            bytes < 1024 -> "$bytes B"
-            bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-            else -> String.format("%.2f MB", bytes.toDouble() / (1024 * 1024))
         }
     }
 

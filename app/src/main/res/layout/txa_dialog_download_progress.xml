@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvDownloadTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Downloading Update..."
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorOnSurface"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Circular Progress with Percentage -->
+    <FrameLayout
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp">
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/cpDownloadProgress"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_gravity="center"
+            app:indicatorSize="120dp"
+            app:trackThickness="8dp"
+            app:trackColor="#26FFFFFF"
+            app:indicatorColor="@color/txa_primary"
+            android:progress="0"
+            app:trackCornerRadius="4dp"/>
+
+        <TextView
+            android:id="@+id/tvProgressPercent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="0%"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/txa_primary"/>
+    </FrameLayout>
+
+    <!-- Linear Progress Bar -->
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:trackThickness="8dp"
+        app:trackCornerRadius="4dp"
+        android:progress="0"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Download Stats -->
+    <!-- Row 1: Progress -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingVertical="4dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Progress"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="12sp"/>
+
+        <TextView
+            android:id="@+id/tvDownloadSizeInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 KB / 0 KB"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="14sp"/>
+    </LinearLayout>
+
+    <!-- Row 2: Speed -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingVertical="4dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Speed"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="12sp"/>
+
+        <TextView
+            android:id="@+id/tvDownloadSpeed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 KB/s"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="14sp"/>
+    </LinearLayout>
+
+    <!-- Row 3: ETA -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingVertical="4dp"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="ETA"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="12sp"/>
+
+        <TextView
+            android:id="@+id/tvDownloadEta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="--:--"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="14sp"/>
+    </LinearLayout>
+
+    <!-- Status Text -->
+    <TextView
+        android:id="@+id/tvDownloadStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Connecting..."
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="12sp"
+        android:textAlignment="center"/>
+
+</LinearLayout>
