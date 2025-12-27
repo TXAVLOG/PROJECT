@@ -86,36 +86,39 @@ class TXAMainActivity : BaseActivity() {
     private var pendingUri: android.net.Uri? = null
 
     private fun playUri(uri: android.net.Uri) {
-        val player = mediaController ?: return
-        
-        // Get file name from URI
-        val fileName = try {
-            val cursor = contentResolver.query(uri, null, null, null, null)
-            cursor?.use {
-                if (it.moveToFirst()) {
-                    val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                    if (nameIndex != -1) it.getString(nameIndex) else null
-                } else null
-            }
-        } catch (e: Exception) {
-            null
-        } ?: uri.lastPathSegment ?: TXATranslation.txa("txamusic_unknown")
+        lifecycleScope.launch {
+            val mergedUri = ms.txams.vv.core.TXAAudioMerger.getMergedAudioUri(this@TXAMainActivity, uri)
+            
+            val player = mediaController ?: return@launch
+            
+            // Get file name from URI
+            val fileName = try {
+                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (nameIndex != -1) cursor.getString(nameIndex) else null
+                    } else null
+                }
+            } catch (e: Exception) {
+                null
+            } ?: uri.lastPathSegment ?: TXATranslation.txa("txamusic_unknown")
 
-        val metadata = MediaMetadata.Builder()
-            .setTitle(fileName)
-            .setArtist(TXATranslation.txa("txamusic_unknown"))
-            .setArtworkUri(uri)
-            .build()
-            
-        val item = MediaItem.Builder()
-            .setUri(uri)
-            .setMediaId(uri.toString())
-            .setMediaMetadata(metadata)
-            .build()
-            
-        player.setMediaItem(item)
-        player.prepare()
-        player.play()
+            val metadata = MediaMetadata.Builder()
+                .setTitle(fileName)
+                .setArtist(TXATranslation.txa("txamusic_unknown"))
+                .setArtworkUri(uri)
+                .build()
+                
+            val item = MediaItem.Builder()
+                .setUri(mergedUri)
+                .setMediaId(uri.toString())
+                .setMediaMetadata(metadata)
+                .build()
+                
+            player.setMediaItem(item)
+            player.prepare()
+            player.play()
+        }
     }
     
     private fun initUI() {
@@ -353,23 +356,28 @@ class TXAMainActivity : BaseActivity() {
     }
     
     private fun playSong(song: SongEntity) {
-        val player = mediaController ?: return
-         
-        val metadata = MediaMetadata.Builder()
-            .setTitle(song.title)
-            .setArtist(song.artist)
-            .setArtworkUri(android.net.Uri.parse(song.path)) // Local path
-            .build()
+        lifecycleScope.launch {
+            val originalUri = android.net.Uri.parse(song.path)
+            val mergedUri = ms.txams.vv.core.TXAAudioMerger.getMergedAudioUri(this@TXAMainActivity, originalUri)
             
-        val item = MediaItem.Builder()
-            .setUri(song.path)
-            .setMediaId(song.id.toString())
-            .setMediaMetadata(metadata)
-            .build()
-            
-        player.setMediaItem(item)
-        player.prepare()
-        player.play()
+            val player = mediaController ?: return@launch
+             
+            val metadata = MediaMetadata.Builder()
+                .setTitle(song.title)
+                .setArtist(song.artist)
+                .setArtworkUri(originalUri) // Keep original URI for artwork
+                .build()
+                
+            val item = MediaItem.Builder()
+                .setUri(mergedUri)
+                .setMediaId(song.id.toString())
+                .setMediaMetadata(metadata)
+                .build()
+                
+            player.setMediaItem(item)
+            player.prepare()
+            player.play()
+        }
     }
     
     private val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(

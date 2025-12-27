@@ -29,4 +29,12 @@ class MusicViewModel @Inject constructor(
             _isLoading.value = false
         }
     }
+
+    fun addManualSong(uri: android.net.Uri) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            repository.addManualSong(uri)
+            _isLoading.value = false
+        }
+    }
 }

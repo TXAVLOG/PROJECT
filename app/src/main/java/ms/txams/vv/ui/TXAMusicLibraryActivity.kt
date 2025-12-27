@@ -2,6 +2,7 @@ package ms.txams.vv.ui
 
 import android.Manifest
 import android.content.ComponentName
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -75,6 +76,15 @@ class TXAMusicLibraryActivity : BaseActivity() {
             viewModel.scanLibrary()
         } else {
             Toast.makeText(this, TXATranslation.txa("txamusic_permission_denied"), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val filePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            viewModel.addManualSong(it)
         }
     }
 
@@ -364,6 +374,9 @@ class TXAMusicLibraryActivity : BaseActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menu?.add(0, 1, 0, TXATranslation.txa("txamusic_refresh_library"))
             ?.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+        menu?.add(0, 2, 1, TXATranslation.txa("txamusic_add_manual_file"))
+            ?.setIcon(R.drawable.ic_add)
+            ?.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
         return super.onCreateOptionsMenu(menu)
     }
 
@@ -377,6 +390,7 @@ class TXAMusicLibraryActivity : BaseActivity() {
                 }
             }
             1 -> checkPermissionAndScan()
+            2 -> filePickerLauncher.launch(arrayOf("audio/*"))
         }
         return super.onOptionsItemSelected(item)
     }

@@ -115,6 +115,12 @@ class TXAApp : Application() {
             TXALogger.appE("Translation init failed", e)
             // App can still work with fallback strings
         }
+
+        // Step 4: Initialize Notification System
+        TXANotificationManager.init(this)
+
+        // Step 5: Start background update checks
+        ms.txams.vv.update.TXAUpdateWorker.startPeriodic(this)
         
         TXALogger.appI("TXA Music App initialized successfully")
     }

@@ -1,6 +1,7 @@
 package ms.txams.vv.ui
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -55,6 +56,12 @@ class TXASettingsActivity : BaseActivity() {
     private val THEME_SYSTEM = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
     private val THEME_LIGHT = AppCompatDelegate.MODE_NIGHT_NO
     private val THEME_DARK = AppCompatDelegate.MODE_NIGHT_YES
+
+    private val requestRoleLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) {
+        updateDefaultPlayerUI()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -499,22 +506,34 @@ class TXASettingsActivity : BaseActivity() {
         binding.btnSetDefault.text = TXATranslation.txa("txamusic_settings_set_default")
         
         binding.btnSetDefault.setOnClickListener {
-            try {
-                // Try to open default apps settings
-                val intent = Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
-                startActivity(intent)
-            } catch (e: Exception) {
-                try {
-                    // Fallback to general settings
-                    val intent = Intent(android.provider.Settings.ACTION_SETTINGS)
-                    startActivity(intent)
-                } catch (e2: Exception) {
-                    Toast.makeText(this, "Could not open settings", Toast.LENGTH_SHORT).show()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val roleManager = getSystemService(android.app.role.RoleManager::class.java)
+                if (roleManager != null && roleManager.isRoleAvailable("android.app.role.MUSIC")) {
+                    val intent = roleManager.createRequestRoleIntent("android.app.role.MUSIC")
+                    requestRoleLauncher.launch(intent)
+                } else {
+                    openDefaultAppsSettings()
                 }
+            } else {
+                openDefaultAppsSettings()
             }
         }
         
         updateDefaultPlayerUI()
+    }
+
+    private fun openDefaultAppsSettings() {
+        try {
+            val intent = Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
+            startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                val intent = Intent(android.provider.Settings.ACTION_SETTINGS)
+                startActivity(intent)
+            } catch (e2: Exception) {
+                Toast.makeText(this, "Could not open settings", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun updateDefaultPlayerUI() {
