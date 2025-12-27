@@ -30,6 +30,9 @@ class TXAMainActivity : BaseActivity() {
 
     @Inject lateinit var lyricsManager: ms.txams.vv.data.manager.TXALyricsManager
 
+    private lateinit var ttsManager: ms.txams.vv.core.TXATTSManager
+    private var isTtsInitialized = false
+
     private lateinit var binding: ActivityMainTxaBinding
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
     private lateinit var queueAdapter: TXAQueueAdapter
@@ -49,6 +52,11 @@ class TXAMainActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainTxaBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        ttsManager = ms.txams.vv.core.TXATTSManager(this)
+        lifecycleScope.launch {
+            isTtsInitialized = ttsManager.initialize()
+        }
 
         initUI()
         setupNavigation()
@@ -60,6 +68,110 @@ class TXAMainActivity : BaseActivity() {
         if (intent != null) {
             handleIntent(intent)
         }
+    }
+    
+    // ... handleIntent ...
+
+    private fun addToQueue(uri: android.net.Uri) {
+        lifecycleScope.launch {
+            // Get sequence (Intro + Song)
+            val mediaItems = prepareMediaItems(uri)
+            
+            val player = mediaController ?: return@launch
+            
+            if (mediaItems.isNotEmpty()) {
+                player.addMediaItems(mediaItems)
+                
+                android.widget.Toast.makeText(
+                    this@TXAMainActivity,
+                    TXATranslation.txa("txamusic_added_to_queue"),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    private var pendingUri: android.net.Uri? = null
+
+    private fun playUri(uri: android.net.Uri) {
+        lifecycleScope.launch {
+            val mediaItems = prepareMediaItems(uri)
+            
+            val player = mediaController ?: return@launch
+            
+            if (mediaItems.isNotEmpty()) {
+                player.setMediaItems(mediaItems)
+                player.prepare()
+                player.play()
+            }
+        }
+    }
+    
+    private suspend fun prepareMediaItems(songUri: android.net.Uri): List<MediaItem> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val items = mutableListOf<MediaItem>()
+        
+        // 1. Prepare Intro
+        try {
+            val cacheDir = java.io.File(externalCacheDir, "tts_cache")
+            if (!cacheDir.exists()) cacheDir.mkdirs()
+            val introFile = java.io.File(cacheDir, "intro_tts_v1.wav")
+            
+            if (!introFile.exists()) {
+                // Initialize if needed (might be on wrong thread, but verify)
+                if (!isTtsInitialized) { 
+                    // Main thread check required if not init? 
+                    // Assuming init in onCreate handles it mostly, or we skip intro.
+                    // For robust fallback:
+                }
+                
+                // Synthesize (requires main thread for some engines, but TTSManager puts callback on Main)
+                val introText = ttsManager.getIntroTextForSynthesis()
+                ttsManager.synthesizeToFile(introText, introFile)
+            }
+            
+            if (introFile.exists() && introFile.length() > 0) {
+                 val introItem = MediaItem.Builder()
+                    .setUri(android.net.Uri.fromFile(introFile))
+                    .setMediaId("intro_txa")
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle("TXA Intro")
+                            .setArtist("TXA Assistant")
+                            .build()
+                    )
+                    .build()
+                 items.add(introItem)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        
+        // 2. Prepare Song
+        // Get file name/metadata
+        val fileName = try {
+            contentResolver.query(songUri, null, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (nameIndex != -1) cursor.getString(nameIndex) else null
+                } else null
+            }
+        } catch (e: Exception) { null } ?: songUri.lastPathSegment ?: TXATranslation.txa("txamusic_unknown")
+
+        val metadata = MediaMetadata.Builder()
+            .setTitle(fileName)
+            .setArtist(TXATranslation.txa("txamusic_unknown"))
+            .setArtworkUri(songUri)
+            .build()
+            
+        val songItem = MediaItem.Builder()
+            .setUri(songUri)
+            .setMediaId(songUri.toString())
+            .setMediaMetadata(metadata)
+            .build()
+            
+        items.add(songItem)
+        
+        return@withContext items
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -101,84 +213,7 @@ class TXAMainActivity : BaseActivity() {
             .show()
     }
     
-    private fun addToQueue(uri: android.net.Uri) {
-        lifecycleScope.launch {
-            val mergedUri = ms.txams.vv.core.TXAAudioMerger.getMergedAudioUri(this@TXAMainActivity, uri)
-            
-            val player = mediaController ?: return@launch
-            
-            // Get file name from URI
-            val fileName = try {
-                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                        if (nameIndex != -1) cursor.getString(nameIndex) else null
-                    } else null
-                }
-            } catch (e: Exception) {
-                null
-            } ?: uri.lastPathSegment ?: TXATranslation.txa("txamusic_unknown")
 
-            val metadata = MediaMetadata.Builder()
-                .setTitle(fileName)
-                .setArtist(TXATranslation.txa("txamusic_unknown"))
-                .setArtworkUri(uri)
-                .build()
-                
-            val item = MediaItem.Builder()
-                .setUri(mergedUri)
-                .setMediaId(uri.toString())
-                .setMediaMetadata(metadata)
-                .build()
-                
-            // Add to queue
-            player.addMediaItem(item)
-            
-            android.widget.Toast.makeText(
-                this@TXAMainActivity,
-                TXATranslation.txa("txamusic_added_to_queue"),
-                android.widget.Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
-    private var pendingUri: android.net.Uri? = null
-
-    private fun playUri(uri: android.net.Uri) {
-        lifecycleScope.launch {
-            val mergedUri = ms.txams.vv.core.TXAAudioMerger.getMergedAudioUri(this@TXAMainActivity, uri)
-            
-            val player = mediaController ?: return@launch
-            
-            // Get file name from URI
-            val fileName = try {
-                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                        if (nameIndex != -1) cursor.getString(nameIndex) else null
-                    } else null
-                }
-            } catch (e: Exception) {
-                null
-            } ?: uri.lastPathSegment ?: TXATranslation.txa("txamusic_unknown")
-
-            val metadata = MediaMetadata.Builder()
-                .setTitle(fileName)
-                .setArtist(TXATranslation.txa("txamusic_unknown"))
-                .setArtworkUri(uri)
-                .build()
-                
-            val item = MediaItem.Builder()
-                .setUri(mergedUri)
-                .setMediaId(uri.toString())
-                .setMediaMetadata(metadata)
-                .build()
-                
-            player.setMediaItem(item)
-            player.prepare()
-            player.play()
-        }
-    }
     
     private fun initUI() {
         binding.tvHeader.text = TXATranslation.txa("txamusic_app_name")
@@ -222,7 +257,10 @@ class TXAMainActivity : BaseActivity() {
     }
 
     private fun releaseController() {
-        controllerFuture?.let { MediaController.releaseFuture(it) }
+        val future = controllerFuture
+        if (future != null) {
+            MediaController.releaseFuture(future)
+        }
         mediaController = null
     }
     
@@ -504,25 +542,36 @@ class TXAMainActivity : BaseActivity() {
     private fun playSong(song: SongEntity) {
         lifecycleScope.launch {
             val originalUri = android.net.Uri.parse(song.path)
-            val mergedUri = ms.txams.vv.core.TXAAudioMerger.getMergedAudioUri(this@TXAMainActivity, originalUri)
+            val mediaItems = prepareMediaItems(originalUri)
             
             val player = mediaController ?: return@launch
              
-            val metadata = MediaMetadata.Builder()
-                .setTitle(song.title)
-                .setArtist(song.artist)
-                .setArtworkUri(originalUri) // Keep original URI for artwork
-                .build()
+            if (mediaItems.isNotEmpty()) {
+                // Update metadata for the Song item (index 1 if intro exists, else 0)
+                // The prepareMediaItems already sets metadata for the song item.
+                // But we derived it from File/ContentResolver. 
+                // Here we have SongEntity which is better.
+                // Let's update the song item (last item) with Entity metadata.
                 
-            val item = MediaItem.Builder()
-                .setUri(mergedUri)
-                .setMediaId(song.id.toString())
-                .setMediaMetadata(metadata)
-                .build()
+                val songItem = mediaItems.last()
+                val betterMetadata = songItem.mediaMetadata.buildUpon()
+                    .setTitle(song.title)
+                    .setArtist(song.artist)
+                    .setArtworkUri(originalUri)
+                    .build()
+                    
+                val betterItem = songItem.buildUpon()
+                    .setMediaMetadata(betterMetadata)
+                    .setMediaId(song.id.toString())
+                    .build()
                 
-            player.setMediaItem(item)
-            player.prepare()
-            player.play()
+                val finalItems = mediaItems.toMutableList()
+                finalItems[finalItems.lastIndex] = betterItem
+                
+                player.setMediaItems(finalItems)
+                player.prepare()
+                player.play()
+            }
         }
     }
     
