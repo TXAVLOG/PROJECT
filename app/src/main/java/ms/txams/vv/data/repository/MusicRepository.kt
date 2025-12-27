@@ -141,7 +141,7 @@ class MusicRepository @Inject constructor(
                 }
                 
                 // Update Database
-                songDao.clearAll()
+                // Using REPLACE strategy in DAO handles duplicates
                 songDao.insertAll(songList)
                 
                 val elapsed = System.currentTimeMillis() - startTime
@@ -153,6 +153,63 @@ class MusicRepository @Inject constructor(
             } catch (e: Exception) {
                 TXALogger.appE("Error scanning music library: ${e.message}")
                 e.printStackTrace()
+            }
+        }
+    }
+
+    suspend fun addManualSong(uri: android.net.Uri) {
+        withContext(Dispatchers.IO) {
+            TXALogger.appI("Adding manual song: $uri")
+            try {
+                // Remove existing if duplicate path
+                songDao.deleteByPath(uri.toString())
+
+                // Try to get info from ContentResolver
+                val projection = arrayOf(
+                    MediaStore.Audio.Media.TITLE,
+                    MediaStore.Audio.Media.ARTIST,
+                    MediaStore.Audio.Media.ALBUM,
+                    MediaStore.Audio.Media.DURATION,
+                    MediaStore.Audio.Media.SIZE,
+                    MediaStore.Audio.Media.ALBUM_ID
+                )
+                
+                context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+                     if (cursor.moveToFirst()) {
+                         val song = SongEntity(
+                             id = uri.hashCode().toLong(), // Unique ID for manual
+                             title = cursor.getString(0) ?: "Unknown",
+                             artist = cursor.getString(1) ?: "Unknown",
+                             album = cursor.getString(2) ?: "Unknown",
+                             duration = cursor.getLong(3),
+                             path = uri.toString(),
+                             size = cursor.getLong(4),
+                             addedAt = System.currentTimeMillis() / 1000,
+                             albumId = cursor.getLong(5)
+                         )
+                         songDao.insert(song)
+                         TXALogger.appI("Manual song added: ${song.title}")
+                         return@withContext
+                     }
+                }
+                
+                // Fallback for simple files
+                val song = SongEntity(
+                    id = uri.hashCode().toLong(),
+                    title = uri.lastPathSegment ?: "Unknown",
+                    artist = "Unknown",
+                    album = "Unknown",
+                    duration = 0,
+                    path = uri.toString(),
+                    size = 0,
+                    addedAt = System.currentTimeMillis() / 1000,
+                    albumId = 0
+                )
+                songDao.insert(song)
+                TXALogger.appI("Manual song added (fallback): ${song.title}")
+                
+            } catch (e: Exception) {
+                TXALogger.appE("Failed to add manual song", e)
             }
         }
     }

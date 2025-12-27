@@ -1,6 +1,7 @@
 package ms.txams.vv.ui
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -56,6 +57,12 @@ class TXASettingsActivity : BaseActivity() {
     private val THEME_LIGHT = AppCompatDelegate.MODE_NIGHT_NO
     private val THEME_DARK = AppCompatDelegate.MODE_NIGHT_YES
 
+    private val requestRoleLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) {
+        updateDefaultPlayerUI()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = TxaActivitySettingsBinding.inflate(layoutInflater)
@@ -69,8 +76,14 @@ class TXASettingsActivity : BaseActivity() {
         setupFontSection()
         setupAppearanceSection()
         setupUpdateSection()
+        setupDefaultPlayerSection()
         setupLogsSection()
         setupAboutSection()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateDefaultPlayerUI()
     }
     
     private fun setupToolbar() {
@@ -485,6 +498,66 @@ class TXASettingsActivity : BaseActivity() {
                         }
                     }
                 }
+        }
+    }
+
+    private fun setupDefaultPlayerSection() {
+        binding.tvDefaultPlayerTitle.text = TXATranslation.txa("txamusic_settings_default_player")
+        binding.btnSetDefault.text = TXATranslation.txa("txamusic_settings_set_default")
+        
+        binding.btnSetDefault.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val roleManager = getSystemService(android.app.role.RoleManager::class.java)
+                if (roleManager != null && roleManager.isRoleAvailable("android.app.role.MUSIC")) {
+                    val intent = roleManager.createRequestRoleIntent("android.app.role.MUSIC")
+                    requestRoleLauncher.launch(intent)
+                } else {
+                    openDefaultAppsSettings()
+                }
+            } else {
+                openDefaultAppsSettings()
+            }
+        }
+        
+        updateDefaultPlayerUI()
+    }
+
+    private fun openDefaultAppsSettings() {
+        try {
+            val intent = Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
+            startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                val intent = Intent(android.provider.Settings.ACTION_SETTINGS)
+                startActivity(intent)
+            } catch (e2: Exception) {
+                Toast.makeText(this, "Could not open settings", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun updateDefaultPlayerUI() {
+        val isDefault = isDefaultMusicPlayer()
+        if (isDefault) {
+            binding.tvDefaultStatus.text = TXATranslation.txa("txamusic_settings_status_default")
+            binding.tvDefaultStatus.setTextColor(getColor(R.color.txa_primary))
+            binding.btnSetDefault.visibility = android.view.View.GONE
+        } else {
+            binding.tvDefaultStatus.text = TXATranslation.txa("txamusic_settings_status_not_default")
+            binding.tvDefaultStatus.setTextColor(getColor(R.color.txa_on_surface_variant))
+            binding.btnSetDefault.visibility = android.view.View.VISIBLE
+        }
+    }
+
+    private fun isDefaultMusicPlayer(): Boolean {
+        return try {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(android.net.Uri.parse("file:///sdcard/dummy.mp3"), "audio/mp3")
+            }
+            val resolveInfo = packageManager.resolveActivity(intent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+            resolveInfo?.activityInfo?.packageName == packageName
+        } catch (e: Exception) {
+            false
         }
     }
 

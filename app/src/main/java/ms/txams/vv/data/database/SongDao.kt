@@ -14,8 +14,14 @@ interface SongDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(songs: List<SongEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(song: SongEntity)
+
     @Query("DELETE FROM songs")
     suspend fun clearAll()
+    
+    @Query("DELETE FROM songs WHERE path = :path")
+    suspend fun deleteByPath(path: String)
     
     @Query("SELECT * FROM songs WHERE title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%'")
     fun searchSongs(query: String): Flow<List<SongEntity>>

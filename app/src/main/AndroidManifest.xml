@@ -47,7 +47,16 @@
 
         <activity android:name=".ui.TXAMainActivity" 
                   android:theme="@style/Theme.TXAMusic"
-                  android:launchMode="singleTask"/>
+                  android:launchMode="singleTask"
+                  android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+        </activity>
         
         <activity android:name=".ui.TXASettingsActivity" />
         <activity android:name=".ui.TXAMusicLibraryActivity" />

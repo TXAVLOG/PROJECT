@@ -434,7 +434,20 @@ object TXATranslation {
   "txamusic_update_status_idle": "Idle",
   "txamusic_update_status_resolving": "Resolving download URL...",
   "txamusic_error_prefix": "Error: %s",
-  "txamusic_update_version_label": "Version %s"
+  "txamusic_update_version_label": "Version %s",
+  "txamusic_settings_default_player": "Default Music Player",
+  "txamusic_settings_status_default": "App is set as default player",
+  "txamusic_settings_status_not_default": "App is not the default player",
+  "txamusic_settings_set_default": "Set as Default",
+  "txamusic_update_notification_channel_name": "Update Notifications",
+  "txamusic_update_notification_channel_description": "Notifies about new app versions",
+  "txamusic_update_notification_body": "New version %s is available!",
+  "txamusic_add_manual_file": "Add Manual File",
+  "txamusic_music_library_title": "Music Library",
+  "txamusic_library_empty": "No music found",
+  "txamusic_refresh_library": "Refresh Library",
+  "txamusic_songs": "songs",
+  "txamusic_songs_count": "%d songs"
 }
 """
         try {
