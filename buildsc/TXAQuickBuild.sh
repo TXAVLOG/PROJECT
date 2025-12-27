@@ -2,6 +2,11 @@
 # FILE BY TXA - Contact: fb.com/vlog.txa.2311
 # TXA Music - Linux/VPS Quick Build + GitHub Release
 # Usage: ./TXAQuickBuild.sh [--release]
+# 
+# Features:
+# - Auto-read CHANGELOG.html for release notes
+# - Dynamic version from version.properties
+# - GitHub Release with full description
 
 set -e
 
@@ -9,11 +14,13 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 
 # Parse args
 BUILD_TYPE="debug"
@@ -23,6 +30,7 @@ BUILD_TYPE="debug"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 ENV_FILE="$SCRIPT_DIR/.env"
+CHANGELOG_FILE="$PROJECT_ROOT/app/src/main/assets/CHANGELOG.html"
 
 # Load .env
 if [ -f "$ENV_FILE" ]; then
@@ -69,7 +77,64 @@ cp "$APK_SOURCE" "$OUTPUT_FILE"
 APK_SIZE=$(du -h "$OUTPUT_FILE" | cut -f1)
 log_success "Build successful! Size: $APK_SIZE"
 
-# 2. GIT PUSH
+# 2. Extract changelog from HTML
+extract_changelog() {
+    if [ ! -f "$CHANGELOG_FILE" ]; then
+        log_warning "CHANGELOG.html not found, using default"
+        echo "TXA Music v$VERSION_NAME - Cập nhật phiên bản mới."
+        return
+    fi
+    
+    log_info "Extracting changelog from CHANGELOG.html..."
+    
+    # Extract <li> items from HTML
+    local items=$(grep -oP '(?<=<li>)[^<]+' "$CHANGELOG_FILE" 2>/dev/null | head -15)
+    
+    if [ -n "$items" ]; then
+        echo "$items"
+    else
+        # Fallback: Remove all HTML tags
+        cat "$CHANGELOG_FILE" | sed 's/<[^>]*>//g' | grep -v "^$" | head -20
+    fi
+}
+
+# Generate release notes
+generate_release_notes() {
+    local notes=""
+    notes+="## 📱 TXA Music v$VERSION_NAME"$'\n\n'
+    
+    # Add changelog items
+    local changelog=$(extract_changelog)
+    if [ -n "$changelog" ]; then
+        notes+="### 📝 Changelog:"$'\n'
+        while IFS= read -r line; do
+            # Clean up the line
+            line=$(echo "$line" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+            if [ -n "$line" ]; then
+                notes+="- $line"$'\n'
+            fi
+        done <<< "$changelog"
+        notes+=$'\n'
+    fi
+    
+    # Add build info
+    notes+="### 📦 Build Info:"$'\n'
+    notes+="- Build Type: \`$BUILD_TYPE\`"$'\n'
+    notes+="- Version Code: \`$VERSION_CODE\`"$'\n'
+    notes+="- Build Date: \`$(date '+%Y-%m-%d %H:%M')\`"$'\n'
+    notes+="- Git Commit: \`$(git rev-parse --short HEAD 2>/dev/null || echo 'N/A')\`"$'\n'
+    
+    echo "$notes"
+}
+
+RELEASE_NOTES=$(generate_release_notes)
+log_info "Generated release notes:"
+echo "$RELEASE_NOTES"
+
+# Save to file for reference
+echo "$RELEASE_NOTES" > "$BUILD_DIR/RELEASE_NOTES.md"
+
+# 3. GIT PUSH
 log_info "Pushing to Git..."
 
 if [ -n "$GIT_EMAIL" ] && [ -n "$GIT_NAME" ]; then
@@ -83,7 +148,7 @@ git commit -m "build: TXAMusic-$VERSION_NAME-$BUILD_TYPE" || true
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 git push origin "$BRANCH:main" --force && log_success "Pushed to main branch from: $BRANCH" || log_error "Git push failed (continuing...)"
 
-# 3. GITHUB RELEASE
+# 4. GITHUB RELEASE
 log_info "Uploading to GitHub Release..."
 
 # Check gh CLI
@@ -100,24 +165,14 @@ fi
 
 TAG="v$VERSION_NAME"
 TITLE="TXA Music v$VERSION_NAME"
-NOTES="TXA Music v$VERSION_NAME
 
-- Build Type: $BUILD_TYPE
-- Version Code: $VERSION_CODE
-- Built: $(date '+%Y-%m-%d %H:%M')
-
-Features:
-- Music Player with Media3
-- OTA Translation System
-- Auto Update System"
-
-# Create or update release
+# Create or update release with dynamic notes
 if gh release view "$TAG" &> /dev/null; then
     log_info "Updating release: $TAG"
-    gh release edit "$TAG" --title "$TITLE" --notes "$NOTES"
+    gh release edit "$TAG" --title "$TITLE" --notes "$RELEASE_NOTES"
 else
     log_info "Creating release: $TAG"
-    gh release create "$TAG" --title "$TITLE" --notes "$NOTES"
+    gh release create "$TAG" --title "$TITLE" --notes "$RELEASE_NOTES"
 fi
 
 # Upload APK
