@@ -538,16 +538,36 @@ object TXATranslation {
                 if (!response.isSuccessful) return@withContext null
                 val body = response.body?.string() ?: return@withContext null
                 
-                val json = JSONObject(body)
-                if (!json.optBoolean("ok")) return@withContext null
-                
-                val locales = json.getJSONArray("locales")
-                for (i in 0 until locales.length()) {
-                    val item = locales.getJSONObject(i)
-                    if (item.getString("code") == locale) {
-                        return@withContext item.getString("updated_at")
+                // Try parsing as Object first (Handbook spec)
+                try {
+                    val json = JSONObject(body)
+                    if (json.has("locales")) {
+                        val locales = json.getJSONArray("locales")
+                        for (i in 0 until locales.length()) {
+                            val item = locales.getJSONObject(i)
+                            if (item.getString("code") == locale) {
+                                return@withContext item.getString("updated_at")
+                            }
+                        }
+                        return@withContext null
                     }
+                } catch (e: Exception) {
+                    // Ignore and try array
                 }
+                
+                // Try parsing as Array (Actual server response observed)
+                try {
+                    val locales = org.json.JSONArray(body)
+                    for (i in 0 until locales.length()) {
+                        val item = locales.getJSONObject(i)
+                        if (item.getString("code") == locale) {
+                            return@withContext item.getString("updated_at")
+                        }
+                    }
+                } catch (e: Exception) {
+                    TXALogger.apiE("Failed to parse locales response", e)
+                }
+                
                 null
             }
         } catch (e: Exception) {
