@@ -94,16 +94,37 @@
                 android:layout_height="match_parent"
                 android:paddingHorizontal="16dp">
                 
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/ivNowPlayingArt"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/ic_music_note"
-                    android:scaleType="centerCrop"
-                    app:shapeAppearanceOverlay="@style/CircleImage"
+                <!-- Album Art with Progress Circle -->
+                <FrameLayout
+                    android:id="@+id/flNowPlayingArt"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"/>
+                    app:layout_constraintStart_toStartOf="parent">
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/cpNowBarProgress"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:layout_gravity="center"
+                        app:indicatorSize="56dp"
+                        app:trackThickness="3dp"
+                        app:trackColor="#40FFFFFF"
+                        app:indicatorColor="@android:color/white"
+                        android:progress="0"
+                        app:trackCornerRadius="2dp"/>
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/ivNowPlayingArt"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_music_note"
+                        android:scaleType="centerCrop"
+                        app:shapeAppearanceOverlay="@style/CircleImage"/>
+
+                </FrameLayout>
                     
                 <TextView
                     android:id="@+id/tvNowPlayingTitle"
@@ -118,7 +139,7 @@
                     android:textStyle="bold"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toEndOf="@+id/ivNowPlayingArt"
+                    app:layout_constraintStart_toEndOf="@+id/flNowPlayingArt"
                     app:layout_constraintEnd_toStartOf="@+id/btnPlayPause"/>
     
                  <ImageView

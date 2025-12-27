@@ -41,7 +41,7 @@ class TXAMainActivity : BaseActivity() {
     private val progressRunnable = object : Runnable {
         override fun run() {
             updateProgress()
-            handler.postDelayed(this, 1000)
+            handler.postDelayed(this, 16) // ~60fps for millisecond precision
         }
     }
 
@@ -145,8 +145,9 @@ class TXAMainActivity : BaseActivity() {
             binding.ivNowPlayingBackground.setImageDrawable(null)
             binding.btnPlayPause.setImageResource(R.drawable.ic_play)
             binding.cpDiskProgress.progress = 0
-            binding.tvCurrentTime.text = "00:00:000"
-            binding.tvTotalTime.text = "00:00:000"
+            binding.cpNowBarProgress.progress = 0
+            binding.tvCurrentTime.text = "00:00.000"
+            binding.tvTotalTime.text = "00:00.000"
             stopRotation()
             return
         }
@@ -193,6 +194,7 @@ class TXAMainActivity : BaseActivity() {
             val progressPercent = (position * 100 / duration).toInt()
             binding.songProgress.value = progressPercent.toFloat().coerceIn(0f, 100f)
             binding.cpDiskProgress.progress = progressPercent
+            binding.cpNowBarProgress.progress = progressPercent
             
             binding.tvCurrentTime.text = ms.txams.vv.core.TXAFormat.formatDuration(position, true)
             binding.tvTotalTime.text = ms.txams.vv.core.TXAFormat.formatDuration(duration, true)
