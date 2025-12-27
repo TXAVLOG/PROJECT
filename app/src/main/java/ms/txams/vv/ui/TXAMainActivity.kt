@@ -72,14 +72,73 @@ class TXAMainActivity : BaseActivity() {
         if (Intent.ACTION_VIEW == intent.action) {
             val uri = intent.data
             if (uri != null) {
-                // If controller is ready, play immediately.
-                // Otherwise, it will be played in initializeController.
-                mediaController?.let {
-                    playUri(uri)
+                // Check if music is currently playing
+                mediaController?.let { controller ->
+                    if (controller.isPlaying || controller.currentMediaItem != null) {
+                        // Show dialog to ask: queue or play now
+                        showQueueOrPlayDialog(uri)
+                    } else {
+                        playUri(uri)
+                    }
                 } ?: run {
                     pendingUri = uri
                 }
             }
+        }
+    }
+    
+    private fun showQueueOrPlayDialog(uri: android.net.Uri) {
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(TXATranslation.txa("txamusic_external_file_title"))
+            .setMessage(TXATranslation.txa("txamusic_external_file_message"))
+            .setPositiveButton(TXATranslation.txa("txamusic_play_now")) { _, _ ->
+                playUri(uri)
+            }
+            .setNeutralButton(TXATranslation.txa("txamusic_add_to_queue")) { _, _ ->
+                addToQueue(uri)
+            }
+            .setNegativeButton(TXATranslation.txa("txamusic_cancel"), null)
+            .show()
+    }
+    
+    private fun addToQueue(uri: android.net.Uri) {
+        lifecycleScope.launch {
+            val mergedUri = ms.txams.vv.core.TXAAudioMerger.getMergedAudioUri(this@TXAMainActivity, uri)
+            
+            val player = mediaController ?: return@launch
+            
+            // Get file name from URI
+            val fileName = try {
+                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (nameIndex != -1) cursor.getString(nameIndex) else null
+                    } else null
+                }
+            } catch (e: Exception) {
+                null
+            } ?: uri.lastPathSegment ?: TXATranslation.txa("txamusic_unknown")
+
+            val metadata = MediaMetadata.Builder()
+                .setTitle(fileName)
+                .setArtist(TXATranslation.txa("txamusic_unknown"))
+                .setArtworkUri(uri)
+                .build()
+                
+            val item = MediaItem.Builder()
+                .setUri(mergedUri)
+                .setMediaId(uri.toString())
+                .setMediaMetadata(metadata)
+                .build()
+                
+            // Add to queue
+            player.addMediaItem(item)
+            
+            android.widget.Toast.makeText(
+                this@TXAMainActivity,
+                TXATranslation.txa("txamusic_added_to_queue"),
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
