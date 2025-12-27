@@ -55,7 +55,7 @@ class TXATTSManager(private val context: Context) {
                 // Set speech rate to 0.8x (slower)
                 tts?.setSpeechRate(0.8f)
                 
-                TXABackgroundLogger.d("TTS initialized with language: ${tts?.language}")
+                TXABackgroundLogger.d("TTS initialized with language: ${tts?.voice?.locale}")
             } else {
                 isInitialized = false
                 TXABackgroundLogger.e("TTS initialization failed with status: $status")
@@ -75,12 +75,7 @@ class TXATTSManager(private val context: Context) {
             return
         }
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
-        } else {
-            @Suppress("DEPRECATION")
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null)
-        }
+        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
     }
     
     /**
@@ -127,16 +122,7 @@ class TXATTSManager(private val context: Context) {
             }
         })
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            tts?.speak(introText, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
-        } else {
-            @Suppress("DEPRECATION")
-            tts?.speak(introText, TextToSpeech.QUEUE_FLUSH, null)
-            // Estimate time and call completion
-            delay(calculateSpeakDuration(introText))
-            speakDeferred.complete(true)
-            onCountdownComplete()
-        }
+        tts?.speak(introText, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
         
         return@withContext speakDeferred.await()
     }
@@ -145,7 +131,7 @@ class TXATTSManager(private val context: Context) {
      * Build intro text based on current locale
      */
     private fun buildIntroText(): String {
-        val locale = tts?.language ?: Locale.getDefault()
+        val locale = tts?.voice?.locale ?: Locale.getDefault()
         
         return when (locale.language) {
             "vi" -> "Áp biu bai tê ích a, ứng dụng sẽ phát nhạc sau... 5... 4... 3... 2... 1"
@@ -184,14 +170,7 @@ class TXATTSManager(private val context: Context) {
                 }
             })
             
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                tts?.synthesizeToFile(text, null, outputFile, utteranceId)
-            } else {
-                @Suppress("DEPRECATION")
-                val params = HashMap<String, String>()
-                params[TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID] = utteranceId
-                tts?.synthesizeToFile(text, params, outputFile.absolutePath)
-            }
+            tts?.synthesizeToFile(text, null, outputFile, utteranceId)
         }
         
         return@withContext synthesizeDeferred.await()
