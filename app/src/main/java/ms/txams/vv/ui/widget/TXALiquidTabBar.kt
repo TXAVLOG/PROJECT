@@ -24,11 +24,11 @@ import ms.txams.vv.core.TXABackgroundLogger
  * 
  * @author TXA - fb.com/vlog.txa.2311
  */
-class TXALiquidTabBar @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : View(context, attrs, defStyleAttr) {
+class TXALiquidTabBar : View {
+
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
     // Configuration
     private val tabCount = 2
