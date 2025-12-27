@@ -531,23 +531,43 @@ object TXATranslation {
      */
     private suspend fun getRemoteUpdatedAt(locale: String): String? = withContext(Dispatchers.IO) {
         try {
-            val url = "${TRANSLATION_API_BASE}tXALocale/$locale"
+            val url = "${TRANSLATION_API_BASE}locales"
             val request = Request.Builder().url(url).build()
             
             TXAHttp.client.newCall(request).execute().use { response ->
-                if (response.isSuccessful) {
-                    val body = response.body?.string() ?: ""
-                    try {
-                        val json = JSONObject(body)
-                        return@withContext if (json.has("updated_at") && !json.isNull("updated_at")) {
-                            json.getString("updated_at")
-                        } else {
-                            null
+                if (!response.isSuccessful) return@withContext null
+                val body = response.body?.string() ?: return@withContext null
+                
+                // Try parsing as Object first (Handbook spec)
+                try {
+                    val json = JSONObject(body)
+                    if (json.has("locales")) {
+                        val locales = json.getJSONArray("locales")
+                        for (i in 0 until locales.length()) {
+                            val item = locales.getJSONObject(i)
+                            if (item.getString("code") == locale) {
+                                return@withContext item.getString("updated_at")
+                            }
                         }
-                    } catch (e: Exception) {
-                        TXALogger.apiE("Failed to parse remote updated_at for $locale", e)
+                        return@withContext null
                     }
+                } catch (e: Exception) {
+                    // Ignore and try array
                 }
+                
+                // Try parsing as Array (Actual server response observed)
+                try {
+                    val locales = org.json.JSONArray(body)
+                    for (i in 0 until locales.length()) {
+                        val item = locales.getJSONObject(i)
+                        if (item.getString("code") == locale) {
+                            return@withContext item.getString("updated_at")
+                        }
+                    }
+                } catch (e: Exception) {
+                    TXALogger.apiE("Failed to parse locales response", e)
+                }
+                
                 null
             }
         } catch (e: Exception) {
@@ -561,7 +581,7 @@ object TXATranslation {
      */
     private suspend fun downloadLocale(locale: String): DownloadResult? = withContext(Dispatchers.IO) {
         try {
-            val url = "${TRANSLATION_API_BASE}tXALocale/$locale"
+            val url = "${TRANSLATION_API_BASE}locale/$locale"
             TXALogger.apiD("Downloading: $url")
             val request = Request.Builder().url(url).build()
             
@@ -660,32 +680,17 @@ object TXATranslation {
             TXAHttp.client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
                     val body = response.body?.string() ?: ""
-                    if (body.trim().startsWith("[")) {
-                        val locales = org.json.JSONArray(body)
+                    val json = JSONObject(body)
+                    
+                    if (json.optBoolean("ok")) {
+                        val locales = json.getJSONArray("locales")
                         val result = mutableListOf<String>()
                         for (i in 0 until locales.length()) {
-                            result.add(locales.getString(i))
+                            val item = locales.getJSONObject(i)
+                            result.add(item.getString("code"))
                         }
-                        TXALogger.apiD("Available locales (array): $result")
+                        TXALogger.apiD("Available locales: $result")
                         return@withContext result
-                    } else {
-                        val json = JSONObject(body)
-                        if (json.optBoolean("ok")) {
-                            val locales = json.getJSONArray("locales")
-                            val result = mutableListOf<String>()
-                            for (i in 0 until locales.length()) {
-                                try {
-                                    val item = locales.get(i)
-                                    if (item is JSONObject) {
-                                        result.add(item.getString("code"))
-                                    } else if (item is String) {
-                                        result.add(item)
-                                    }
-                                } catch (e: Exception) {}
-                            }
-                            TXALogger.apiD("Available locales (object): $result")
-                            return@withContext result
-                        }
                     }
                 }
                 null
