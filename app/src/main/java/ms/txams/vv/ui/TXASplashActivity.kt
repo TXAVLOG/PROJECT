@@ -59,6 +59,10 @@ class TXASplashActivity : BaseActivity() {
         binding = ActivitySplashBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
+        try {
+            binding.tvVersion.text = "v${ms.txams.vv.BuildConfig.VERSION_NAME}"
+        } catch (e: Exception) { }
+        
         TXALogger.appI("TXASplashActivity started")
 
         if (!performIntegrityCheck()) {
