@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TXA Player Activity Layout - Namida-inspired -->
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/txa_background"
+    android:fitsSystemWindows="true">
+
+    <!-- Scrollable content -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Close button / Back -->
+            <ImageButton
+                android:id="@+id/btnClose"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_arrow_back"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Back"
+                app:tint="@color/txa_on_surface" />
+
+            <!-- Album Art -->
+            <ms.txams.vv.ui.widget.TXAAlbumArtView
+                android:id="@+id/albumArt"
+                android:layout_width="280dp"
+                android:layout_height="280dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp"
+                android:src="@drawable/ic_music_note"
+                android:scaleType="centerCrop" />
+
+            <!-- Track Info -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:id="@+id/tvTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Song Title"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/txa_on_surface"
+                    android:gravity="center"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    tools:text="Beautiful Song Name" />
+
+                <TextView
+                    android:id="@+id/tvArtist"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Artist Name"
+                    android:textSize="16sp"
+                    android:textColor="@color/txa_on_surface_variant"
+                    android:gravity="center"
+                    android:layout_marginTop="4dp"
+                    tools:text="Amazing Artist" />
+
+                <TextView
+                    android:id="@+id/tvAlbum"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Album Name"
+                    android:textSize="14sp"
+                    android:textColor="@color/txa_on_surface_variant"
+                    android:alpha="0.7"
+                    android:gravity="center"
+                    android:layout_marginTop="2dp"
+                    tools:text="Great Album" />
+            </LinearLayout>
+
+            <!-- Waveform / SeekBar -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:layout_marginBottom="8dp">
+
+                <ms.txams.vv.ui.widget.TXAWaveformView
+                    android:id="@+id/waveform"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <SeekBar
+                    android:id="@+id/seekBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0"
+                    android:max="1000" />
+            </FrameLayout>
+
+            <!-- Time labels -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:id="@+id/tvCurrentTime"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="0:00"
+                    android:textSize="12sp"
+                    android:textColor="@color/txa_on_surface_variant" />
+
+                <TextView
+                    android:id="@+id/tvTotalTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0:00"
+                    android:textSize="12sp"
+                    android:textColor="@color/txa_on_surface_variant" />
+            </LinearLayout>
+
+            <!-- Main Control Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="24dp">
+
+                <!-- Shuffle -->
+                <ImageButton
+                    android:id="@+id/btnShuffle"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_shuffle"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Shuffle"
+                    android:alpha="0.5"
+                    app:tint="@color/txa_on_surface" />
+
+                <!-- Previous -->
+                <ImageButton
+                    android:id="@+id/btnPrevious"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_marginStart="16dp"
+                    android:src="@drawable/ic_previous"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Previous"
+                    app:tint="@color/txa_on_surface" />
+
+                <!-- Play/Pause -->
+                <ImageButton
+                    android:id="@+id/btnPlayPause"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:src="@drawable/ic_play"
+                    android:background="@drawable/bg_circle_primary"
+                    android:padding="20dp"
+                    android:elevation="8dp"
+                    android:contentDescription="Play/Pause"
+                    app:tint="@color/txa_on_primary" />
+
+                <!-- Next -->
+                <ImageButton
+                    android:id="@+id/btnNext"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_next"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Next"
+                    app:tint="@color/txa_on_surface" />
+
+                <!-- Repeat -->
+                <ImageButton
+                    android:id="@+id/btnRepeat"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_repeat"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Repeat"
+                    android:alpha="0.5"
+                    app:tint="@color/txa_on_surface" />
+            </LinearLayout>
+
+            <!-- Secondary Control Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="16dp">
+
+                <!-- Volume -->
+                <ImageButton
+                    android:id="@+id/btnVolume"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_volume_up"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Volume"
+                    app:tint="@color/txa_on_surface_variant" />
+
+                <!-- Like/Favorite -->
+                <ImageButton
+                    android:id="@+id/btnLike"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="16dp"
+                    android:src="@drawable/ic_heart"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Like"
+                    android:alpha="0.5"
+                    app:tint="@color/txa_on_surface_variant" />
+
+                <!-- Queue -->
+                <ImageButton
+                    android:id="@+id/btnQueue"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="16dp"
+                    android:src="@drawable/ic_queue"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Queue"
+                    app:tint="@color/txa_on_surface_variant" />
+
+                <!-- Sleep Timer -->
+                <ImageButton
+                    android:id="@+id/btnSleep"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="16dp"
+                    android:src="@drawable/ic_sleep"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Sleep Timer"
+                    app:tint="@color/txa_on_surface_variant" />
+
+                <!-- Equalizer -->
+                <ImageButton
+                    android:id="@+id/btnEqualizer"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="16dp"
+                    android:src="@drawable/ic_equalizer"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Equalizer"
+                    app:tint="@color/txa_on_surface_variant" />
+            </LinearLayout>
+
+            <!-- Tertiary Control Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <!-- Lyrics -->
+                <ImageButton
+                    android:id="@+id/btnLyrics"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_lyrics"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Lyrics"
+                    app:tint="@color/txa_on_surface_variant" />
+
+                <!-- Playback Speed -->
+                <ImageButton
+                    android:id="@+id/btnSpeed"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="24dp"
+                    android:src="@drawable/ic_speed"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Playback Speed"
+                    app:tint="@color/txa_on_surface_variant" />
+
+                <!-- More -->
+                <ImageButton
+                    android:id="@+id/btnMore"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="24dp"
+                    android:src="@drawable/ic_more"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="More Options"
+                    app:tint="@color/txa_on_surface_variant" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

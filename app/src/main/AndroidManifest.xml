@@ -62,6 +62,9 @@
         <activity android:name=".ui.TXAMusicLibraryActivity" />
         <activity android:name=".ui.TXANowBarSettingsActivity" 
                   android:label="Now Bar Settings" />
+        <activity android:name=".ui.TXAPlayerActivity"
+                  android:theme="@style/Theme.TXAMusic"
+                  android:launchMode="singleTop" />
 
         <service
             android:name=".service.MusicService"
