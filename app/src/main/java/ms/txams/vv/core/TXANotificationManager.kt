@@ -44,7 +44,7 @@ object TXANotificationManager {
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID_UPDATE)
-            .setSmallIcon(R.drawable.ic_update)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(TXATranslation.txa("txamusic_update_available"))
             .setContentText(TXATranslation.txa("txamusic_update_notification_body").format(updateInfo.versionName))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
