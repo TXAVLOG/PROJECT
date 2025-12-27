@@ -48,6 +48,11 @@ class TXANowBarSettingsManager @Inject constructor(
         const val STYLE_SQUARE = 0
         const val STYLE_ROUNDED = 1
         const val STYLE_CIRCLE = 2
+        
+        // Alias for external use
+        const val ALBUM_ART_SQUARE = "square"
+        const val ALBUM_ART_ROUNDED = "rounded"
+        const val ALBUM_ART_CIRCLE = "circle"
     }
     
     /**
@@ -118,17 +123,40 @@ class TXANowBarSettingsManager @Inject constructor(
     }
     
     /**
-     * Get album art style for notification
+     * Get album art style for notification (returns string constant)
      */
-    fun getAlbumArtStyle(): Int {
+    fun getAlbumArtStyle(): String {
+        return when (prefs.getInt(KEY_ALBUM_ART_STYLE, STYLE_ROUNDED)) {
+            STYLE_SQUARE -> ALBUM_ART_SQUARE
+            STYLE_CIRCLE -> ALBUM_ART_CIRCLE
+            else -> ALBUM_ART_ROUNDED
+        }
+    }
+    
+    /**
+     * Get album art style as integer
+     */
+    fun getAlbumArtStyleInt(): Int {
         return prefs.getInt(KEY_ALBUM_ART_STYLE, STYLE_ROUNDED)
     }
     
     /**
-     * Set album art style
+     * Set album art style (integer)
      */
     fun setAlbumArtStyle(style: Int) {
         prefs.edit().putInt(KEY_ALBUM_ART_STYLE, style).apply()
+    }
+    
+    /**
+     * Set album art style (string constant)
+     */
+    fun setAlbumArtStyle(style: String) {
+        val styleInt = when (style) {
+            ALBUM_ART_SQUARE -> STYLE_SQUARE
+            ALBUM_ART_CIRCLE -> STYLE_CIRCLE
+            else -> STYLE_ROUNDED
+        }
+        prefs.edit().putInt(KEY_ALBUM_ART_STYLE, styleInt).apply()
     }
     
     /**

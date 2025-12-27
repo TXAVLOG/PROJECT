@@ -468,7 +468,11 @@ object TXATranslation {
   "txamusic_nowbar_style_rounded": "Rounded",
   "txamusic_nowbar_style_circle": "Circle",
   "txamusic_stop": "Stop",
-  "txamusic_file_browser_title": "TXA File Browser"
+  "txamusic_file_browser_title": "TXA File Browser",
+  "txamusic_confirm_reset": "Are you sure you want to reset all settings to defaults?",
+  "txamusic_settings_reset": "Settings have been reset",
+  "txamusic_ok": "OK",
+  "txamusic_cancel": "Cancel"
 }
 """
         try {

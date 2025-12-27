@@ -22,4 +22,6 @@
     <color name="txa_surface_variant">#FFE7E0EC</color>
     <color name="txa_text_secondary">#FF757575</color>
     <color name="txa_divider">#FFE0E0E0</color>
+    <color name="txa_on_primary">#FFFFFFFF</color>
+    <color name="txa_outline">#FF79747E</color>
 </resources>
