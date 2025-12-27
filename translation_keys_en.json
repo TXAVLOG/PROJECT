@@ -254,5 +254,7 @@
   "txamusic_download_error": "Download error",
   "txamusic_selected": "selected",
   "txamusic_update_status_idle": "Idle",
-  "txamusic_update_status_resolving": "Resolving download URL..."
+  "txamusic_update_status_resolving": "Resolving download URL...",
+  "txamusic_error_prefix": "Error: %s",
+  "txamusic_update_version_label": "Version %s"
 }

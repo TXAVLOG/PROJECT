@@ -346,7 +346,7 @@ class TXASettingsActivity : BaseActivity() {
                     }
                     is UpdateCheckResult.Error -> {
                         loadingDialog.dismiss()
-                        Toast.makeText(this@TXASettingsActivity, "Error: ${result.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this@TXASettingsActivity, TXATranslation.txa("txamusic_error_prefix").format(result.message), Toast.LENGTH_LONG).show()
                     }
                 }
             } catch (e: Exception) {
@@ -366,7 +366,7 @@ class TXASettingsActivity : BaseActivity() {
         
         // Setup header with translations
         dialogBinding.tvUpdateTitle.text = TXATranslation.txa("txamusic_update_available")
-        dialogBinding.tvUpdateVersion.text = "Version ${updateInfo.versionName}"
+        dialogBinding.tvUpdateVersion.text = TXATranslation.txa("txamusic_update_version_label").format(updateInfo.versionName)
         dialogBinding.tvUpdateSize.text = "${TXATranslation.txa("txamusic_update_size")}: ${TXAFormat.formatBytes(updateInfo.downloadSizeBytes)}"
         dialogBinding.tvUpdateDate.text = TXATranslation.txa("txamusic_update_release_date").format(updateInfo.releaseDate)
         
