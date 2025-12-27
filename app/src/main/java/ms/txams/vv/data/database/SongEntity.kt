@@ -11,8 +11,10 @@ data class SongEntity(
     val artist: String,
     val album: String,
     val duration: Long,
-    val path: String,
+    val path: String, // Original file path
     val size: Long,
     val addedAt: Long,
-    val albumId: Long
+    val albumId: Long,
+    val mergedPath: String? = null // Path to file with intro already merged
 )
+

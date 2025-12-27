@@ -174,9 +174,11 @@ class MusicRepository @Inject constructor(
                     MediaStore.Audio.Media.ALBUM_ID
                 )
                 
+                var song: SongEntity? = null
+                
                 context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
                      if (cursor.moveToFirst()) {
-                         val song = SongEntity(
+                         song = SongEntity(
                              id = uri.hashCode().toLong(), // Unique ID for manual
                              title = cursor.getString(0) ?: "Unknown",
                              artist = cursor.getString(1) ?: "Unknown",
@@ -185,28 +187,47 @@ class MusicRepository @Inject constructor(
                              path = uri.toString(),
                              size = cursor.getLong(4),
                              addedAt = System.currentTimeMillis() / 1000,
-                             albumId = cursor.getLong(5)
+                             albumId = cursor.getLong(5),
+                             mergedPath = null
                          )
-                         songDao.insert(song)
-                         TXALogger.appI("Manual song added: ${song.title}")
-                         return@withContext
                      }
                 }
                 
                 // Fallback for simple files
-                val song = SongEntity(
-                    id = uri.hashCode().toLong(),
-                    title = uri.lastPathSegment ?: "Unknown",
-                    artist = "Unknown",
-                    album = "Unknown",
-                    duration = 0,
-                    path = uri.toString(),
-                    size = 0,
-                    addedAt = System.currentTimeMillis() / 1000,
-                    albumId = 0
-                )
-                songDao.insert(song)
-                TXALogger.appI("Manual song added (fallback): ${song.title}")
+                if (song == null) {
+                    song = SongEntity(
+                        id = uri.hashCode().toLong(),
+                        title = uri.lastPathSegment ?: "Unknown",
+                        artist = "Unknown",
+                        album = "Unknown",
+                        duration = 0,
+                        path = uri.toString(),
+                        size = 0,
+                        addedAt = System.currentTimeMillis() / 1000,
+                        albumId = 0,
+                        mergedPath = null
+                    )
+                }
+                
+                // Insert song first
+                songDao.insert(song!!)
+                TXALogger.appI("Manual song added: ${song!!.title}")
+                
+                // Now merge intro and update mergedPath
+                try {
+                    TXALogger.appI("Merging intro for: ${song!!.title}")
+                    val mergedUri = ms.txams.vv.core.TXAAudioMerger.getMergedAudioUri(context, uri)
+                    
+                    // Check if merged successfully (different from original)
+                    if (mergedUri != uri) {
+                        songDao.updateMergedPath(song!!.id, mergedUri.toString())
+                        TXALogger.appI("Intro merged successfully: $mergedUri")
+                    } else {
+                        TXALogger.appW("Merge returned original URI, intro may not be prepended")
+                    }
+                } catch (e: Exception) {
+                    TXALogger.appE("Failed to merge intro for ${song!!.title}", e)
+                }
                 
             } catch (e: Exception) {
                 TXALogger.appE("Failed to add manual song", e)

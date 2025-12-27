@@ -238,6 +238,9 @@ class TXAMusicLibraryActivity : BaseActivity() {
             null
         }
         
+        // Use merged path if available (has intro), otherwise use original path
+        val playbackUri = song.mergedPath ?: song.path
+        
         val metadata = MediaMetadata.Builder()
             .setTitle(song.title)
             .setArtist(song.artist)
@@ -245,7 +248,7 @@ class TXAMusicLibraryActivity : BaseActivity() {
             .build()
             
         val item = MediaItem.Builder()
-            .setUri(song.path)
+            .setUri(playbackUri)
             .setMediaId(song.id.toString())
             .setMediaMetadata(metadata)
             .build()
@@ -276,8 +279,10 @@ class TXAMusicLibraryActivity : BaseActivity() {
                 null
             }
             
+            val playbackUri = song.mergedPath ?: song.path
+            
             MediaItem.Builder()
-                .setUri(song.path)
+                .setUri(playbackUri)
                 .setMediaId(song.id.toString())
                 .setMediaMetadata(
                     MediaMetadata.Builder()
@@ -313,8 +318,10 @@ class TXAMusicLibraryActivity : BaseActivity() {
                 null
             }
             
+            val playbackUri = song.mergedPath ?: song.path
+            
             val mediaItem = MediaItem.Builder()
-                .setUri(song.path)
+                .setUri(playbackUri)
                 .setMediaId(song.id.toString())
                 .setMediaMetadata(
                     MediaMetadata.Builder()

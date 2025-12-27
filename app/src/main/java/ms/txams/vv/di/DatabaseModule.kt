@@ -22,7 +22,9 @@ object DatabaseModule {
             context,
             MusicDatabase::class.java,
             "music_database"
-        ).build()
+        )
+        .addMigrations(MusicDatabase.MIGRATION_1_2)
+        .build()
     }
 
     @Provides

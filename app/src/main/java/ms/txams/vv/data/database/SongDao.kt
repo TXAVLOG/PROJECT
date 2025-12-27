@@ -25,4 +25,10 @@ interface SongDao {
     
     @Query("SELECT * FROM songs WHERE title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%'")
     fun searchSongs(query: String): Flow<List<SongEntity>>
+    
+    @Query("UPDATE songs SET mergedPath = :mergedPath WHERE id = :songId")
+    suspend fun updateMergedPath(songId: Long, mergedPath: String)
+    
+    @Query("SELECT * FROM songs WHERE id = :id LIMIT 1")
+    suspend fun getSongById(id: Long): SongEntity?
 }
