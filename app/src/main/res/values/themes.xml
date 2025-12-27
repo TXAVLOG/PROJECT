@@ -46,4 +46,10 @@
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
     </style>
+
+    <!-- ZingMp3 Style - Rounded corners for album art -->
+    <style name="RoundedCornerImage" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
 </resources>

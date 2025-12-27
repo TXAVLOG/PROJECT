@@ -10,9 +10,19 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import ms.txams.vv.data.database.SongDao
 import ms.txams.vv.data.database.SongEntity
+import ms.txams.vv.core.TXALogger
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * TXA Music Repository
+ * Scans and manages music files from device storage
+ * 
+ * Features:
+ * - Scan all music files except ringtones folder
+ * - Store in local database for fast access
+ * - Detailed logging for debugging
+ */
 @Singleton
 class MusicRepository @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -20,8 +30,21 @@ class MusicRepository @Inject constructor(
 ) {
     val allSongs: Flow<List<SongEntity>> = songDao.getAllSongs()
 
+    // Folders to exclude from scanning
+    private val excludedFolders = listOf(
+        "/ringtones/",
+        "/ringtone/",
+        "/notifications/",
+        "/alarms/",
+        "/android/data/",
+        "/android/obb/"
+    )
+
     suspend fun scanMediaStore() {
         withContext(Dispatchers.IO) {
+            TXALogger.appI("Starting music library scan...")
+            val startTime = System.currentTimeMillis()
+            
             val songList = mutableListOf<SongEntity>()
             val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
@@ -37,19 +60,24 @@ class MusicRepository @Inject constructor(
                 MediaStore.Audio.Media.DURATION,
                 MediaStore.Audio.Media.SIZE,
                 MediaStore.Audio.Media.DATE_ADDED,
-                MediaStore.Audio.Media.ALBUM_ID
+                MediaStore.Audio.Media.ALBUM_ID,
+                MediaStore.Audio.Media.DATA // Path for filtering
             )
 
-            // Select only music files
+            // Select only music files (IS_MUSIC = 1)
             val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
 
             try {
+                var totalScanned = 0
+                var skippedRingtones = 0
+                var skippedShort = 0
+                
                 context.contentResolver.query(
                     collection,
                     projection,
                     selection,
                     null,
-                    "${MediaStore.Audio.Media.TITLE} ASC"
+                    "${MediaStore.Audio.Media.DATE_ADDED} DESC" // Newest first
                 )?.use { cursor ->
                     val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
                     val titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
@@ -59,8 +87,13 @@ class MusicRepository @Inject constructor(
                     val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE)
                     val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
                     val albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
+                    val dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
+
+                    TXALogger.appD("Found ${cursor.count} audio files in MediaStore")
 
                     while (cursor.moveToNext()) {
+                        totalScanned++
+                        
                         val id = cursor.getLong(idColumn)
                         val title = cursor.getString(titleColumn) ?: "Unknown"
                         val artist = cursor.getString(artistColumn) ?: "Unknown"
@@ -69,6 +102,22 @@ class MusicRepository @Inject constructor(
                         val size = cursor.getLong(sizeColumn)
                         val added = cursor.getLong(dateAddedColumn)
                         val albumId = cursor.getLong(albumIdColumn)
+                        val path = cursor.getString(dataColumn) ?: ""
+
+                        // Skip if in excluded folders (ringtones, notifications, etc.)
+                        val pathLower = path.lowercase()
+                        if (excludedFolders.any { pathLower.contains(it) }) {
+                            skippedRingtones++
+                            TXALogger.appD("Skipped ringtone/notification: $title ($path)")
+                            continue
+                        }
+
+                        // Skip very short audio (less than 30 seconds - likely ringtones)
+                        if (duration < 30000) {
+                            skippedShort++
+                            TXALogger.appD("Skipped short audio (${duration}ms): $title")
+                            continue
+                        }
 
                         val contentUri = ContentUris.withAppendedId(
                             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
@@ -94,7 +143,15 @@ class MusicRepository @Inject constructor(
                 // Update Database
                 songDao.clearAll()
                 songDao.insertAll(songList)
+                
+                val elapsed = System.currentTimeMillis() - startTime
+                TXALogger.appI("Music scan completed in ${elapsed}ms")
+                TXALogger.appI("Results: ${songList.size} songs added")
+                TXALogger.appI("Skipped: $skippedRingtones ringtones/notifications, $skippedShort short files")
+                TXALogger.appI("Total scanned: $totalScanned files")
+                
             } catch (e: Exception) {
+                TXALogger.appE("Error scanning music library: ${e.message}")
                 e.printStackTrace()
             }
         }
