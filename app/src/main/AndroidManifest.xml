@@ -60,6 +60,8 @@
         
         <activity android:name=".ui.TXASettingsActivity" />
         <activity android:name=".ui.TXAMusicLibraryActivity" />
+        <activity android:name=".ui.TXANowBarSettingsActivity" 
+                  android:label="Now Bar Settings" />
 
         <service
             android:name=".service.MusicService"

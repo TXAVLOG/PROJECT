@@ -240,6 +240,7 @@ class TXAMusicLibraryActivity : BaseActivity() {
         
         // Use merged path if available (has intro), otherwise use original path
         val playbackUri = song.mergedPath ?: song.path
+        val hasIntro = song.mergedPath != null
         
         val metadata = MediaMetadata.Builder()
             .setTitle(song.title)
@@ -255,7 +256,22 @@ class TXAMusicLibraryActivity : BaseActivity() {
             
         player.setMediaItem(item)
         player.prepare()
-        player.play()
+        
+        // Use TXAAudioFader for smooth fade in with intro boost if merged
+        if (hasIntro) {
+            // Play with intro boost (louder intro, then fade to normal)
+            ms.txams.vv.core.TXAAudioFader.playWithIntroBoost(
+                player = player,
+                introDurationMs = 5000L, // intro_txa.mp3 duration
+                fadeInDurationMs = 3000L
+            )
+        } else {
+            // Normal fade in
+            ms.txams.vv.core.TXAAudioFader.fadeIn(
+                player = player,
+                durationMs = 3000L
+            )
+        }
         
         Toast.makeText(this, TXATranslation.txa("txamusic_playing").format(song.title), Toast.LENGTH_SHORT).show()
     }
@@ -397,8 +413,25 @@ class TXAMusicLibraryActivity : BaseActivity() {
                 }
             }
             1 -> checkPermissionAndScan()
-            2 -> filePickerLauncher.launch(arrayOf("audio/*"))
+            2 -> {
+                try {
+                    filePickerLauncher.launch(arrayOf("audio/*"))
+                } catch (e: android.content.ActivityNotFoundException) {
+                    // No document picker available - use custom file picker fallback
+                    showCustomFilePicker()
+                }
+            }
         }
         return super.onOptionsItemSelected(item)
     }
+    
+    private fun showCustomFilePicker() {
+        TXAFilePickerDialog.newInstance { file ->
+            // Convert File to Uri and add to library
+            val uri = android.net.Uri.fromFile(file)
+            viewModel.addManualSong(uri)
+            Toast.makeText(this, TXATranslation.txa("txamusic_playing").format(file.name), Toast.LENGTH_SHORT).show()
+        }.show(supportFragmentManager, TXAFilePickerDialog.TAG)
+    }
 }
+
