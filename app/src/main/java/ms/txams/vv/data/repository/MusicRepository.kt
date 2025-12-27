@@ -64,8 +64,8 @@ class MusicRepository @Inject constructor(
                 MediaStore.Audio.Media.DATA // Path for filtering
             )
 
-            // Select only music files (IS_MUSIC = 1)
-            val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
+            // Select audio files with size > 0 (let app filter by duration/path later)
+            val selection = "${MediaStore.Audio.Media.SIZE} > 0"
 
             try {
                 var totalScanned = 0
@@ -112,10 +112,10 @@ class MusicRepository @Inject constructor(
                             continue
                         }
 
-                        // Skip very short audio (less than 30 seconds - likely ringtones)
-                        if (duration < 30000) {
+                        // Skip very short audio (less than 5 seconds - likely notifications or UI sounds)
+                        if (duration < 5000) {
                             skippedShort++
-                            TXALogger.appD("Skipped short audio (${duration}ms): $title")
+                            TXALogger.appD("Skipped short audio (${duration}ms): $title ($path)")
                             continue
                         }
 
