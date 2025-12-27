@@ -1,11 +1,11 @@
-## 📱 TXA Music v1.3.0_txa
+## 📱 TXA Music v1.5.0_txa
 
 ### 📝 Changelog:
 - [1;33m[WARNING][0m CHANGELOG.html not found, using default
-- TXA Music v1.3.0_txa - Cập nhật phiên bản mới.
+- TXA Music v1.5.0_txa - Cập nhật phiên bản mới.
 
 ### 📦 Build Info:
 - Build Type: `debug`
-- Version Code: `130`
-- Build Date: `2025-12-27 10:28`
-- Git Commit: `1a1721e`
+- Version Code: `150`
+- Build Date: `2025-12-27 11:21`
+- Git Commit: `45d5a84`
