@@ -10,6 +10,7 @@ import kotlinx.serialization.Serializable
 import ms.txams.vv.BuildConfig
 import ms.txams.vv.core.TXAHttp
 import ms.txams.vv.core.TXALogger
+import ms.txams.vv.core.TXATranslation
 import org.json.JSONObject
 
 /**
@@ -127,7 +128,7 @@ object TXAUpdateManager {
             
             if (!json.optBoolean("ok", false)) {
                 val errorCode = json.optString("error_code", "unknown")
-                return UpdateCheckResult.Error("Server error: $errorCode")
+                return UpdateCheckResult.Error("${TXATranslation.txa("txamusic_error_server")}: $errorCode")
             }
             
             val updateAvailable = json.optBoolean("update_available", false)
@@ -136,7 +137,7 @@ object TXAUpdateManager {
                 return UpdateCheckResult.NoUpdate(currentVersionName)
             }
             
-            val latest = json.optJSONObject("latest") ?: return UpdateCheckResult.Error("Missing latest info")
+            val latest = json.optJSONObject("latest") ?: return UpdateCheckResult.Error(TXATranslation.txa("txamusic_error_metadata_unavailable"))
             
             // Parse latest version info
             val latestVersionCode = latest.optInt("versionCode", 0)
@@ -157,7 +158,7 @@ object TXAUpdateManager {
             
             // Validate download URL
             if (downloadUrl.isEmpty()) {
-                return UpdateCheckResult.Error("Download URL missing")
+                return UpdateCheckResult.Error(TXATranslation.txa("txamusic_error_download_url_missing"))
             }
             
             // Double check version comparison
