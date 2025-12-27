@@ -98,6 +98,24 @@ object TXAUpdateManager {
     
     /**
      * Parse update response JSON
+     * Expected format:
+     * {
+     *   "ok": true,
+     *   "update_available": true,
+     *   "force_update": false,
+     *   "client": { "packageId": "...", "versionCode": 90, "versionName": "0.9.0" },
+     *   "latest": {
+     *     "packageId": "...",
+     *     "versionCode": 100,
+     *     "versionName": "1.0.0",
+     *     "downloadUrl": "...",
+     *     "downloadSizeBytes": 52323968,
+     *     "checksum": { "type": "sha256", "value": "..." },
+     *     "releaseDate": "2025-12-23",
+     *     "mandatory": false,
+     *     "changelog": "<style>...</style>..."
+     *   }
+     * }
      */
     private fun parseUpdateResponse(
         jsonStr: String,
@@ -120,19 +138,24 @@ object TXAUpdateManager {
             
             val latest = json.optJSONObject("latest") ?: return UpdateCheckResult.Error("Missing latest info")
             
-            val latestVersionCode = latest.optInt("code", 0)
-            val latestVersionName = latest.optString("name", "")
+            // Parse latest version info
+            val latestVersionCode = latest.optInt("versionCode", 0)
+            val latestVersionName = latest.optString("versionName", "")
             val downloadUrl = latest.optString("downloadUrl", "")
             val changelog = latest.optString("changelog", "")
             val releaseDate = latest.optString("releaseDate", "")
+            val downloadSize = latest.optLong("downloadSizeBytes", 0)
             
-            // Force update priority: root > latest.force
+            // Parse checksum for MD5 validation
+            val checksumObj = latest.optJSONObject("checksum")
+            val checksumType = checksumObj?.optString("type", "") ?: ""
+            val checksumValue = checksumObj?.optString("value", "") ?: ""
+            
+            // Force update: root level force_update OR latest.mandatory
             var mandatory = json.optBoolean("force_update", false)
-            if (!mandatory) mandatory = latest.optBoolean("force", false)
+            if (!mandatory) mandatory = latest.optBoolean("mandatory", false)
             
-            val downloadSize = latest.optLong("size_bytes", 0)
-            
-            // Validate
+            // Validate download URL
             if (downloadUrl.isEmpty()) {
                 return UpdateCheckResult.Error("Download URL missing")
             }
@@ -153,7 +176,9 @@ object TXAUpdateManager {
                     changelog = changelog,
                     releaseDate = releaseDate,
                     mandatory = mandatory,
-                    downloadSizeBytes = downloadSize
+                    downloadSizeBytes = downloadSize,
+                    checksumType = checksumType,
+                    checksumValue = checksumValue
                 )
             )
         } catch (e: Exception) {
@@ -228,8 +253,47 @@ object TXAUpdateManager {
             return@flow
         }
         
+        // Validate checksum if provided
+        if (updateInfo.checksumValue.isNotEmpty()) {
+            val calculatedHash = calculateFileHash(destFile, updateInfo.checksumType)
+            if (calculatedHash != null && !calculatedHash.equals(updateInfo.checksumValue, ignoreCase = true)) {
+                TXALogger.downloadE("Checksum mismatch! Expected: ${updateInfo.checksumValue}, Got: $calculatedHash")
+                emit(TXAUpdatePhase.ChecksumMismatch)
+                destFile.delete()
+                return@flow
+            }
+            TXALogger.downloadI("Checksum validated: $calculatedHash")
+        }
+        
         emit(TXAUpdatePhase.ReadyToInstall(destFile))
     }.flowOn(Dispatchers.IO)
+    
+    /**
+     * Calculate file hash using specified algorithm
+     */
+    private fun calculateFileHash(file: java.io.File, algorithm: String): String? {
+        return try {
+            val digest = when (algorithm.lowercase()) {
+                "md5" -> java.security.MessageDigest.getInstance("MD5")
+                "sha256" -> java.security.MessageDigest.getInstance("SHA-256")
+                "sha1" -> java.security.MessageDigest.getInstance("SHA-1")
+                else -> java.security.MessageDigest.getInstance("SHA-256")
+            }
+            
+            file.inputStream().use { fis ->
+                val buffer = ByteArray(8192)
+                var bytesRead: Int
+                while (fis.read(buffer).also { bytesRead = it } != -1) {
+                    digest.update(buffer, 0, bytesRead)
+                }
+            }
+            
+            digest.digest().joinToString("") { "%02x".format(it) }
+        } catch (e: Exception) {
+            TXALogger.downloadE("Failed to calculate file hash", e)
+            null
+        }
+    }
     
     /**
      * Install downloaded update
@@ -266,7 +330,9 @@ data class UpdateInfo(
     val changelog: String,
     val releaseDate: String,
     val mandatory: Boolean,
-    val downloadSizeBytes: Long
+    val downloadSizeBytes: Long,
+    val checksumType: String = "",   // "sha256", "md5", etc.
+    val checksumValue: String = ""   // checksum value for validation
 )
 
 /**
@@ -287,6 +353,7 @@ sealed class TXAUpdatePhase {
     }
     data class Retrying(val attempt: Int, val maxAttempts: Int) : TXAUpdatePhase()
     object Validating : TXAUpdatePhase()
+    object ChecksumMismatch : TXAUpdatePhase()  // App integrity check failed
     data class ReadyToInstall(val apkFile: java.io.File) : TXAUpdatePhase()
     data class Error(val message: String) : TXAUpdatePhase()
 }
