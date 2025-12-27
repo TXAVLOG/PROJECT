@@ -67,14 +67,16 @@ object TXAUpdateManager {
     ): UpdateCheckResult? {
         TXALogger.apiD("Checking endpoint: $endpoint")
         
-        val jsonBody = """
-            {
-                "packageId": "${BuildConfig.APPLICATION_ID}",
-                "versionCode": $versionCode,
-                "versionName": "$versionName",
-                "locale": "$locale"
-            }
-        """.trimIndent()
+        val jsonBody = JSONObject().apply {
+            put("packageId", BuildConfig.APPLICATION_ID)
+            put("versionCode", versionCode)
+            put("versionName", versionName)
+            put("locale", locale)
+            put("platform", "android")
+            put("debug", BuildConfig.DEBUG)
+        }.toString()
+        
+        TXALogger.apiD("Request Body: $jsonBody")
         
         val request = TXAHttp.buildPost(endpoint, jsonBody)
         
