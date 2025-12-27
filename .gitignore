@@ -27,6 +27,7 @@ TXABUILD/*.jpg
 TXABUILD/*.png
 TXABUILD/*.mp4
 TXABUILD/*.zip
+TXABUILD/*.mp3
 
 # Log Files
 *.log
