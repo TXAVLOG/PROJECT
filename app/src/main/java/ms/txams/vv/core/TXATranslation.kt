@@ -528,44 +528,27 @@ object TXATranslation {
 
     /**
      * Get remote updated_at from API
+     * API /locales returns simple array ["en", "vi"]
+     * So we need to call /tXALocale/{locale} to get updated_at
      */
     private suspend fun getRemoteUpdatedAt(locale: String): String? = withContext(Dispatchers.IO) {
         try {
-            val url = "${TRANSLATION_API_BASE}locales"
+            // Call /tXALocale/{locale} directly to get updated_at
+            val url = "${TRANSLATION_API_BASE}tXALocale/$locale"
             val request = Request.Builder().url(url).build()
             
             TXAHttp.client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@withContext null
                 val body = response.body?.string() ?: return@withContext null
                 
-                // Try parsing as Object first (Handbook spec)
+                // Parse JSON object and get updated_at
                 try {
                     val json = JSONObject(body)
-                    if (json.has("locales")) {
-                        val locales = json.getJSONArray("locales")
-                        for (i in 0 until locales.length()) {
-                            val item = locales.getJSONObject(i)
-                            if (item.getString("code") == locale) {
-                                return@withContext item.getString("updated_at")
-                            }
-                        }
-                        return@withContext null
+                    if (json.has("updated_at")) {
+                        return@withContext json.getString("updated_at")
                     }
                 } catch (e: Exception) {
-                    // Ignore and try array
-                }
-                
-                // Try parsing as Array (Actual server response observed)
-                try {
-                    val locales = org.json.JSONArray(body)
-                    for (i in 0 until locales.length()) {
-                        val item = locales.getJSONObject(i)
-                        if (item.getString("code") == locale) {
-                            return@withContext item.getString("updated_at")
-                        }
-                    }
-                } catch (e: Exception) {
-                    TXALogger.apiE("Failed to parse locales response", e)
+                    TXALogger.apiE("Failed to parse locale response for updated_at", e)
                 }
                 
                 null
@@ -581,7 +564,7 @@ object TXATranslation {
      */
     private suspend fun downloadLocale(locale: String): DownloadResult? = withContext(Dispatchers.IO) {
         try {
-            val url = "${TRANSLATION_API_BASE}locale/$locale"
+            val url = "${TRANSLATION_API_BASE}tXALocale/$locale"
             TXALogger.apiD("Downloading: $url")
             val request = Request.Builder().url(url).build()
             
@@ -669,6 +652,7 @@ object TXATranslation {
 
     /**
      * Get available locales from API
+     * API returns simple array: ["en", "vi"]
      * @return List of locale codes or null if failed
      */
     suspend fun getAvailableLocales(): List<String>? = withContext(Dispatchers.IO) {
@@ -680,17 +664,18 @@ object TXATranslation {
             TXAHttp.client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
                     val body = response.body?.string() ?: ""
-                    val json = JSONObject(body)
                     
-                    if (json.optBoolean("ok")) {
-                        val locales = json.getJSONArray("locales")
+                    // Parse as simple array ["en", "vi"]
+                    try {
+                        val jsonArray = org.json.JSONArray(body)
                         val result = mutableListOf<String>()
-                        for (i in 0 until locales.length()) {
-                            val item = locales.getJSONObject(i)
-                            result.add(item.getString("code"))
+                        for (i in 0 until jsonArray.length()) {
+                            result.add(jsonArray.getString(i))
                         }
                         TXALogger.apiD("Available locales: $result")
                         return@withContext result
+                    } catch (e: Exception) {
+                        TXALogger.apiE("Failed to parse locales array", e)
                     }
                 }
                 null

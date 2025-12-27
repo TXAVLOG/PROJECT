@@ -324,7 +324,21 @@ class TXASplashActivity : BaseActivity() {
                              dialog.dismiss()
                              showErrorDialog(phase.message, updateInfo.mandatory)
                         }
-                        else -> {}
+                        is TXAUpdatePhase.Retrying -> {
+                            tvStatus.text = "${TXATranslation.txa("txamusic_download_retrying")} (${phase.attempt}/${phase.maxAttempts})"
+                        }
+                        is TXAUpdatePhase.ChecksumMismatch -> {
+                            dialog.dismiss()
+                            // Show integrity error dialog - app needs reinstall
+                            MaterialAlertDialogBuilder(this@TXASplashActivity)
+                                .setTitle(TXATranslation.txa("txamusic_msg_error"))
+                                .setMessage(TXATranslation.txa("txamusic_integrity_check_failed"))
+                                .setPositiveButton(TXATranslation.txa("txamusic_action_ok")) { _, _ ->
+                                    finishAffinity()
+                                }
+                                .setCancelable(false)
+                                .show()
+                        }
                     }
                 }
         }

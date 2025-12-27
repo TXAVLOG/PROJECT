@@ -466,6 +466,15 @@ class TXASettingsActivity : BaseActivity() {
                             dialogBinding.tvDownloadStatus.text = TXATranslation.txa("txamusic_download_validating")
                             dialogBinding.progressBar.isIndeterminate = true
                         }
+                        is TXAUpdatePhase.ChecksumMismatch -> {
+                            dialog.dismiss()
+                            // Show integrity check failed dialog
+                            MaterialAlertDialogBuilder(this@TXASettingsActivity)
+                                .setTitle(TXATranslation.txa("txamusic_msg_error"))
+                                .setMessage(TXATranslation.txa("txamusic_integrity_check_failed"))
+                                .setPositiveButton(TXATranslation.txa("txamusic_action_ok"), null)
+                                .show()
+                        }
                         is TXAUpdatePhase.ReadyToInstall -> {
                             dialog.dismiss()
                             TXAUpdateManager.installUpdate(this@TXASettingsActivity)
