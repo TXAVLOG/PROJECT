@@ -86,6 +86,14 @@ class MusicService : MediaLibraryService() {
     private val fadeHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private var fadeOutJob: Job? = null
     private val FADE_CHECK_INTERVAL = 500L // 500ms
+    
+    // Mute/Unmute logic
+    private var previousVolume: Float = 1.0f
+    
+    // Stuck Player Detection
+    private var lastPlaybackProgressTime: Long = 0
+    private var lastPlaybackPosition: Long = 0
+    private var lastStuckCheckTime: Long = 0
 
     private val connectionReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -187,6 +195,17 @@ class MusicService : MediaLibraryService() {
         // Initialize Android Auto provider
         autoMusicProvider = AutoMusicProvider(this, musicRepository)
 
+        // Custom LoadControl to limit buffering
+        val loadControl = androidx.media3.exoplayer.DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                50000, // Min buffer
+                50000, // Max buffer
+                1500,  // Buffer for playback
+                5000   // Buffer for rebuffer
+            )
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .build()
+            
         // Create ExoPlayer
         player = ExoPlayer.Builder(this)
             .setAudioAttributes(
@@ -197,6 +216,8 @@ class MusicService : MediaLibraryService() {
                 true
             )
             .setHandleAudioBecomingNoisy(true)
+            .setWakeMode(C.WAKE_MODE_LOCAL) // Requested Wake Mode
+            .setLoadControl(loadControl)
             .build()
         
         // Update audio session ID for Equalizer
@@ -426,7 +447,65 @@ class MusicService : MediaLibraryService() {
             while (isActive) {
                 delay(FADE_CHECK_INTERVAL)
                 checkFadeOutNeed()
+                checkForStuckPlayer()
             }
+        }
+    }
+    
+    private fun checkForStuckPlayer() {
+        if (!player.isPlaying) {
+            lastPlaybackProgressTime = System.currentTimeMillis()
+            return
+        }
+        
+        val currentPos = player.currentPosition
+        val now = System.currentTimeMillis()
+        
+        // Update progress time if position moved
+        if (kotlin.math.abs(currentPos - lastPlaybackPosition) > 100) {
+            lastPlaybackProgressTime = now
+            lastPlaybackPosition = currentPos
+        }
+        
+        // 1. STATE_BUFFERING > 10 mins
+        if (player.playbackState == Player.STATE_BUFFERING) {
+             // If buffering for too long without shift? 
+             // Logic: if currentPos hasn't changed in 10 mins BUT we are buffering.
+             // Usually buffering means position stuck.
+             if (now - lastPlaybackProgressTime > 600000) { // 10 mins
+                 handleStuckPlayer("Stuck in BUFFERING for 10 mins")
+             }
+        }
+        
+        // 2. STATE_READY stuck > 10s
+        if (player.playbackState == Player.STATE_READY && player.playWhenReady) {
+            if (now - lastPlaybackProgressTime > 10000) { // 10s
+                handleStuckPlayer("Stuck in READY for 10s without progress")
+            }
+        }
+        
+        // 3. READY > 1 min past duration (sanity check)
+        val duration = player.duration
+        if (duration > 0 && currentPos > duration + 60000) {
+             handleStuckPlayer("Position exceeded duration by 1 min")
+        }
+    }
+
+    private fun handleStuckPlayer(reason: String) {
+        // Prevent spamming
+        if (System.currentTimeMillis() - lastStuckCheckTime < 60000) return
+        lastStuckCheckTime = System.currentTimeMillis()
+        
+        TXALogger.playbackE("MusicService", "StuckPlayerException: $reason. Restarting playback logic.")
+        try {
+             // Simple recovery: pause and play, or seek to current
+             val pos = player.currentPosition
+             player.stop()
+             player.prepare()
+             player.seekTo(pos)
+             player.play()
+        } catch (e: Exception) {
+            TXALogger.playbackE("MusicService", "Error recovering stuck player", e)
         }
     }
 
@@ -733,6 +812,26 @@ class MusicService : MediaLibraryService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
+    fun setVirtualDeviceId(deviceId: Int) {
+        // Attempt to set device ID if supported by Player or Routing
+        // Since ExoPlayer doesn't have a direct 'setVirtualDeviceId', we might need to use platform APIs
+        // or this is a placeholder for a specific implementation requirement.
+        // For now, we log it.
+        TXALogger.playbackI("MusicService", "Setting Virtual Device ID: $deviceId")
+        // If there was a specific API like player.setDeviceInfo, we would use it here.
+    }
+
+    fun mute() {
+        if (player.volume > 0) {
+            previousVolume = player.volume
+            player.volume = 0f
+        }
+    }
+
+    fun unmute() {
+        player.volume = if (previousVolume > 0) previousVolume else 1.0f
+    }
+
     fun playSong(song: Song) {
         val mediaItem = createMediaItem(song)
         player.setMediaItem(mediaItem)
@@ -742,6 +841,11 @@ class MusicService : MediaLibraryService() {
     }
 
     fun playQueue(songs: List<Song>) {
+        if (songs.isEmpty()) {
+            player.stop()
+            player.clearMediaItems()
+            return
+        }
         val mediaItems = songs.map { createMediaItem(it) }
         originalMediaItems = mediaItems.toMutableList()
         player.setMediaItems(mediaItems)

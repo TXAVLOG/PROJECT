@@ -1,4 +1,16 @@
-# 🎵 TXAPP - Music Player
+# 🎵 TXAPP
+# TXA Music Player
+
+Ứng dụng nghe nhạc mạnh mẽ với thiết kế hiện đại, hỗ trợ nhiều định dạng và tính năng nâng cao.
+
+## Hỗ trợ & Đóng góp
+Nếu bạn có thắc mắc hoặc gặp lỗi, vui lòng:
+- Gửi yêu cầu kéo (Pull Request) tại repository này.
+- Hoặc liên hệ qua Facebook: [![Facebook](https://img.shields.io/badge/Facebook-1877F2?style=flat-square&logo=facebook&logoColor=white)](https://fb.com/vlog.txa.2311)
+
+### Xác minh Checksum
+Để đảm bảo tính toàn vẹn của file APK, bạn có thể so sánh Checksum (SHA-256) của file tải về với giá trị được công bố trong Release.
+Sử dụng lệnh: `certutil -hashfile app-debug.apk SHA256` hoặc các công cụ tương tự.
 
 Chào mừng bạn đến với **TXA Music Player** - ứng dụng nghe nhạc hiện đại, giao diện đẹp mắt và nhiều tính năng tùy biến mạnh mẽ dành cho Android.
 
@@ -37,6 +49,7 @@ TXAPP Music Player được xây dựng dựa trên kiến trúc hiện đại, 
 ---
 
 ## 📖 Hướng Dẫn Sử Dụng (Cho Người Dùng)
+
 
 1. **Cài đặt**:
    - Tải file APK mới nhất từ thư mục `TXABUILD/` hoặc từ trang Releases.
