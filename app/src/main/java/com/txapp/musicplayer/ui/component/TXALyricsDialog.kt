@@ -1,4 +1,6 @@
-package com.txapp.musicplayer.ui.component
+﻿package com.txapp.musicplayer.ui.component
+
+// cms
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

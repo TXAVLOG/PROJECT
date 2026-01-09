@@ -1,4 +1,6 @@
-package com.txapp.musicplayer.ui.component
+﻿package com.txapp.musicplayer.ui.component
+
+// cms
 
 import android.content.Context
 import android.media.AudioManager

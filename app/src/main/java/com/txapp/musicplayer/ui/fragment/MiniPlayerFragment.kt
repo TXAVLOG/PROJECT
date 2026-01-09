@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2020 Hemanth Savarla.
  *
  * Licensed under the GNU General Public License v3
@@ -13,6 +13,8 @@
  *
  */
 package com.txapp.musicplayer.ui.fragment
+
+// cms
 
 import android.os.Bundle
 import android.view.View
