@@ -25,6 +25,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -48,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.withStyle
 import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -483,7 +486,8 @@ fun NowPlayingFullStyle(
                         onShowLyrics = {
                             menuExpanded = false
                             TXAPreferences.setShowLyricsInPlayer(!showLyrics)
-                        }
+                        },
+                        isLyricsShowing = showLyrics
                     )
                 }
             }
@@ -1916,7 +1920,8 @@ fun MoreOptionsDropdown(
     onAddToPlaylist: () -> Unit,
     onEditTag: () -> Unit = {},
     onSetRingtone: () -> Unit = {},
-    onShowLyrics: () -> Unit = {}
+    onShowLyrics: () -> Unit = {},
+    isLyricsShowing: Boolean = false
 ) {
     val context = LocalContext.current
     DropdownMenu(
@@ -1924,7 +1929,12 @@ fun MoreOptionsDropdown(
         onDismissRequest = onDismiss
     ) {
         DropdownMenuItem(
-            text = { Text("txamusic_lyrics".txa()) },
+            text = { 
+                Text(
+                    if (isLyricsShowing) "txamusic_hide_lyrics".txa() 
+                    else "txamusic_lyrics".txa()
+                ) 
+            },
             onClick = {
                 onDismiss()
                 onShowLyrics()
@@ -1967,7 +1977,11 @@ fun MoreOptionsDropdown(
 
 
 /**
- * Synced Lyrics View for Player - ZingMP3 style
+ * Synced Lyrics View for Player - Karaoke-style (NCT/ZingMP3)
+ * Features:
+ * - Word-by-word highlight based on timing
+ * - Double-tap to seek to lyric position
+ * - Ellipsis animation between gaps
  */
 @Composable
 fun SyncedLyricsView(
@@ -1979,8 +1993,7 @@ fun SyncedLyricsView(
     val listState = rememberLazyListState()
     
     val activeIndex = remember(lyrics, currentPosition) {
-        val adjustedPos = currentPosition + 500
-        lyrics.indexOfLast { it.timestamp <= adjustedPos }.coerceAtLeast(0)
+        lyrics.indexOfLast { it.timestamp <= currentPosition }.coerceAtLeast(0)
     }
     
     LaunchedEffect(activeIndex) {
@@ -2000,26 +2013,97 @@ fun SyncedLyricsView(
     ) {
         itemsIndexed(lyrics) { index, line ->
             val isActive = index == activeIndex
-            val scale by animateFloatAsState(if (isActive) 1.2f else 1f, label = "scale")
-            val alpha by animateFloatAsState(if (isActive) 1f else 0.4f, label = "alpha")
+            val isPast = index < activeIndex
+            val scale by animateFloatAsState(if (isActive) 1.15f else 1f, label = "scale")
+            val baseAlpha by animateFloatAsState(if (isActive) 1f else if (isPast) 0.35f else 0.5f, label = "alpha")
             
-            Text(
-                text = line.text,
-                color = if (isActive) Color.White else Color.White.copy(alpha = 0.5f),
-                fontSize = if (isActive) 20.sp else 18.sp,
-                lineHeight = 30.sp,
-                fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.Medium,
-                textAlign = TextAlign.Center,
+            // Calculate word-by-word highlight progress for active line
+            val lineProgress = if (isActive && line.endTimestamp > line.timestamp) {
+                val duration = (line.endTimestamp - line.timestamp).toFloat()
+                val elapsed = (currentPosition - line.timestamp).toFloat()
+                (elapsed / duration).coerceIn(0f, 1f)
+            } else if (isPast) {
+                1f // Fully highlighted for past lines
+            } else {
+                0f
+            }
+            
+            // Karaoke-style annotated text with word highlight
+            val annotatedText = remember(line.text, lineProgress, isActive, isPast) {
+                buildKaraokeText(line.text, lineProgress, isActive, isPast, accentColor)
+            }
+            
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp, horizontal = 24.dp)
                     .graphicsLayer {
                         scaleX = scale
                         scaleY = scale
-                        this.alpha = alpha
+                        alpha = baseAlpha
                     }
-                    .clickable { onLyricClick(line.timestamp) }
-            )
+                    .pointerInput(line.timestamp) {
+                        detectTapGestures(
+                            onDoubleTap = {
+                                onLyricClick(line.timestamp)
+                            }
+                        )
+                    }
+            ) {
+                androidx.compose.foundation.text.BasicText(
+                    text = annotatedText,
+                    style = androidx.compose.ui.text.TextStyle(
+                        fontSize = if (isActive) 20.sp else 18.sp,
+                        lineHeight = 30.sp,
+                        fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.Medium,
+                        textAlign = TextAlign.Center
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Build karaoke-style annotated string with word-by-word highlight
+ */
+private fun buildKaraokeText(
+    text: String,
+    progress: Float,
+    isActive: Boolean,
+    isPast: Boolean,
+    accentColor: Color
+): androidx.compose.ui.text.AnnotatedString {
+    return androidx.compose.ui.text.buildAnnotatedString {
+        if (text.isEmpty()) return@buildAnnotatedString
+        
+        val highlightedLength = (text.length * progress).toInt()
+        
+        // Highlighted part (already sung)
+        if (highlightedLength > 0) {
+            withStyle(
+                style = androidx.compose.ui.text.SpanStyle(
+                    color = if (isActive) accentColor else Color.White.copy(alpha = 0.7f),
+                    fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.SemiBold
+                )
+            ) {
+                append(text.substring(0, highlightedLength.coerceAtMost(text.length)))
+            }
+        }
+        
+        // Remaining part (not yet sung)
+        if (highlightedLength < text.length) {
+            withStyle(
+                style = androidx.compose.ui.text.SpanStyle(
+                    color = if (isPast) Color.White.copy(alpha = 0.5f) 
+                            else if (isActive) Color.White.copy(alpha = 0.6f)
+                            else Color.White.copy(alpha = 0.5f),
+                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium
+                )
+            ) {
+                append(text.substring(highlightedLength))
+            }
         }
     }
 }

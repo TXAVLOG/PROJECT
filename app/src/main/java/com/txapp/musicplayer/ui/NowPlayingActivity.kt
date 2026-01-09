@@ -270,7 +270,8 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
                                 androidx.activity.result.IntentSenderRequest.Builder(intent).build()
                             )
                         },
-                        startInEditMode = startLyricsInEditMode
+                        startInEditMode = startLyricsInEditMode,
+                        songDuration = state.duration
                     )
                 }
             }

@@ -32,11 +32,15 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 /**
- * Lyrics data class
+ * Lyrics data class - Enhanced for karaoke-style support
+ * @param timestamp Start time in milliseconds
+ * @param endTimestamp End time in milliseconds (auto-calculated if not provided)
+ * @param text Lyric line text
  */
 data class LyricLine(
-    val timestamp: Long, // milliseconds
-    val text: String
+    val timestamp: Long, // Start time in milliseconds
+    val text: String,
+    val endTimestamp: Long = -1 // End time in milliseconds (-1 = auto-calculate)
 )
 
 /**
@@ -58,7 +62,8 @@ fun LyricsDialog(
     onSearchLyrics: () -> Unit = {},
     onLyricsUpdated: () -> Unit = {},
     onPermissionRequest: (android.app.PendingIntent, String) -> Unit = { _, _ -> },
-    startInEditMode: Boolean = false
+    startInEditMode: Boolean = false,
+    songDuration: Long = 0 // Duration in milliseconds
 ) {
     val context = LocalContext.current
     val listState = rememberLazyListState()
@@ -218,9 +223,14 @@ fun LyricsDialog(
                             )
                         }
                         
-                        // Helper text
+                        // Helper text - Dynamic format based on song duration
+                        val formatKey = if (songDuration >= 3600000) { // >= 1 hour
+                            "txamusic_lyrics_format_long_extended".txa()
+                        } else {
+                            "txamusic_lyrics_format_short_extended".txa()
+                        }
                         Text(
-                            text = if (editTab == 0) "txamusic_paste_synced_lyrics_hint".txa() 
+                            text = if (editTab == 0) "txamusic_paste_synced_lyrics_hint".txa().replace("%s", formatKey)
                                    else "txamusic_paste_normal_lyrics_hint".txa(),
                             fontSize = 12.sp,
                             color = Color.White.copy(alpha = 0.5f),
@@ -553,8 +563,12 @@ fun SimpleLyricsOverlay(
 object LyricsUtil {
     
     /**
-     * Parse LRC format lyrics
-     * Format: [mm:ss.xx]lyrics text
+     * Parse LRC format lyrics with extended support
+     * Supported formats:
+     * - [mm:ss.xx]lyrics text (standard)
+     * - [mm:ss.xx - mm:ss.xx]lyrics text (extended with end time)
+     * - [hh:mm:ss.xx]lyrics text (for songs > 1 hour)
+     * - [hh:mm:ss.xx - hh:mm:ss.xx]lyrics text (extended for songs > 1 hour)
      */
     fun parseLrc(lrcContent: String): List<LyricLine> {
         if (lrcContent.isBlank()) return emptyList()
@@ -563,7 +577,14 @@ object LyricsUtil {
         var offset = 0
         val lines = lrcContent.lines()
         
+        // Standard format: [mm:ss.xx]
         val timeRegex = Regex("""\[(\d+):(\d{2})[.:](\d{2,3})\]""")
+        // Extended format with end time: [mm:ss.xx - mm:ss.xx]
+        val extendedTimeRegex = Regex("""\[(\d+):(\d{2})[.:](\d{2,3})\s*-\s*(\d+):(\d{2})[.:](\d{2,3})\]""")
+        // Hour format: [hh:mm:ss.xx]
+        val hourTimeRegex = Regex("""\[(\d+):(\d{2}):(\d{2})[.:](\d{2,3})\]""")
+        // Extended hour format: [hh:mm:ss.xx - hh:mm:ss.xx]
+        val extendedHourRegex = Regex("""\[(\d+):(\d{2}):(\d{2})[.:](\d{2,3})\s*-\s*(\d+):(\d{2}):(\d{2})[.:](\d{2,3})\]""")
         val attrRegex = Regex("""\[(\D+):(.+)\]""")
 
         for (line in lines) {
@@ -577,6 +598,56 @@ object LyricsUtil {
                 continue
             }
 
+            // Try extended hour format first [hh:mm:ss.xx - hh:mm:ss.xx]
+            val extHourMatch = extendedHourRegex.find(line)
+            if (extHourMatch != null) {
+                val hr1 = extHourMatch.groupValues[1].toLong()
+                val min1 = extHourMatch.groupValues[2].toLong()
+                val sec1 = extHourMatch.groupValues[3].toLong()
+                val ms1 = parseMs(extHourMatch.groupValues[4])
+                val hr2 = extHourMatch.groupValues[5].toLong()
+                val min2 = extHourMatch.groupValues[6].toLong()
+                val sec2 = extHourMatch.groupValues[7].toLong()
+                val ms2 = parseMs(extHourMatch.groupValues[8])
+                
+                val startMs = ((hr1 * 3600 + min1 * 60 + sec1) * 1000 + ms1 + offset)
+                val endMs = ((hr2 * 3600 + min2 * 60 + sec2) * 1000 + ms2 + offset)
+                val text = line.replace(extendedHourRegex, "").trim()
+                result.add(LyricLine(startMs, text, endMs))
+                continue
+            }
+
+            // Try hour format [hh:mm:ss.xx]
+            val hourMatch = hourTimeRegex.find(line)
+            if (hourMatch != null) {
+                val hr = hourMatch.groupValues[1].toLong()
+                val min = hourMatch.groupValues[2].toLong()
+                val sec = hourMatch.groupValues[3].toLong()
+                val ms = parseMs(hourMatch.groupValues[4])
+                val totalMs = ((hr * 3600 + min * 60 + sec) * 1000 + ms + offset)
+                val text = line.replace(hourTimeRegex, "").trim()
+                result.add(LyricLine(totalMs, text))
+                continue
+            }
+
+            // Try extended format [mm:ss.xx - mm:ss.xx]
+            val extMatch = extendedTimeRegex.find(line)
+            if (extMatch != null) {
+                val min1 = extMatch.groupValues[1].toLong()
+                val sec1 = extMatch.groupValues[2].toLong()
+                val ms1 = parseMs(extMatch.groupValues[3])
+                val min2 = extMatch.groupValues[4].toLong()
+                val sec2 = extMatch.groupValues[5].toLong()
+                val ms2 = parseMs(extMatch.groupValues[6])
+                
+                val startMs = ((min1 * 60 + sec1) * 1000 + ms1 + offset)
+                val endMs = ((min2 * 60 + sec2) * 1000 + ms2 + offset)
+                val text = line.replace(extendedTimeRegex, "").trim()
+                result.add(LyricLine(startMs, text, endMs))
+                continue
+            }
+
+            // Standard format [mm:ss.xx]
             val matches = timeRegex.findAll(line)
             if (matches.none()) continue
             
@@ -584,15 +655,31 @@ object LyricsUtil {
             for (match in matches) {
                 val min = match.groupValues[1].toLong()
                 val sec = match.groupValues[2].toLong()
-                val msStr = match.groupValues[3]
-                var ms = msStr.toLong()
-                if (msStr.length == 2) ms *= 10 // Handle [00:00.10] as 100ms
-                
+                val ms = parseMs(match.groupValues[3])
                 val totalMs = (min * 60 + sec) * 1000 + ms + offset
                 result.add(LyricLine(totalMs, text))
             }
         }
-        return result.sortedBy { it.timestamp }
+        
+        // Sort and auto-calculate end timestamps
+        val sorted = result.sortedBy { it.timestamp }.toMutableList()
+        for (i in sorted.indices) {
+            if (sorted[i].endTimestamp == -1L) {
+                val endTime = if (i < sorted.size - 1) {
+                    sorted[i + 1].timestamp // Next line's start time
+                } else {
+                    sorted[i].timestamp + 10000 // Last line: 10 seconds duration
+                }
+                sorted[i] = sorted[i].copy(endTimestamp = endTime)
+            }
+        }
+        return sorted
+    }
+    
+    private fun parseMs(msStr: String): Long {
+        var ms = msStr.toLong()
+        if (msStr.length == 2) ms *= 10 // Handle [00:00.10] as 100ms
+        return ms
     }
     
     private val centralLrcPath: String

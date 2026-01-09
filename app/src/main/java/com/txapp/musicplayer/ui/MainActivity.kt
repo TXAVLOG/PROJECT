@@ -870,7 +870,8 @@ class MainActivity : AppCompatActivity() {
                                 androidx.activity.result.IntentSenderRequest.Builder(intent).build()
                             )
                         },
-                        startInEditMode = startLyricsInEditMode
+                        startInEditMode = startLyricsInEditMode,
+                        songDuration = nowPlayingState.duration
                     )
                 }
             }
