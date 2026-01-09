@@ -100,8 +100,6 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
                     onClose = { if (isDriveModeActive) isDriveModeActive = false else finish() },
                     onShowSleepTimer = { showSleepTimerDialog = true },
                     onShowLyrics = { inEditMode -> 
-                        android.util.Log.d("TXA_DEBUG", "onShowLyrics called, editMode: $inEditMode")
-                        com.txapp.musicplayer.util.TXAToast.info(this@NowPlayingActivity, "Lyrics: $inEditMode")
                         startLyricsInEditMode = inEditMode
                         showLyricsDialog = true 
                     },

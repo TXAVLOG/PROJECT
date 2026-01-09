@@ -131,6 +131,7 @@ class MainActivity : AppCompatActivity() {
     private var showCreatePlaylistDialog by mutableStateOf(false)
     private var showTagEditorSheet by mutableStateOf(false)
     private var showLyricsDialog by mutableStateOf(false)
+    private var startLyricsInEditMode by mutableStateOf(false)
     private var currentSongForEdit by mutableStateOf<com.txapp.musicplayer.model.Song?>(null)
     
     // In-App AOD State
@@ -139,8 +140,23 @@ class MainActivity : AppCompatActivity() {
     
     private val inactivityTimeout: Long
         get() = com.txapp.musicplayer.util.TXAAODSettings.inactivityTimeout.value
+
+    private var pendingLyricsUpdate: String? = null
+    private val writeRequestLauncher =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult()) { result ->
+            if (result.resultCode == android.app.Activity.RESULT_OK) {
+                pendingLyricsUpdate?.let { lyrics ->
+                    val mediaUri = nowPlayingState.mediaUri
+                    if (mediaUri.isNotEmpty()) {
+                        saveLyricsUpdate(mediaUri, lyrics)
+                    }
+                }
+            }
+            pendingLyricsUpdate = null
+        }
     
-    fun toggleLyricsDialog() {
+    fun toggleLyricsDialog(inEditMode: Boolean = false) {
+        startLyricsInEditMode = inEditMode
         showLyricsDialog = !showLyricsDialog
     }
     
@@ -626,6 +642,7 @@ class MainActivity : AppCompatActivity() {
                     onAddToPlaylist = { showAddToPlaylistSheet = true },
                     onEditTag = { openTagEditorForCurrentSong() },
                     onSetRingtone = { setCurrentSongAsRingtone() },
+                    onShowLyrics = { inEditMode -> toggleLyricsDialog(inEditMode) },
                     onArtistClick = { navigateToArtist(nowPlayingState.artist) }
                 )
 
@@ -809,7 +826,55 @@ class MainActivity : AppCompatActivity() {
                         onPrevious = { mediaController?.seekToPrevious() }
                     )
                 }
+
+                // Lyrics Dialog
+                if (showLyricsDialog) {
+                    var lyricsVersion by remember { mutableIntStateOf(0) }
+                    val currentLyrics = remember(nowPlayingState.lyrics, lyricsVersion) {
+                        nowPlayingState.lyrics?.let { lrcContent ->
+                            com.txapp.musicplayer.ui.component.LyricsUtil.parseLrc(lrcContent)
+                        } ?: emptyList()
+                    }
+
+                    com.txapp.musicplayer.ui.component.LyricsDialog(
+                        songTitle = nowPlayingState.title,
+                        artistName = nowPlayingState.artist,
+                        songPath = try {
+                            android.net.Uri.parse(nowPlayingState.mediaUri).path ?: ""
+                        } catch (e: Exception) {
+                            ""
+                        },
+                        lyrics = currentLyrics,
+                        currentPosition = nowPlayingState.position,
+                        isPlaying = nowPlayingState.isPlaying,
+                        onSeek = { position ->
+                            mediaController?.seekTo(position)
+                        },
+                        onDismiss = { showLyricsDialog = false },
+                        onLyricsUpdated = {
+                            lyricsVersion++
+                            updateNowPlayingState() // Refresh lyrics in player
+                        },
+                        onSearchLyrics = {
+                             val url = com.txapp.musicplayer.ui.component.LyricsUtil.buildSearchUrl(nowPlayingState.title, nowPlayingState.artist)
+                             try {
+                                 com.txapp.musicplayer.util.TXAToast.info(this@MainActivity, "txamusic_lyrics_searching".txa())
+                                 startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+                             } catch (e: Exception) {
+                                 com.txapp.musicplayer.util.TXAToast.error(this@MainActivity, "txamusic_browser_not_found".txa())
+                             }
+                        },
+                        onPermissionRequest = { intent, content ->
+                            pendingLyricsUpdate = content
+                            writeRequestLauncher.launch(
+                                androidx.activity.result.IntentSenderRequest.Builder(intent).build()
+                            )
+                        },
+                        startInEditMode = startLyricsInEditMode
+                    )
+                }
             }
+
         }
     }
 
@@ -846,6 +911,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
+    private fun saveLyricsUpdate(mediaUri: String, lyrics: String) {
+        lifecycleScope.launch {
+            val path = try {
+                android.net.Uri.parse(mediaUri).path ?: ""
+            } catch (e: Exception) {
+                ""
+            }
+            if (path.isEmpty()) return@launch
+
+            val result = com.txapp.musicplayer.ui.component.LyricsUtil.saveLyrics(this@MainActivity, path, lyrics)
+            if (result is com.txapp.musicplayer.ui.component.LyricsUtil.SaveResult.Success) {
+                TXAToast.success(this@MainActivity, "txamusic_lyrics_saved".txa())
+                updateNowPlayingState()
+            } else if (result is com.txapp.musicplayer.ui.component.LyricsUtil.SaveResult.Failure) {
+                TXAToast.error(this@MainActivity, "txamusic_lyrics_save_failed".txa())
+            }
+        }
+    }
+
     override fun dispatchTouchEvent(ev: android.view.MotionEvent?): Boolean {
         try {
             if (!isFinishing && !isDestroyed) {
@@ -937,7 +1021,12 @@ class MainActivity : AppCompatActivity() {
                 Player.REPEAT_MODE_ONE -> 1
                 Player.REPEAT_MODE_ALL -> 2
                 else -> 0
-            }
+            },
+            lyrics = com.txapp.musicplayer.ui.component.LyricsUtil.getRawLyrics(
+                audioFilePath = try { android.net.Uri.parse(currentItem.localConfiguration?.uri?.toString() ?: "").path ?: "" } catch (e: Exception) { "" },
+                title = currentItem.mediaMetadata.title?.toString() ?: "",
+                artist = currentItem.mediaMetadata.artist?.toString() ?: ""
+            )
         )
         
         // Update TXAActiveMP3 global state for all fragments to observe

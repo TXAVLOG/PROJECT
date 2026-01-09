@@ -72,12 +72,9 @@ open class MiniPlayerFragment : Fragment(R.layout.fragment_mini_player) {
                                 controller?.play()
                             },
                             onExpand = { activity.expandPanel() },
-                            onEditLyrics = { activity.run { 
-                                // Direct access since it's in same package or internal
-                                // Wait, MainActivity's showLyricsDialog is private
-                                // I'll check its visibility or add a method
-                                toggleLyricsDialog()
-                            } }
+                            onEditLyrics = { 
+                                activity.toggleLyricsDialog(state.lyrics.isNullOrBlank())
+                            }
                         )
                     }
                 }
