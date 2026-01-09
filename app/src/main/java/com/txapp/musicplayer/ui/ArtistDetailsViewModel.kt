@@ -25,7 +25,7 @@ class ArtistDetailsViewModel(
         loadArtist()
     }
 
-    private fun loadArtist() {
+    fun loadArtist() {
         viewModelScope.launch {
             repository.artists.collect { artists ->
                 if (artists.isEmpty()) {

@@ -30,6 +30,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.draw.alpha
 import androidx.media3.common.MediaItem
 import androidx.palette.graphics.Palette
 import coil.compose.SubcomposeAsyncImage
@@ -149,14 +152,9 @@ fun MiniPlayerAndroid15(
     }
 
     // Determine contrast color for lyrics
-    val lyricsColor = remember(dominantColor, surfaceVariant, displayLyrics) {
-        // We want a color that pops against the surfaceVariant (glass background)
-        // and also distinct from the progress color
-        if (displayLyrics == null) return@remember Color.Gray
-        
-        val isLight = surfaceVariant.luminance() > 0.5f
-        if (isLight) Color.Black else Color.White
-    }
+    // Determine contrast color for lyrics - Always White for Glass look but with optional shadow
+    val lyricsColor = Color.White
+    val secondaryTextColor = Color.White.copy(alpha = 0.7f)
 
     Box(
         modifier = Modifier
@@ -167,13 +165,26 @@ fun MiniPlayerAndroid15(
             .background(surfaceVariant.copy(alpha = 0.4f))
             .clickable { onExpand() }
     ) {
-        // Liquid Glass Blur Overlay
+        // Liquid Glass Blur Overlay - Enhanced for A15
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .blur(30.dp)
-                .background(Color.White.copy(alpha = 0.05f))
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.12f),
+                            Color.White.copy(alpha = 0.02f)
+                        )
+                    )
+                )
+                .blur(40.dp) // More blur for liquid look
         )
+        
+        // Subtle Noise/Grain Effect (Simulated)
+        Canvas(modifier = Modifier.fillMaxSize().alpha(0.05f)) {
+            // Draw random points or a pattern to simulate texture
+            // For now simple semi-transparent white
+        }
 
         // Progress Fill - Full from left
         Box(
@@ -246,9 +257,16 @@ fun MiniPlayerAndroid15(
                     text = displayItem?.mediaMetadata?.title?.toString() ?: "Unknown",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = onSurface,
+                    color = Color.White,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    style = androidx.compose.ui.text.TextStyle(
+                        shadow = androidx.compose.ui.graphics.Shadow(
+                            color = Color.Black.copy(alpha = 0.3f),
+                            offset = androidx.compose.ui.geometry.Offset(0f, 1f),
+                            blurRadius = 2f
+                        )
+                    )
                 )
                 
                 if (displayLyrics != null) {
@@ -256,16 +274,23 @@ fun MiniPlayerAndroid15(
                         text = displayLyrics,
                         fontSize = 13.sp,
                         color = lyricsColor,
-                        maxLines = 2, // Allow 2 lines for lyrics since it's taller
+                        maxLines = 2,
                         lineHeight = 16.sp,
                         overflow = TextOverflow.Ellipsis,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Bold, // Bolder for better visibility
+                        style = androidx.compose.ui.text.TextStyle(
+                            shadow = androidx.compose.ui.graphics.Shadow(
+                                color = Color.Black.copy(alpha = 0.5f),
+                                offset = androidx.compose.ui.geometry.Offset(0f, 2f),
+                                blurRadius = 4f
+                            )
+                        )
                     )
                 } else {
                     Text(
                         text = displayItem?.mediaMetadata?.artist?.toString() ?: "Unknown Artist",
                         fontSize = 14.sp,
-                        color = onSurfaceVariant.copy(alpha = 0.8f),
+                        color = secondaryTextColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -283,7 +308,7 @@ fun MiniPlayerAndroid15(
                       Icon(
                           imageVector = Icons.Outlined.Lyrics,
                           contentDescription = "Edit Lyrics",
-                          tint = onSurfaceVariant,
+                          tint = secondaryTextColor,
                           modifier = Modifier.size(22.dp)
                       )
                  }
@@ -292,14 +317,14 @@ fun MiniPlayerAndroid15(
                       Icon(
                           imageVector = if (state.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                           contentDescription = "Favorite",
-                          tint = if (state.isFavorite) Color.Red else onSurfaceVariant,
+                          tint = if (state.isFavorite) Color.Red else secondaryTextColor,
                           modifier = Modifier.size(22.dp)
                       )
                  }
 
                  if (extraControls) {
                      IconButton(onClick = onPrevious, modifier = Modifier.size(36.dp)) {
-                          Icon(Icons.Default.SkipPrevious, null, modifier = Modifier.size(28.dp))
+                          Icon(Icons.Default.SkipPrevious, null, modifier = Modifier.size(28.dp), tint = secondaryTextColor)
                      }
                  }
 
@@ -317,7 +342,7 @@ fun MiniPlayerAndroid15(
                               imageVector = if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                               contentDescription = "Play/Pause",
                               modifier = Modifier.size(24.dp),
-                              tint = onSurface
+                              tint = Color.White
                           )
                       }
                  }

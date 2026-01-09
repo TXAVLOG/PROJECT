@@ -129,6 +129,9 @@ interface SongDao {
     @Query("SELECT * FROM songs WHERE albumId = :albumId ORDER BY title ASC")
     suspend fun getSongsByAlbum(albumId: Long): List<Song>
     
+    @Query("SELECT * FROM songs WHERE artist = :artistName ORDER BY title ASC")
+    suspend fun getSongsByArtist(artistName: String): List<Song>
+    
     // ============= TAG EDITOR SUPPORT =============
     
     @Query("""

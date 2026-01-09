@@ -616,6 +616,9 @@ class MusicRepository(
                     trackNumber = trackNumber
                 )
                 TXALogger.appI("MusicRepository", "Successfully updated metadata for song: $title")
+                
+                // 4. Notify MediaStore about the change so it refreshes its cache
+                android.media.MediaScannerConnection.scanFile(context, arrayOf(filePath), null, null)
             }
 
             return@withContext result
@@ -625,4 +628,50 @@ class MusicRepository(
         }
     }
 
+    /**
+     * Update artwork for all songs of an artist
+     */
+    suspend fun updateArtistArtwork(
+        context: Context,
+        artistName: String,
+        artwork: android.graphics.Bitmap
+    ): com.txapp.musicplayer.util.TXATagWriter.WriteResult = withContext(Dispatchers.IO) {
+        try {
+            // 1. Get all songs by this artist
+            val songs = database.songDao().getSongsByArtist(artistName)
+            if (songs.isEmpty()) return@withContext com.txapp.musicplayer.util.TXATagWriter.WriteResult.Failure
+
+            var finalResult: com.txapp.musicplayer.util.TXATagWriter.WriteResult = com.txapp.musicplayer.util.TXATagWriter.WriteResult.Success
+
+            // 2. Update each song
+            for (i in songs.indices) {
+                val song = songs[i]
+                val res = updateSongMetadata(
+                    context = context,
+                    songId = song.id,
+                    title = song.title,
+                    artist = song.artist,
+                    album = song.album,
+                    albumArtist = song.albumArtist,
+                    composer = song.composer,
+                    year = song.year,
+                    trackNumber = song.trackNumber,
+                    artwork = artwork
+                )
+
+                if (res is com.txapp.musicplayer.util.TXATagWriter.WriteResult.PermissionRequired) {
+                    return@withContext res // Need permission to continue
+                }
+                
+                if (res is com.txapp.musicplayer.util.TXATagWriter.WriteResult.Failure) {
+                    finalResult = res
+                }
+            }
+
+            finalResult
+        } catch (e: Exception) {
+            TXALogger.appE("MusicRepository", "Failed to update artist artwork", e)
+            com.txapp.musicplayer.util.TXATagWriter.WriteResult.Failure
+        }
+    }
 }

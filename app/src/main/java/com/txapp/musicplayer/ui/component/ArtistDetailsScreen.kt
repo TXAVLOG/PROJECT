@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import kotlin.OptIn
@@ -50,9 +51,13 @@ fun ArtistDetailsScreen(
     onPlayAll: (List<Song>) -> Unit,
     onShuffleAll: (List<Song>) -> Unit,
     onAlbumClick: (Long) -> Unit,
+    onUpdateLogo: (android.graphics.Bitmap) -> Unit,
     currentSongId: Long = -1L
 ) {
     val accentColor = Color(android.graphics.Color.parseColor(TXAPreferences.currentAccent))
+    
+    // Token to force image reload when updated
+    var imageUpdateToken by remember { mutableLongStateOf(System.currentTimeMillis()) }
     
     // State for expanded image
     var expandedImageUrl by remember { mutableStateOf<String?>(null) }
@@ -64,7 +69,10 @@ fun ArtistDetailsScreen(
         ) {
             // Header
             item {
-                ArtistHeader(artist, accentColor, onPlayAll, onShuffleAll) { imageUrl ->
+                ArtistHeader(artist, accentColor, onPlayAll, onShuffleAll, { bitmap ->
+                    onUpdateLogo(bitmap)
+                    imageUpdateToken = System.currentTimeMillis() // Refresh
+                }, imageUpdateToken) { imageUrl ->
                     expandedImageUrl = imageUrl
                 }
             }
@@ -145,6 +153,8 @@ fun ArtistHeader(
     accentColor: Color,
     onPlayAll: (List<Song>) -> Unit,
     onShuffleAll: (List<Song>) -> Unit,
+    onUpdateLogo: (android.graphics.Bitmap) -> Unit,
+    imageUpdateToken: Long,
     onImageClick: (String?) -> Unit
 ) {
     val context = LocalContext.current
@@ -179,17 +189,18 @@ fun ArtistHeader(
                 .clip(CircleShape)
                 .background(Color.Gray.copy(alpha = 0.2f))
                 .border(4.dp, accentColor.copy(alpha = 0.3f), CircleShape)
-                .clickable {
-                    onImageClick(imageSource.toString())
-                }
         ) {
             SubcomposeAsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(imageSource)
+                    .setHeader("Cache-Control", "no-cache") // Hint
+                    .memoryCacheKey("${imageSource}_$imageUpdateToken") // Unique key
                     .crossfade(true)
                     .build(),
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().clickable {
+                    onImageClick(imageSource.toString())
+                },
                 contentScale = ContentScale.Crop
             ) {
                  val state = painter.state
@@ -198,6 +209,40 @@ fun ArtistHeader(
                  } else {
                      SubcomposeAsyncImageContent()
                  }
+            }
+            
+            // Edit Overlay
+            val pickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                androidx.activity.result.contract.ActivityResultContracts.GetContent()
+            ) { uri: android.net.Uri? ->
+                uri?.let {
+                    val processedFile = com.txapp.musicplayer.util.TXAImageUtils.processImage(context, it)
+                    if (processedFile != null) {
+                        val bitmap = android.graphics.BitmapFactory.decodeFile(processedFile.absolutePath)
+                        if (bitmap != null) {
+                            onUpdateLogo(bitmap)
+                        }
+                        processedFile.delete()
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(8.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
+                    .clickable { pickerLauncher.launch("image/*") },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.Edit,
+                    contentDescription = "Edit Logo",
+                    tint = accentColor,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
 

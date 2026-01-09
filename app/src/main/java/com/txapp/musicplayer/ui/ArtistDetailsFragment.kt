@@ -23,6 +23,9 @@ import com.txapp.musicplayer.model.Song
 import com.txapp.musicplayer.ui.component.ArtistDetailsScreen
 import androidx.media3.session.MediaController
 import androidx.media3.common.Player
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.txapp.musicplayer.util.txa
 
 class ArtistDetailsFragment : Fragment() {
 
@@ -59,7 +62,8 @@ class ArtistDetailsFragment : Fragment() {
                             onPlayAll = { list -> playSongs(list, 0) },
                             onShuffleAll = { list -> shuffleSongs(list) },
                             onAlbumClick = { id -> navigateToAlbum(id) },
-                            currentSongId = currentSongId
+                            currentSongId = currentSongId,
+                            onUpdateLogo = { bitmap -> updateArtistLogo(bitmap) }
                         )
                     } else {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -87,5 +91,27 @@ class ArtistDetailsFragment : Fragment() {
     private fun navigateToAlbum(id: Long) {
         val bundle = Bundle().apply { putLong("extra_album_id", id) }
         findNavController().navigate(com.txapp.musicplayer.R.id.albumDetailsFragment, bundle)
+    }
+
+    private fun updateArtistLogo(bitmap: android.graphics.Bitmap) {
+        val name = artistName ?: return
+        val mainActivity = activity as? MainActivity ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = mainActivity.repository.updateArtistArtwork(requireContext(), name, bitmap)
+            
+            when (result) {
+                is com.txapp.musicplayer.util.TXATagWriter.WriteResult.Success -> {
+                    com.txapp.musicplayer.util.TXAToast.show(requireContext(), "txamusic_tag_saved".txa())
+                    viewModel.loadArtist() 
+                    mainActivity.updateNowPlayingState()
+                }
+                is com.txapp.musicplayer.util.TXATagWriter.WriteResult.PermissionRequired -> {
+                    mainActivity.startArtistLogoUpdate(name, bitmap, result.intent)
+                }
+                else -> {
+                    com.txapp.musicplayer.util.TXAToast.show(requireContext(), "txamusic_tag_save_failed".txa())
+                }
+            }
+        }
     }
 }

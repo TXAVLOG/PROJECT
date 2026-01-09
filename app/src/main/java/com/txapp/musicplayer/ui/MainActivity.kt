@@ -38,6 +38,7 @@ import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import kotlinx.coroutines.launch
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
@@ -143,6 +144,7 @@ class MainActivity : AppCompatActivity() {
 
     private var pendingLyricsUpdate: String? = null
     private var pendingTagUpdate: com.txapp.musicplayer.ui.component.TagEditData? = null
+    private var pendingArtistLogoUpdate: Pair<String, android.graphics.Bitmap>? = null
     private val writeRequestLauncher =
         registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult()) { result ->
             if (result.resultCode == android.app.Activity.RESULT_OK) {
@@ -155,15 +157,16 @@ class MainActivity : AppCompatActivity() {
                 pendingTagUpdate?.let { data ->
                     val songId = nowPlayingState.songId
                     if (songId != -1L) {
-                         // We need to trigger the save again. 
-                         // To avoid duplicate code, I'll rely on the existing onSave logic or similar.
-                         // But since it's a simple call, I'll just redo it here.
                          retryTagUpdate(songId, data)
                     }
+                }
+                pendingArtistLogoUpdate?.let { (name, bitmap) ->
+                    retryArtistLogoUpdate(name, bitmap)
                 }
             }
             pendingLyricsUpdate = null
             pendingTagUpdate = null
+            pendingArtistLogoUpdate = null
         }
 
     private fun retryTagUpdate(songId: Long, data: com.txapp.musicplayer.ui.component.TagEditData) {
@@ -177,12 +180,27 @@ class MainActivity : AppCompatActivity() {
                 albumArtist = data.albumArtist,
                 composer = data.composer,
                 year = data.year.toIntOrNull() ?: 0,
-                trackNumber = 0 // We don't have track number here easily, but repository handles it
+                trackNumber = 0,
+                artwork = data.artworkBitmap
             )
             if (result is com.txapp.musicplayer.util.TXATagWriter.WriteResult.Success) {
                 TXAToast.success(this@MainActivity, "txamusic_tag_saved".txa())
                 updateNowPlayingState()
             }
+        }
+    }
+    fun startArtistLogoUpdate(name: String, bitmap: android.graphics.Bitmap, intent: android.app.PendingIntent) {
+        pendingArtistLogoUpdate = Pair(name, bitmap)
+        writeRequestLauncher.launch(
+            androidx.activity.result.IntentSenderRequest.Builder(intent).build()
+        )
+    }
+
+    private fun retryArtistLogoUpdate(name: String, bitmap: android.graphics.Bitmap) {
+        lifecycleScope.launch {
+            repository.updateArtistArtwork(this@MainActivity, name, bitmap)
+            com.txapp.musicplayer.util.TXAToast.show(this@MainActivity, "txamusic_tag_saved".txa())
+            updateNowPlayingState()
         }
     }
 
@@ -192,7 +210,7 @@ class MainActivity : AppCompatActivity() {
         showLyricsDialog = !showLyricsDialog
     }
     
-    private lateinit var repository: MusicRepository
+    internal lateinit var repository: MusicRepository
     
     // Bottom Nav State
     private var currentTabId by mutableStateOf(R.id.action_home)
@@ -1042,7 +1060,7 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNavComposeView.visibility = View.VISIBLE
     }
     
-    private fun updateNowPlayingState() {
+    fun updateNowPlayingState() {
         val controller = mediaController ?: return
         val currentItem = controller.currentMediaItem ?: return
         

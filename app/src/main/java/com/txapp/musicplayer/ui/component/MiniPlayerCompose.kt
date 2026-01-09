@@ -265,28 +265,20 @@ fun MiniPlayerContent(
                         }
                     }
                     
-                    val lyricsColor = remember(backgroundColor, accentColor, displayLyrics, onSurfaceVariant) {
-                        if (displayLyrics == null) return@remember onSurfaceVariant
-                        
-                        // If background is vibrant enough, use a high contrast color
-                        if (backgroundColor != Color.Transparent) {
-                             // Use a basic contrast check: if background is dark, use light text, and vice versa
-                             val backgroundLuminance = if (backgroundColor != Color.Transparent) {
-                                 backgroundColor.copy(alpha = 1f).luminance()
-                             } else 0.5f
-                             
-                             if (backgroundLuminance > 0.5f) Color.Black else Color.White
-                        } else {
-                             accentColor // Fallback to accent if no background color extracted
-                        }
-                    }
+                    val lyricsColor = Color.White
                     
                     Text(
                         text = displayLyrics ?: (displayItem?.mediaMetadata?.artist?.toString() ?: "Unknown Artist"),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            shadow = androidx.compose.ui.graphics.Shadow(
+                                color = Color.Black.copy(alpha = 0.5f),
+                                offset = androidx.compose.ui.geometry.Offset(0f, 2f),
+                                blurRadius = 4f
+                            )
+                        ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = lyricsColor,
+                        color = Color.White,
                         fontWeight = if (displayLyrics != null) FontWeight.Bold else FontWeight.Normal
                     )
                 }
