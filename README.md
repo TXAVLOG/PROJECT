@@ -14,8 +14,21 @@ TXAPP Music Player được xây dựng dựa trên kiến trúc hiện đại, 
 - **Material You**: Giao diện thích ứng theo màu sắc hệ thống.
 - **Tag Editor**: Chỉnh sửa thông tin bài hát trực tiếp.
 
-> **Phiên bản hiện tại:** <!-- VERSION_START -->2.5.0_txa<!-- VERSION_END -->
+> **Phiên bản hiện tại:** <!-- VERSION_START -->2.5.1_txa<!-- VERSION_END -->
 > *(Được cập nhật tự động từ [version.properties](version.properties))*
+
+## 📦 Thông Tin Build (Latest Build Info)
+
+| Check | Value |
+| :--- | :--- |
+| **File Name** | `TXAMUSIC_v2.5.1_txa.apk` |
+| **Version** | v2.5.1_txa |
+| **Build Date** | 10/01/2026 |
+| **Size** | ~180 MB |
+| **SHA-256** | `32973fd5fc7a23b12ca9baab655549acbd4f32f1916c5ca2d76b554ae0b7e63f` |
+| **Status** | Stable / Signed |
+
+> **Lưu ý:** Hãy kiểm tra mã SHA-256 sau khi tải về để đảm bảo file gốc không bị chỉnh sửa.
 
 ---
 
