@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Dream Service configuration for MusicDreamService.
+    This file configures the system screen saver (Daydream).
+    
+    - settingsActivity: Custom settings screen for AOD configuration
+    - previewImage: Preview image shown in the system screen saver picker
+-->
+<dream xmlns:android="http://schemas.android.com/apk/res/android"
+    android:settingsActivity="com.txapp.musicplayer.ui.ScreenSaverSettingsActivity" />

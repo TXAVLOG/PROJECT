@@ -1,0 +1,262 @@
+package com.txapp.musicplayer.util
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.core.content.FileProvider
+import com.txapp.musicplayer.service.TXADownloadService
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.currentCoroutineContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
+import java.util.concurrent.CancellationException
+
+data class UpdateInfo(
+    val updateAvailable: Boolean,
+    val forceUpdate: Boolean = false,
+    val latestVersionCode: Int = 0,
+    val latestVersionName: String = "",
+    val downloadUrl: String = "",
+    val downloadSizeBytes: Long = 0,
+    val changelog: String = "",
+    val releaseDate: String = "",
+    val checksumType: String = "",
+    val checksumValue: String = ""
+)
+
+sealed class DownloadState {
+    data class Progress(val percentage: Int, val downloaded: Long, val total: Long, val bps: Long) : DownloadState()
+    data class Success(val file: File) : DownloadState()
+    data class Error(val message: String) : DownloadState()
+}
+
+object TXAUpdateManager {
+    private const val API_URL = "https://soft.nrotxa.online/txamusic/api/update/check"
+    
+    // Global Download State
+    private val _downloadState = MutableStateFlow<DownloadState?>(null)
+    val downloadState = _downloadState.asStateFlow()
+
+    var isResolving = MutableStateFlow(false)
+    val updateInfo = MutableStateFlow<UpdateInfo?>(null)
+
+    const val ACTION_START = "com.txapp.musicplayer.action.START_DOWNLOAD"
+    const val ACTION_STOP = "com.txapp.musicplayer.action.STOP_DOWNLOAD"
+    const val ACTION_CANCEL = "com.txapp.musicplayer.action.CANCEL_DOWNLOAD"
+    const val ACTION_PAUSE = "com.txapp.musicplayer.action.PAUSE_DOWNLOAD"
+    const val EXTRA_UPDATE_INFO = "extra_update_info"
+
+    suspend fun checkForUpdate(): UpdateInfo? = withContext(Dispatchers.IO) {
+        try {
+            val jsonBody = JSONObject().apply {
+                put("packageId", "com.txapp.musicplayer")
+                put("versionCode", TXADeviceInfo.getVersionCode())
+                put("versionName", TXADeviceInfo.getVersionName())
+                put("platform", "android")
+                put("locale", TXATranslation.getSystemLanguage())
+                // put("debug", BuildConfig.DEBUG) // Simplified
+            }
+
+            val request = Request.Builder()
+                .url(API_URL)
+                .post(jsonBody.toString().toRequestBody("application/json".toMediaType()))
+                .build()
+
+            val response = TXAHttp.client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val body = response.body?.string() ?: return@withContext null
+                val json = JSONObject(body)
+                
+                if (json.optBoolean("ok") && json.optBoolean("update_available")) {
+                    val latest = json.getJSONObject("latest")
+                    val latestVersionCode = latest.optInt("versionCode")
+                    val currentVersionCode = TXADeviceInfo.getVersionCode()
+                    
+                    // Safety check: local version must be lower than latest version to show update
+                    if (latestVersionCode <= currentVersionCode) {
+                        TXALogger.apiI("UpdateManager", "Server returned older or same version ($latestVersionCode <= $currentVersionCode), ignoring update")
+                        return@withContext null
+                    }
+
+                    val checksum = latest.optJSONObject("checksum")
+                    
+                    val info = UpdateInfo(
+                        updateAvailable = true,
+                        forceUpdate = json.optBoolean("force_update") || latest.optBoolean("mandatory"),
+                        latestVersionCode = latestVersionCode,
+                        latestVersionName = latest.optString("versionName"),
+                        downloadUrl = latest.optString("downloadUrl"),
+                        downloadSizeBytes = latest.optLong("downloadSizeBytes"),
+                        changelog = latest.optString("changelog"),
+                        releaseDate = latest.optString("releaseDate"),
+                        checksumType = checksum?.optString("type") ?: "",
+                        checksumValue = checksum?.optString("value") ?: ""
+                    )
+                    updateInfo.value = info
+                    return@withContext info
+                }
+            }
+            null
+        } catch (e: Exception) {
+            TXALogger.apiE("UpdateManager", "Update check failed", e)
+            null
+        }
+    }
+
+    fun startDownload(context: Context, info: UpdateInfo) {
+        val intent = Intent(context, TXADownloadService::class.java).apply {
+            action = ACTION_START
+            putExtra(EXTRA_UPDATE_INFO, info.downloadUrl)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+    }
+
+    fun stopDownload(context: Context) {
+        TXALogger.downloadI("UpdateManager", "Stopping download service/job")
+        val intent = Intent(context, TXADownloadService::class.java).apply {
+            action = ACTION_STOP
+        }
+        context.startService(intent)
+        _downloadState.value = null
+    }
+
+    fun resetDownloadState() {
+        TXALogger.downloadI("UpdateManager", "Global state reset")
+        _downloadState.value = null
+    }
+
+    suspend fun downloadApk(context: Context, url: String): Flow<DownloadState> = flow {
+        _downloadState.value = null
+        try {
+            isResolving.value = true
+            TXALogger.resolveI("UpdateManager", "Starting resolve for: $url")
+            val resolveResult = TXADownloadUrlResolver.resolve(url)
+            val directUrl = resolveResult.getOrElse {
+                TXALogger.resolveE("UpdateManager", "Resolve failed: ${it.message}")
+                throw it
+            }
+            isResolving.value = false
+            TXALogger.resolveI("UpdateManager", "Resolved to Direct: $directUrl")
+
+            val baseDir = context.getExternalFilesDir(null) ?: context.filesDir
+            if (!baseDir.exists()) TXASuHelper.mkdirs(baseDir)
+            val destination = File(baseDir, "update.apk")
+            if (destination.exists()) destination.delete()
+            
+            TXALogger.downloadI("UpdateManager", "Downloading from: $directUrl")
+            
+            val request = Request.Builder()
+                .url(directUrl)
+                .header("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36")
+                .build()
+            
+            val response = TXAHttp.client.newCall(request).execute()
+            
+            if (!response.isSuccessful) {
+                val errorMsg = "HTTP Error: ${response.code} ${response.message}"
+                TXALogger.apiE("UpdateManager", errorMsg)
+                throw Exception(errorMsg)
+            }
+            
+            val body = response.body ?: throw Exception("Response body null")
+            val totalBytes = body.contentLength()
+            
+            body.byteStream().use { inputStream ->
+                FileOutputStream(destination).use { outputStream ->
+                    TXALogger.downloadI("UpdateManager", "Download started. Size: $totalBytes bytes")
+
+                    val buffer = ByteArray(8192)
+                    var downloadedBytes = 0L
+                    var bytesRead: Int
+                    var lastUpdate = 0L
+                    val startTime = System.currentTimeMillis()
+                    
+                    while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                        if (!currentCoroutineContext().isActive) {
+                            TXALogger.downloadI("UpdateManager", "Download cancelled via context")
+                            throw CancellationException("User cancelled")
+                        }
+
+                        outputStream.write(buffer, 0, bytesRead)
+                        downloadedBytes += bytesRead
+                        
+                        val now = System.currentTimeMillis()
+                        if (now - lastUpdate > 500) {
+                            val timePassed = (now - startTime + 1) / 1000f
+                            val bps = (downloadedBytes / timePassed).toLong()
+                            val progress = if (totalBytes > 0) ((downloadedBytes * 100) / totalBytes).toInt() else 0
+                            val state = DownloadState.Progress(progress, downloadedBytes, totalBytes, bps)
+                            _downloadState.value = state
+                            emit(state)
+                            lastUpdate = now
+                        }
+                    }
+                }
+            }
+            TXALogger.downloadI("UpdateManager", "Download success. File saved to update.apk")
+            val success = DownloadState.Success(destination)
+            _downloadState.value = success
+            emit(success)
+        } catch (e: Throwable) {
+            isResolving.value = false
+            if (e is CancellationException) {
+                _downloadState.value = null
+            } else {
+                TXALogger.downloadE("UpdateManager", "Download failed", e)
+                
+                // If it's a fatal error (like disk full, permission denied halfway, etc.)
+                // we report it to crash handler to show the custom error page
+                if (TXACrashHandler.isFatalError(e)) {
+                    TXACrashHandler.reportFatalError(context, e, "UpdateManagerDownload")
+                } else {
+                    val error = DownloadState.Error(e.message ?: "Download failed")
+                    _downloadState.value = error
+                    emit(error)
+                }
+            }
+        }
+    }.flowOn(Dispatchers.IO)
+
+    fun canInstallApp(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.packageManager.canRequestPackageInstalls()
+        } else true
+    }
+
+    fun requestInstallPermission(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                data = Uri.parse("package:${context.packageName}")
+            }
+            context.startActivity(intent)
+        }
+    }
+
+    fun installApk(context: Context, file: File) {
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/vnd.android.package-archive")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    }
+}

@@ -1,0 +1,42 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorOnSurface">
+
+    <!-- Timer body -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="
+            M15,1H9v2h6V1z
+            M12,4
+            c-4.97,0 -9,4.03 -9,9
+            s4.03,9 9,9
+            s9,-4.03 9,-9
+            s-4.03,-9 -9,-9z
+            M12,20
+            c-3.87,0 -7,-3.13 -7,-7
+            s3.13,-7 7,-7
+            s7,3.13 7,7
+            s-3.13,7 -7,7z"/>
+
+    <!-- Timer hand -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="
+            M11,7
+            h2
+            v6
+            h-2
+            z"/>
+
+    <!-- Running indicator dot -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="
+            M18.5,18.5
+            m-1.2,0
+            a1.2,1.2 0 1,0 2.4,0
+            a1.2,1.2 0 1,0 -2.4,0"/>
+</vector>

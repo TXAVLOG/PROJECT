@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    app:startDestination="@id/action_home">
+
+    <fragment
+        android:id="@+id/genreDetailsFragment"
+        android:name="com.txapp.musicplayer.ui.GenreDetailsFragment"
+        android:label="GenreDetailsFragment">
+        <argument
+            android:name="extra_genre"
+            app:argType="com.txapp.musicplayer.model.Genre" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/playlistDetailsFragment"
+        android:name="com.txapp.musicplayer.ui.PlaylistDetailsFragment"
+        android:label="PlaylistDetailsFragment">
+        <argument
+            android:name="extra_playlist_id"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/albumDetailsFragment"
+        android:name="com.txapp.musicplayer.ui.AlbumDetailsFragment"
+        android:label="AlbumDetailsFragment">
+        <argument
+            android:name="extra_album_id"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/artistDetailsFragment"
+        android:name="com.txapp.musicplayer.ui.ArtistDetailsFragment"
+        android:label="ArtistDetailsFragment">
+        <argument
+            android:name="extra_artist_id"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/albumArtistDetailsFragment"
+        android:name="com.txapp.musicplayer.ui.AlbumArtistDetailsFragment"
+        android:label="AlbumArtistDetailsFragment">
+        <argument
+            android:name="extra_artist_name"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/libraryFragment"
+        android:name="com.txapp.musicplayer.ui.LibraryFragment"
+        android:label="" />
+
+    <fragment
+        android:id="@+id/detailListFragment"
+        android:name="com.txapp.musicplayer.ui.fragment.DetailListFragment"
+        android:label="DetailListFragment">
+        <argument
+            android:name="type"
+            app:argType="integer" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/action_search"
+        android:name="com.txapp.musicplayer.ui.SearchFragment"
+        android:label="SearchFragment" />
+
+    <activity
+        android:id="@+id/settings_fragment"
+        android:name="com.txapp.musicplayer.ui.SettingsActivity"
+        android:label="SettingsActivity" />
+
+    <fragment
+        android:id="@+id/action_album"
+        android:name="com.txapp.musicplayer.ui.AlbumsFragment" />
+
+    <fragment
+        android:id="@+id/action_artist"
+        android:name="com.txapp.musicplayer.ui.ArtistsFragment" />
+
+    <fragment
+        android:id="@+id/action_song"
+        android:name="com.txapp.musicplayer.ui.SongsFragment" />
+
+    <fragment
+        android:id="@+id/action_genre"
+        android:name="com.txapp.musicplayer.ui.GenresFragment" />
+
+    <fragment
+        android:id="@+id/action_playlist"
+        android:name="com.txapp.musicplayer.ui.PlaylistsFragment" />
+
+    <fragment
+        android:id="@+id/action_folder"
+        android:name="com.txapp.musicplayer.ui.FoldersFragment" />
+
+    <fragment
+        android:id="@+id/action_home"
+        android:name="com.txapp.musicplayer.ui.HomeFragment"
+        android:label="" />
+
+    <fragment
+        android:id="@+id/user_info_fragment"
+        android:name="com.txapp.musicplayer.ui.UserInfoFragment" />
+
+    <fragment
+        android:id="@+id/playing_queue_fragment"
+        android:name="com.txapp.musicplayer.ui.PlayingQueueFragment" />
+
+    <fragment
+        android:id="@+id/lyrics_fragment"
+        android:name="com.txapp.musicplayer.ui.LyricsFragment" />
+</navigation>

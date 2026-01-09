@@ -1,0 +1,1204 @@
+package com.txapp.musicplayer.service
+
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaLibraryService
+import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionResult
+import androidx.media3.session.CommandButton
+import androidx.media3.common.util.UnstableApi
+import com.google.common.collect.ImmutableList
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
+import com.txapp.musicplayer.MusicApplication
+import com.txapp.musicplayer.R
+import com.txapp.musicplayer.data.MusicRepository
+import com.txapp.musicplayer.model.Song
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.*
+import androidx.annotation.OptIn
+import androidx.media3.session.DefaultMediaNotificationProvider
+import androidx.media3.session.LibraryResult.RESULT_ERROR_BAD_VALUE
+import androidx.media3.session.LibraryResult.RESULT_ERROR_UNKNOWN
+import com.txapp.musicplayer.auto.AutoMediaIDHelper
+import com.txapp.musicplayer.auto.AutoMusicProvider
+import com.txapp.musicplayer.util.txa
+import com.txapp.musicplayer.util.TXALogger
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+
+/**
+ * Extension function to convert suspend block to ListenableFuture
+ */
+private fun <T> CoroutineScope.future(block: suspend () -> T): ListenableFuture<T> {
+    val deferred = async { block() }
+    return object : ListenableFuture<T> {
+        private val listeners = mutableListOf<Pair<Runnable, java.util.concurrent.Executor>>()
+        
+        override fun cancel(mayInterruptIfRunning: Boolean): Boolean {
+            deferred.cancel()
+            return true
+        }
+        
+        override fun isCancelled(): Boolean = deferred.isCancelled
+        override fun isDone(): Boolean = deferred.isCompleted
+        
+        override fun get(): T = runBlocking { deferred.await() }
+        override fun get(timeout: Long, unit: java.util.concurrent.TimeUnit): T = runBlocking {
+            withTimeout(unit.toMillis(timeout)) { deferred.await() }
+        }
+        
+        override fun addListener(listener: Runnable, executor: java.util.concurrent.Executor) {
+            listeners.add(listener to executor)
+            deferred.invokeOnCompletion { executor.execute(listener) }
+        }
+    }
+}
+
+class MusicService : MediaLibraryService() {
+
+    private lateinit var player: ExoPlayer
+    private lateinit var mediaLibrarySession: MediaLibraryService.MediaLibrarySession
+    private lateinit var musicRepository: MusicRepository
+    private lateinit var autoMusicProvider: AutoMusicProvider
+
+    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+    // Manual Shuffle Implementation
+    private var originalMediaItems: MutableList<MediaItem> = mutableListOf()
+    private var isShuffleEnabled = false
+    
+    // Crossfade (Fade In/Out) logic
+    private val fadeHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var fadeOutJob: Job? = null
+    private val FADE_CHECK_INTERVAL = 500L // 500ms
+
+    private val connectionReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                Intent.ACTION_HEADSET_PLUG -> {
+                    val state = intent.getIntExtra("state", -1)
+                    if (state == 1) { // Plugged
+                        if (com.txapp.musicplayer.util.TXAPreferences.isHeadsetPlayEnabled) {
+                            TXALogger.playbackI("MusicService", "Tai nghe đã kết nối, tự động phát")
+                            player.play()
+                        } else {
+                           // If disabled, ensure we don't play or route? 
+                           // User wants to FORCE speaker.
+                           checkAudioRouting(context)
+                        }
+                    } else {
+                        // Unplugged
+                        checkAudioRouting(context)
+                    }
+                }
+                "android.bluetooth.device.action.ACL_CONNECTED" -> {
+                    if (com.txapp.musicplayer.util.TXAPreferences.isBluetoothPlaybackEnabled) {
+                        TXALogger.playbackI("MusicService", "Bluetooth đã kết nối, chuẩn bị tự động phát")
+                        serviceScope.launch {
+                            delay(1500) // Đợi thiết bị Bluetooth ổn định
+                            player.play()
+                        }
+                    } else {
+                        // Force speaker if BT playback disabled?
+                        checkAudioRouting(context)
+                    }
+                }
+                "android.bluetooth.device.action.ACL_DISCONNECTED" -> {
+                     checkAudioRouting(context)
+                }
+            }
+        }
+    }
+    
+    @Suppress("DEPRECATION")
+    private fun checkAudioRouting(context: Context) {
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+        
+        // Check Bluetooth using modern API
+        var isBluetoothConnected = false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val devices = audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS)
+            for (device in devices) {
+                if (device.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || 
+                    device.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
+                    isBluetoothConnected = true
+                    break
+                }
+            }
+        } else {
+             @Suppress("DEPRECATION")
+             isBluetoothConnected = audioManager.isBluetoothA2dpOn || audioManager.isBluetoothScoOn
+        }
+
+        if (isBluetoothConnected) {
+            if (!com.txapp.musicplayer.util.TXAPreferences.isBluetoothPlaybackEnabled) {
+                 // Force Speaker
+                 audioManager.mode = android.media.AudioManager.MODE_NORMAL
+                 audioManager.stopBluetoothSco()
+                 audioManager.isBluetoothScoOn = false
+                 audioManager.isSpeakerphoneOn = true
+                 TXALogger.playbackI("MusicService", "Forcing Speaker (BT disabled in settings)")
+                 return
+            }
+        }
+        
+        // Check Headset
+        if (audioManager.isWiredHeadsetOn) {
+             if (!com.txapp.musicplayer.util.TXAPreferences.isHeadsetPlayEnabled) {
+                 // Force Speaker
+                 audioManager.mode = android.media.AudioManager.MODE_NORMAL
+                 audioManager.isSpeakerphoneOn = true
+                 TXALogger.playbackI("MusicService", "Forcing Speaker (Headset disabled in settings)")
+                 return
+             }
+        }
+        
+        if (audioManager.isSpeakerphoneOn) {
+             audioManager.isSpeakerphoneOn = false
+        }
+    }
+
+    @OptIn(UnstableApi::class)
+    override fun onCreate() {
+        super.onCreate()
+
+        createNotificationChannel()
+
+        // Initialize repository
+        val database = (application as MusicApplication).database
+        val contentResolver = contentResolver
+        musicRepository = MusicRepository(database, contentResolver)
+        
+        // Initialize Android Auto provider
+        autoMusicProvider = AutoMusicProvider(this, musicRepository)
+
+        // Create ExoPlayer
+        player = ExoPlayer.Builder(this)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                    .setUsage(C.USAGE_MEDIA)
+                    .build(),
+                true
+            )
+            .setHandleAudioBecomingNoisy(true)
+            .build()
+        
+        // Update audio session ID for Equalizer
+        audioSessionId = player.audioSessionId
+        
+        // Restore previous state
+        restorePlaybackState()
+
+        // SessionActivity for Samsung Now Bar / Dynamic Island
+        val intent = Intent(this, com.txapp.musicplayer.ui.MainActivity::class.java)
+        val pendingIntent = android.app.PendingIntent.getActivity(
+            this, 0, intent,
+            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        // Create MediaLibrarySession
+        mediaLibrarySession = MediaLibraryService.MediaLibrarySession.Builder(
+            this,
+            player,
+            MediaLibrarySessionCallback()
+        )
+        .setSessionActivity(pendingIntent)
+        .build()
+
+        // Custom notification provider with Favorite and Shuffle buttons
+        setMediaNotificationProvider(TXAMediaNotificationProvider(this))
+
+        player.addListener(object : Player.Listener {
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                updateMediaSessionLayout()
+                savePlaybackState() // Save immediately on change
+                mediaItem?.mediaId?.toLongOrNull()?.let { songId ->
+                    serviceScope.launch(Dispatchers.Default) {
+                        musicRepository.updateHistory(songId)
+                        
+                        // Check artwork validity and fallback if needed
+                        val artworkUri = mediaItem.mediaMetadata.artworkUri
+                        if (artworkUri != null && artworkUri.scheme == "content") {
+                            // Verify if content exists
+                            var isValid = false
+                            try {
+                                contentResolver.openInputStream(artworkUri)?.use { isValid = true }
+                            } catch (e: Exception) {
+                                isValid = false
+                            }
+                            
+                            if (!isValid) {
+                                // Fallback
+                                val fallbackUri = com.txapp.musicplayer.util.TXAImageUtils.getFallbackUri(this@MusicService, songId)
+                                val updatedMetadata = mediaItem.mediaMetadata.buildUpon()
+                                    .setArtworkUri(fallbackUri)
+                                    .build()
+                                val updatedItem = mediaItem.buildUpon()
+                                    .setMediaMetadata(updatedMetadata)
+                                    .build()
+                                
+                                withContext(Dispatchers.Main) {
+                                    // Only update if current item hasn't changed
+                                    if (player.currentMediaItem?.mediaId == songId.toString()) {
+                                        player.replaceMediaItem(player.currentMediaItemIndex, updatedItem)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                isShuffleEnabled = shuffleModeEnabled
+                updateMediaSessionLayout()
+                savePlaybackState()
+                
+                // Broadcast for UI sync
+                val shuffleBroadcast = Intent("com.txapp.musicplayer.action.SHUFFLE_MODE_CHANGED")
+                shuffleBroadcast.putExtra("is_enabled", shuffleModeEnabled)
+                sendBroadcast(shuffleBroadcast)
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                updateMediaSessionLayout()
+                if (!isPlaying) savePlaybackState() 
+            }
+
+            override fun onRepeatModeChanged(repeatMode: Int) {
+                updateMediaSessionLayout()
+                savePlaybackState()
+                
+                // Broadcast for UI sync
+                val repeatBroadcast = Intent("com.txapp.musicplayer.action.REPEAT_MODE_CHANGED")
+                repeatBroadcast.putExtra("mode", repeatMode)
+                sendBroadcast(repeatBroadcast)
+            }
+
+            override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                if (audioSessionId > 0) {
+                    com.txapp.musicplayer.service.MusicService.audioSessionId = audioSessionId
+                    com.txapp.musicplayer.util.TXAEqualizerManager.init(audioSessionId)
+                    TXALogger.playbackI("MusicService", "Audio Session ID updated for Eq: $audioSessionId")
+                }
+            }
+
+            override fun onPlaybackStateChanged(state: Int) {
+                if (state == Player.STATE_READY && player.playWhenReady) {
+                    // This could be manual play or auto transition
+                    // If position is near start, it's likely a start of song
+                    if (player.currentPosition < 1000) {
+                         startFadeIn(isManualPlay = false) // Use crossfade for song start
+                    } else {
+                         startFadeIn(isManualPlay = true) // Likely resumed from pause
+                    }
+                }
+            }
+
+            override fun onPositionDiscontinuity(
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int
+            ) {
+                if (reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION) {
+                    startFadeIn(isManualPlay = false)
+                }
+                // Don't fade on manual Seek to avoid "cutting" feel
+            }
+
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                val errorCode = error.errorCode
+                TXALogger.playbackE("MusicService", "Player Error ($errorCode): ${error.message}")
+                
+                // Check if it's a "File Not Found" or "Source Error"
+                val isSourceError = error.errorCode == androidx.media3.common.PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND ||
+                                   error.errorCode == androidx.media3.common.PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS ||
+                                   error.errorCode == androidx.media3.common.PlaybackException.ERROR_CODE_DECODING_FAILED ||
+                                   error.message?.contains("ENOENT", ignoreCase = true) == true
+                
+                if (isSourceError) {
+                    val currentId = player.currentMediaItem?.mediaId?.toLongOrNull()
+                    if (currentId != null) {
+                        serviceScope.launch {
+                            // 1. Show Toast
+                            val msg = "txamusic_error_file_not_found".txa(player.currentMediaItem?.mediaMetadata?.title ?: "Unknown")
+                            withContext(Dispatchers.Main) {
+                                com.txapp.musicplayer.util.TXAToast.show(this@MusicService, msg)
+                            }
+                            
+                            // 2. Remove from database
+                            musicRepository.deleteSong(currentId)
+                            
+                            // 3. Trigger Scan on Activity if possible (via Broadcast)
+                            val scanIntent = Intent("com.txapp.musicplayer.action.TRIGGER_RESCAN")
+                            sendBroadcast(scanIntent)
+                            
+                            // 4. Skip to next song automatically
+                            withContext(Dispatchers.Main) {
+                                if (player.mediaItemCount > 1) {
+                                    player.seekToNextMediaItem()
+                                    player.prepare()
+                                    player.play()
+                                } else {
+                                    player.stop()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        })
+        
+        // Init Equalizer if ID is already available
+        if (player.audioSessionId > 0) {
+            com.txapp.musicplayer.util.TXAEqualizerManager.init(player.audioSessionId)
+        }
+
+        // Periodic save for crash protection (every 10s)
+        serviceScope.launch {
+            while (isActive) {
+                delay(10000)
+                if (player.isPlaying) {
+                    savePlaybackState()
+                }
+            }
+        }
+
+        // Observe playback speed changes
+        serviceScope.launch {
+            com.txapp.musicplayer.util.TXAPreferences.playbackSpeed.collect { speed ->
+                player.setPlaybackParameters(androidx.media3.common.PlaybackParameters(speed))
+            }
+        }
+
+        // Observe button visibility changes to update layout
+        serviceScope.launch {
+            kotlinx.coroutines.flow.combine(
+                com.txapp.musicplayer.util.TXAPreferences.showShuffleBtn,
+                com.txapp.musicplayer.util.TXAPreferences.showFavoriteBtn
+            ) { _, _ -> }.collect {
+                updateMediaSessionLayout()
+            }
+        }
+        
+        // Observe Audio Focus Preference
+        serviceScope.launch {
+            com.txapp.musicplayer.util.TXAPreferences.audioFocus.collect { enabled ->
+                player.setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                        .setUsage(C.USAGE_MEDIA)
+                        .build(),
+                    enabled
+                )
+            }
+        }
+
+        // Register connection receiver
+        val filter = android.content.IntentFilter().apply {
+            addAction(Intent.ACTION_HEADSET_PLUG)
+            addAction("android.bluetooth.device.action.ACL_CONNECTED")
+        }
+        registerReceiver(connectionReceiver, filter)
+
+        // Start fade check loop
+        startFadeCheckLoop()
+    }
+
+    private fun startFadeCheckLoop() {
+        serviceScope.launch {
+            while (isActive) {
+                delay(FADE_CHECK_INTERVAL)
+                checkFadeOutNeed()
+            }
+        }
+    }
+
+    private fun checkFadeOutNeed() {
+        if (!player.isPlaying) return
+        
+        val duration = player.duration
+        val position = player.currentPosition
+        if (duration <= 0) return
+
+        val fadeDur = com.txapp.musicplayer.util.TXAPreferences.currentCrossfadeDuration * 1000L
+        if (fadeDur <= 0) return
+
+        val remaining = duration - position
+        if (remaining <= fadeDur && remaining > 0) {
+            // Already fading? 
+            // We need a way to check if fader is already fading out.
+            // TXAAudioFader current animator can be checked, but it's simpler to use a flag or just call it (it cancels previous).
+            // BUT we only want to start fade out ONCE per song end.
+            if (player.volume > 0.9f) {
+                TXALogger.playbackI("MusicService", "Starting auto fade out ($fadeDur ms)")
+                com.txapp.musicplayer.util.TXAAudioFader.startFade(player, false, fadeDur)
+            }
+        }
+    }
+
+    private fun startFadeIn(isManualPlay: Boolean = false) {
+        val fadeDur = if (isManualPlay) {
+            com.txapp.musicplayer.util.TXAPreferences.currentAudioFadeDuration.toLong()
+        } else {
+            com.txapp.musicplayer.util.TXAPreferences.currentCrossfadeDuration * 1000L
+        }
+
+        if (fadeDur > 0) {
+            com.txapp.musicplayer.util.TXAAudioFader.startFade(player, true, fadeDur)
+        } else {
+            player.volume = 1.0f
+        }
+    }
+
+    private fun startFadeOut(isManualPause: Boolean = false, onEnd: () -> Unit) {
+        val fadeDur = if (isManualPause) {
+            com.txapp.musicplayer.util.TXAPreferences.currentAudioFadeDuration.toLong()
+        } else {
+            com.txapp.musicplayer.util.TXAPreferences.currentCrossfadeDuration * 1000L
+        }
+
+        if (fadeDur > 0) {
+            com.txapp.musicplayer.util.TXAAudioFader.startFade(player, false, fadeDur, onEnd)
+        } else {
+            player.volume = 0.0f
+            onEnd()
+        }
+    }
+
+    private fun savePlaybackState() {
+        val currentItem = player.currentMediaItem ?: return
+        val currentId = currentItem.mediaId.toLongOrNull() ?: -1L
+        val currentPos = player.currentPosition
+        val queueIds = mutableListOf<Long>()
+        for (i in 0 until player.mediaItemCount) {
+            player.getMediaItemAt(i).mediaId.toLongOrNull()?.let { queueIds.add(it) }
+        }
+        
+        com.txapp.musicplayer.util.TXAPlaybackPersistence.savePlaybackState(
+            this, currentId, currentPos, queueIds, player.shuffleModeEnabled, player.repeatMode
+        )
+    }
+
+    private fun restorePlaybackState() {
+        serviceScope.launch {
+            val lastId = com.txapp.musicplayer.util.TXAPlaybackPersistence.getLastSongId(this@MusicService)
+            if (lastId == -1L) return@launch
+            
+            val queueIds = com.txapp.musicplayer.util.TXAPlaybackPersistence.getQueueIds(this@MusicService)
+            val pos = com.txapp.musicplayer.util.TXAPlaybackPersistence.getLastPosition(this@MusicService)
+            val shuffle = com.txapp.musicplayer.util.TXAPlaybackPersistence.getShuffleMode(this@MusicService)
+            val repeat = com.txapp.musicplayer.util.TXAPlaybackPersistence.getRepeatMode(this@MusicService)
+            
+            val songs = musicRepository.getSongsByIds(queueIds.toLongArray())
+            val songMap = songs.associateBy { it.id }
+            val orderedSongs = queueIds.mapNotNull { songMap[it] }
+            
+            if (orderedSongs.isNotEmpty()) {
+                val lastSongIndex = orderedSongs.indexOfFirst { it.id == lastId }
+                withContext(Dispatchers.Main) {
+                    val mediaItems = orderedSongs.map { createMediaItem(it) }
+                    player.setMediaItems(mediaItems, if (lastSongIndex >= 0) lastSongIndex else 0, pos)
+                    player.shuffleModeEnabled = shuffle
+                    player.repeatMode = repeat
+                    player.prepare()
+                    TXALogger.playbackI("MusicService", "Khôi phục trạng thái: Bài ID=$lastId, Vị trí=${pos}ms")
+                }
+            }
+        }
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibraryService.MediaLibrarySession {
+        return mediaLibrarySession
+    }
+
+    override fun onDestroy() {
+        try {
+            unregisterReceiver(connectionReceiver)
+        } catch (e: Exception) {
+            TXALogger.appE("MusicService", "Error unregistering receiver", e)
+        }
+        savePlaybackState()
+        mediaLibrarySession.release()
+        player.release()
+        super.onDestroy()
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        savePlaybackState()
+        super.onTaskRemoved(rootIntent)
+        player.stop()
+        stopSelf()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        when (intent?.action) {
+            ACTION_PLAY_SONG -> {
+                val songId = intent.getLongExtra(EXTRA_SONG_ID, -1)
+                if (songId > 0) {
+                    serviceScope.launch {
+                        val song = musicRepository.getSongById(songId)
+                        if (song != null) {
+                            playSong(song)
+                        }
+                    }
+                }
+            }
+
+            ACTION_TOGGLE_PLAYBACK -> {
+                if (player.isPlaying) {
+                    startFadeOut(isManualPause = true) { player.pause() }
+                } else {
+                    player.play() 
+                    // onPlaybackStateChanged will handle startFadeIn(true)
+                }
+            }
+
+            ACTION_NEXT -> {
+                startFadeOut { 
+                    player.seekToNextMediaItem()
+                    // startFadeIn will be triggered by listener
+                }
+            }
+
+            ACTION_PREVIOUS -> {
+                 startFadeOut { 
+                    player.seekToPreviousMediaItem()
+                    // startFadeIn will be triggered by listener
+                }
+            }
+
+            ACTION_PLAY_EXTERNAL_URI -> {
+                val uriString = intent.getStringExtra(EXTRA_URI)
+                if (!uriString.isNullOrEmpty()) {
+                    val uri = Uri.parse(uriString)
+                    playExternalUri(uri)
+                }
+            }
+
+            ACTION_ENQUEUE_EXTERNAL_URI -> {
+                val uriString = intent.getStringExtra(EXTRA_URI)
+                if (!uriString.isNullOrEmpty()) {
+                    val uri = Uri.parse(uriString)
+                    enqueueExternalUri(uri)
+                }
+            }
+            
+            ACTION_TOGGLE_FAVORITE -> {
+                val songId = intent.getLongExtra(EXTRA_SONG_ID, -1)
+                if (songId > 0) {
+                    serviceScope.launch {
+                        val song = musicRepository.getSongById(songId)
+                        val newStatus = if (song != null) !song.isFavorite else false
+                        
+                        if (song != null) {
+                            musicRepository.setFavorite(songId, newStatus)
+                        }
+                        
+                        // Update current media item if it's the one toggled
+                        val currentItem = player.currentMediaItem
+                        if (currentItem?.mediaId == songId.toString()) {
+                            val currentExtras = currentItem.mediaMetadata.extras ?: Bundle()
+                            currentExtras.putBoolean("is_favorite", newStatus)
+                            val newMetadata = currentItem.mediaMetadata.buildUpon()
+                                .setExtras(currentExtras)
+                                .build()
+                            val newItem = currentItem.buildUpon().setMediaMetadata(newMetadata).build()
+                            
+                            withContext(Dispatchers.Main) {
+                                if (player.currentMediaItem?.mediaId == songId.toString()) {
+                                    player.replaceMediaItem(player.currentMediaItemIndex, newItem)
+                                }
+                            }
+                        }
+                        
+                        // Notify widgets/others like backup
+                        val broadcastIntent = Intent("com.txapp.musicplayer.action.FAVORITE_STATE_CHANGED")
+                        broadcastIntent.putExtra("song_id", songId)
+                        broadcastIntent.putExtra("is_favorite", newStatus)
+                        sendBroadcast(broadcastIntent)
+                        
+                        updateMediaSessionLayout(overrideFavorite = newStatus)
+                    }
+                }
+            }
+
+            ACTION_PLAY_QUEUE -> {
+                val songIds = intent.getLongArrayExtra(EXTRA_SONG_IDS)
+                if (songIds != null && songIds.isNotEmpty()) {
+                    serviceScope.launch {
+                        val songs = mutableListOf<com.txapp.musicplayer.model.Song>()
+                        for (id in songIds) {
+                            musicRepository.getSongById(id)?.let { songs.add(it) }
+                        }
+                        if (songs.isNotEmpty()) {
+                            playQueue(songs)
+                        }
+                    }
+                }
+            }
+            
+            ACTION_TOGGLE_SHUFFLE -> {
+                toggleShuffle()
+            }
+            
+            ACTION_TOGGLE_REPEAT -> {
+                 // Toggle repeat logic
+                 val newMode = when (player.repeatMode) {
+                     Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                     Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                     else -> Player.REPEAT_MODE_OFF
+                 }
+                 player.repeatMode = newMode
+                 
+                 // Show feedback
+                 val message = when(newMode) {
+                     Player.REPEAT_MODE_ALL -> "txamusic_repeat_all".txa()
+                     Player.REPEAT_MODE_ONE -> "txamusic_repeat_one".txa()
+                     else -> "txamusic_repeat_off".txa()
+                 }
+                 com.txapp.musicplayer.util.TXAToast.show(this, message)
+                 
+                 // Broadcast update
+                 val repeatBroadcast = Intent("com.txapp.musicplayer.action.REPEAT_MODE_CHANGED")
+                 repeatBroadcast.putExtra("mode", newMode)
+                 sendBroadcast(repeatBroadcast)
+                 updateMediaSessionLayout()
+            }
+            
+            ACTION_PLAY_SONG_IN_CONTEXT -> {
+                val songId = intent.getLongExtra(EXTRA_SONG_ID, -1)
+                val contextIds = intent.getLongArrayExtra(EXTRA_CONTEXT_SONG_IDS) ?: longArrayOf()
+                if (songId > 0 && contextIds.isNotEmpty()) {
+                    serviceScope.launch {
+                        val fetchedSongs = musicRepository.getSongsByIds(contextIds)
+                        // Preserve the order of songs as they appear in contextIds
+                        val songMap = fetchedSongs.associateBy { it.id }
+                        val songs = contextIds.toList().mapNotNull { songMap[it] } 
+                        
+                        if (songs.isNotEmpty()) {
+                            // Find index of target song in the ordered list
+                            val targetIndex = songs.indexOfFirst { it.id == songId }
+                            if (targetIndex >= 0) {
+                                playSongInContext(songs, targetIndex)
+                            } else {
+                                // Fallback if not found in context (shouldn't happen)
+                                val fallbackSong = musicRepository.getSongById(songId)
+                                if (fallbackSong != null) {
+                                    playSong(fallbackSong)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            ACTION_ENQUEUE_SONG -> {
+                val songId = intent.getLongExtra(EXTRA_SONG_ID, -1)
+                if (songId > 0) {
+                    serviceScope.launch {
+                        val song = musicRepository.getSongById(songId)
+                        if (song != null) {
+                            enqueueSong(song)
+                        }
+                    }
+                }
+            }
+            
+            ACTION_STOP -> {
+                // Sleep Timer or manual stop request
+                TXALogger.playbackI("MusicService", "Nhận ACTION_STOP - Dừng nhạc (Sleep Timer)")
+                startFadeOut(isManualPause = true) {
+                    player.stop()
+                    stopSelf()
+                }
+            }
+        }
+        return super.onStartCommand(intent, flags, startId)
+    }
+
+    fun playSong(song: Song) {
+        val mediaItem = createMediaItem(song)
+        player.setMediaItem(mediaItem)
+        player.seekTo(0) // Ensure it starts from beginning
+        player.prepare()
+        player.play()
+    }
+
+    fun playQueue(songs: List<Song>) {
+        val mediaItems = songs.map { createMediaItem(it) }
+        originalMediaItems = mediaItems.toMutableList()
+        player.setMediaItems(mediaItems)
+        player.shuffleModeEnabled = isShuffleEnabled
+        player.prepare()
+        player.play()
+    }
+    
+    /**
+     * Play a song within a queue context (e.g., play song X from library, queue = all library songs)
+     */
+    fun playSongInContext(songs: List<Song>, startIndex: Int) {
+        val mediaItems = songs.map { createMediaItem(it) }
+        originalMediaItems = mediaItems.toMutableList()
+        player.setMediaItems(mediaItems, startIndex, 0)
+        player.shuffleModeEnabled = isShuffleEnabled
+        player.prepare()
+        player.play()
+    }
+    
+    /**
+     * Add a song to the end of the current queue
+     */
+    fun enqueueSong(song: Song) {
+        val mediaItem = createMediaItem(song)
+        player.addMediaItem(mediaItem)
+        originalMediaItems.add(mediaItem)
+        if (!player.isPlaying && player.mediaItemCount == 1) {
+            player.prepare()
+            player.play()
+        }
+    }
+
+    private fun createMediaItem(song: Song): MediaItem {
+        val artworkUri = Uri.parse("content://media/external/audio/albumart/" + song.albumId)
+        val defaultMetadataBuilder = androidx.media3.common.MediaMetadata.Builder()
+            .setTitle(song.title)
+            .setArtist(song.artist)
+            .setAlbumTitle(song.album)
+            .setArtworkUri(artworkUri) // Set URI first, player will try to load it
+            .setExtras(Bundle().apply {
+                 putLong("album_id", song.albumId)
+                 putBoolean("is_favorite", song.isFavorite)
+                 putLong("duration", song.duration)
+            })
+
+        // Optimization: Check if artwork exists? 
+        // We can't do IO here easily as it might block. 
+        // BUT we can use a lazy check or check at playback start.
+        // For now, let's just use the URI. 
+        // If we want fallback, we can use a custom logic in onMediaItemTransition
+        
+        return MediaItem.Builder()
+            .setUri(song.data)
+            .setMediaId(song.id.toString())
+            .setMediaMetadata(defaultMetadataBuilder.build())
+            .build()
+    }
+
+    private fun playExternalUri(uri: Uri) {
+        val fileName = uri.lastPathSegment ?: uri.toString()
+        val mediaItem = MediaItem.Builder()
+            .setUri(uri)
+            .setMediaMetadata(
+                androidx.media3.common.MediaMetadata.Builder()
+                    .setTitle(fileName)
+                    .build()
+            )
+            .build()
+        player.setMediaItem(mediaItem)
+        player.prepare()
+        player.play()
+    }
+
+    private fun enqueueExternalUri(uri: Uri) {
+        val fileName = uri.lastPathSegment ?: uri.toString()
+        val mediaItem = MediaItem.Builder()
+            .setUri(uri)
+            .setMediaMetadata(
+                androidx.media3.common.MediaMetadata.Builder()
+                    .setTitle(fileName)
+                    .build()
+            )
+            .build()
+        player.addMediaItem(mediaItem)
+        if (!player.isPlaying) {
+            player.prepare()
+            player.play()
+        }
+    }
+    
+    private var lastUpdateLayoutTime = 0L
+
+    private fun updateMediaSessionLayout(overrideFavorite: Boolean? = null) {
+        // Throttling removed to ensure state sync
+        // val now = System.currentTimeMillis()
+        // if (now - lastUpdateLayoutTime < 300) return
+        // lastUpdateLayoutTime = now
+
+        // Ensure UI updates happen on main thread to avoid race conditions
+        val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        mainHandler.post {
+            if (!this::mediaLibrarySession.isInitialized || !this::player.isInitialized) return@post
+            
+            val buttons = mutableListOf<CommandButton>()
+            val isShuffleOn = player.shuffleModeEnabled
+            val currentItem = player.currentMediaItem
+            
+            val isFavorite = overrideFavorite ?: (currentItem?.mediaMetadata?.extras?.getBoolean("is_favorite", false) ?: false)
+            
+            // 1. Shuffle
+            if (com.txapp.musicplayer.util.TXAPreferences.isShowShuffleBtn) {
+                val shuffleIcon = if (isShuffleOn) R.drawable.ic_shuffle_on else R.drawable.ic_shuffle
+                buttons.add(
+                    CommandButton.Builder()
+                        .setDisplayName("Shuffle")
+                        .setIconResId(shuffleIcon)
+                        .setSessionCommand(TXAMediaNotificationProvider.COMMAND_TOGGLE_SHUFFLE)
+                        .build()
+                )
+            }
+            
+            // 2. Previous
+            buttons.add(
+                 CommandButton.Builder()
+                    .setDisplayName("Previous")
+                    .setIconResId(R.drawable.ic_skip_previous)
+                    .setPlayerCommand(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+                    .build()
+            )
+            
+            // 3. Play/Pause
+            val isPlaying = player.isPlaying
+            buttons.add(
+                CommandButton.Builder()
+                    .setDisplayName(if (isPlaying) "Pause" else "Play")
+                    .setIconResId(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play)
+                    .setPlayerCommand(Player.COMMAND_PLAY_PAUSE)
+                    .build()
+            )
+            
+            // 4. Next
+            buttons.add(
+                CommandButton.Builder()
+                    .setDisplayName("Next")
+                    .setIconResId(R.drawable.ic_skip_next)
+                    .setPlayerCommand(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+                    .build()
+            )
+            
+            // 5. Favorite
+            if (com.txapp.musicplayer.util.TXAPreferences.isShowFavoriteBtn) {
+                val favoriteIcon = if (isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border
+                buttons.add(
+                    CommandButton.Builder()
+                        .setDisplayName("Favorite")
+                        .setIconResId(favoriteIcon)
+                        .setSessionCommand(TXAMediaNotificationProvider.COMMAND_TOGGLE_FAVORITE)
+                        .build()
+                )
+            }
+            
+            mediaLibrarySession.setCustomLayout(buttons)
+        }
+    }
+
+    private fun toggleShuffle() {
+        isShuffleEnabled = !isShuffleEnabled
+        player.shuffleModeEnabled = isShuffleEnabled
+        
+        com.txapp.musicplayer.util.TXAToast.show(this, 
+            if (isShuffleEnabled) "txamusic_shuffle_on".txa() else "txamusic_shuffle_off".txa())
+
+        val shuffleBroadcast = Intent("com.txapp.musicplayer.action.SHUFFLE_MODE_CHANGED")
+        shuffleBroadcast.putExtra("is_enabled", isShuffleEnabled)
+        sendBroadcast(shuffleBroadcast)
+        updateMediaSessionLayout()
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "txamusic_noti_channel_name".txa(),
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "txamusic_noti_channel_desc".txa()
+                setShowBadge(false)
+                setBypassDnd(false)
+            }
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+    }
+
+    companion object {
+        const val NOTIFICATION_ID = 1
+        const val CHANNEL_ID = "txmusic_playback"
+
+        const val ACTION_PLAY_SONG = "com.txapp.musicplayer.action.PLAY_SONG"
+        const val EXTRA_SONG_ID = "extra_song_id"
+
+        const val ACTION_TOGGLE_PLAYBACK = "com.txapp.musicplayer.action.TOGGLE_PLAYBACK"
+        const val ACTION_NEXT = "com.txapp.musicplayer.action.NEXT"
+        const val ACTION_PREVIOUS = "com.txapp.musicplayer.action.PREVIOUS"
+        const val ACTION_PLAY_EXTERNAL_URI = "com.txapp.musicplayer.action.PLAY_EXTERNAL_URI"
+        const val ACTION_ENQUEUE_EXTERNAL_URI = "com.txapp.musicplayer.action.ENQUEUE_EXTERNAL_URI"
+        const val ACTION_TOGGLE_FAVORITE = "com.txapp.musicplayer.action.TOGGLE_FAVORITE"
+        const val ACTION_PLAY_QUEUE = "com.txapp.musicplayer.action.PLAY_QUEUE"
+        const val EXTRA_SONG_IDS = "extra_song_ids"
+        const val EXTRA_URI = "extra_uri"
+        
+        // Custom Shuffle/Repeat
+        const val ACTION_TOGGLE_SHUFFLE = "com.txapp.musicplayer.action.TOGGLE_SHUFFLE"
+        const val ACTION_TOGGLE_REPEAT = "com.txapp.musicplayer.action.TOGGLE_REPEAT"
+        const val ACTION_PLAY_SONG_IN_CONTEXT = "com.txapp.musicplayer.action.PLAY_SONG_IN_CONTEXT"
+        const val ACTION_ENQUEUE_SONG = "com.txapp.musicplayer.action.ENQUEUE_SONG"
+        const val EXTRA_CONTEXT_SONG_IDS = "extra_context_song_ids"
+        
+        // Sleep Timer
+        const val ACTION_STOP = "com.txapp.musicplayer.action.STOP"
+        
+        // Audio session ID for Equalizer
+        @Volatile
+        var audioSessionId: Int = android.media.audiofx.AudioEffect.ERROR_BAD_VALUE
+            private set
+    }
+    private inner class MediaLibrarySessionCallback : MediaLibraryService.MediaLibrarySession.Callback {
+        
+        @OptIn(UnstableApi::class)
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): MediaSession.ConnectionResult {
+            val availableSessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
+                .add(SessionCommand("PLAY_NEXT", Bundle.EMPTY))
+                .add(SessionCommand("ADD_TO_QUEUE", Bundle.EMPTY))
+                .add(SessionCommand("TOGGLE_FAVORITE", Bundle.EMPTY))
+                // Add notification custom commands
+                .add(TXAMediaNotificationProvider.COMMAND_TOGGLE_FAVORITE)
+                .add(TXAMediaNotificationProvider.COMMAND_TOGGLE_SHUFFLE)
+                .build()
+            return MediaSession.ConnectionResult.accept(
+                availableSessionCommands, 
+                MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS
+            )
+        }
+        
+        // ========== ANDROID AUTO BROWSING ==========
+        
+        /**
+         * Trả về root cho Android Auto browsing
+         */
+        override fun onGetLibraryRoot(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            params: LibraryParams?
+        ): ListenableFuture<LibraryResult<MediaItem>> {
+            // Check if this is a recent request (for "Continue playing" on Auto home)
+            val isRecent = params?.isRecent == true
+            
+            val rootMediaId = if (isRecent) {
+                AutoMediaIDHelper.MEDIA_ID_RECENT
+            } else {
+                AutoMediaIDHelper.MEDIA_ID_ROOT
+            }
+            
+            val rootItem = MediaItem.Builder()
+                .setMediaId(rootMediaId)
+                .setMediaMetadata(
+                    androidx.media3.common.MediaMetadata.Builder()
+                        .setTitle("TXA Music")
+                        .setIsBrowsable(true)
+                        .setIsPlayable(false)
+                        .setMediaType(androidx.media3.common.MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+                        .build()
+                )
+                .build()
+            
+            return Futures.immediateFuture(LibraryResult.ofItem(rootItem, params))
+        }
+        
+        /**
+         * Trả về children cho một parent ID (dùng cho Android Auto browsing)
+         */
+        override fun onGetChildren(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            parentId: String,
+            page: Int,
+            pageSize: Int,
+            params: LibraryParams?
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+            return serviceScope.future {
+                try {
+                    val children = autoMusicProvider.getChildren(parentId)
+                    LibraryResult.ofItemList(ImmutableList.copyOf(children), params)
+                } catch (e: Exception) {
+                    TXALogger.appE("MusicService", "Error getting children for $parentId", e)
+                    LibraryResult.ofItemList(ImmutableList.of(), params)
+                }
+            }
+        }
+        
+        /**
+         * Xử lý khi Android Auto muốn phát một item
+         */
+        override fun onGetItem(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            mediaId: String
+        ): ListenableFuture<LibraryResult<MediaItem>> {
+            return serviceScope.future {
+                try {
+                    // Extract song ID from mediaId
+                    val songIdStr = AutoMediaIDHelper.extractMusicID(mediaId)
+                    val songId = songIdStr?.toLongOrNull()
+                    
+                    if (songId != null) {
+                        val song = musicRepository.getSongById(songId)
+                        if (song != null) {
+                            val mediaItem = createMediaItem(song)
+                            LibraryResult.ofItem(mediaItem, null)
+                        } else {
+                            LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE)
+                        }
+                    } else {
+                        // It's a browsable item, not a song
+                        val children = autoMusicProvider.getChildren(mediaId)
+                        if (children.isNotEmpty()) {
+                            LibraryResult.ofItem(children.first(), null)
+                        } else {
+                            LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE)
+                        }
+                    }
+                } catch (e: Exception) {
+                    TXALogger.appE("MusicService", "Error getting item $mediaId", e)
+                    LibraryResult.ofError(LibraryResult.RESULT_ERROR_UNKNOWN)
+                }
+            }
+        }
+        
+        /**
+         * Handle search từ Android Auto voice command
+         */
+        override fun onSearch(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            params: LibraryParams?
+        ): ListenableFuture<LibraryResult<Void>> {
+            // Trigger search and notify when ready
+            serviceScope.launch {
+                val results = musicRepository.searchSongs(query)
+                val mediaItems = results.take(20).map { song -> createMediaItem(song) }
+                session.notifySearchResultChanged(browser, query, mediaItems.size, params)
+            }
+            return Futures.immediateFuture(LibraryResult.ofVoid())
+        }
+        
+        override fun onGetSearchResult(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            page: Int,
+            pageSize: Int,
+            params: LibraryParams?
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+            return serviceScope.future {
+                try {
+                    val results = musicRepository.searchSongs(query)
+                    val mediaItems = results.take(pageSize).map { song -> createMediaItem(song) }
+                    LibraryResult.ofItemList(ImmutableList.copyOf(mediaItems), params)
+                } catch (e: Exception) {
+                    LibraryResult.ofItemList(ImmutableList.of(), params)
+                }
+            }
+        }
+
+        override fun onCustomCommand(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            customCommand: SessionCommand,
+            args: Bundle
+        ): ListenableFuture<SessionResult> {
+            val handler = android.os.Handler(android.os.Looper.getMainLooper())
+
+            // Handle Favorite toggle from notification or app
+            if (customCommand.customAction == "TOGGLE_FAVORITE" || 
+                customCommand.customAction == TXAMediaNotificationProvider.ACTION_TOGGLE_FAVORITE) {
+                 serviceScope.launch {
+                     val currentMediaItem = player.currentMediaItem
+                     val songId = currentMediaItem?.mediaId?.toLongOrNull()
+                     if (songId != null) {
+                         val song = musicRepository.getSongById(songId)
+                         if (song != null) {
+                             val newStatus = !song.isFavorite
+                             musicRepository.setFavorite(songId, newStatus)
+                             
+                             // Show Feedback
+                             handler.post {
+                                 com.txapp.musicplayer.util.TXAToast.show(this@MusicService, 
+                                     if (newStatus) "txamusic_action_add_to_favorites".txa() 
+                                     else "txamusic_action_remove_from_favorites".txa())
+                             }
+                             
+                             // Update metadata instantly
+                             val currentExtras = currentMediaItem.mediaMetadata.extras ?: Bundle()
+                             currentExtras.putBoolean("is_favorite", newStatus)
+                             val newMetadata = currentMediaItem.mediaMetadata.buildUpon()
+                                 .setExtras(currentExtras)
+                                 .build()
+                             val newItem = currentMediaItem.buildUpon().setMediaMetadata(newMetadata).build()
+                             
+                             // Update player - this will trigger notification refresh
+                             withContext(Dispatchers.Main) {
+                                 if (player.currentMediaItem?.mediaId == songId.toString()) {
+                                      player.replaceMediaItem(player.currentMediaItemIndex, newItem)
+                                 }
+                             }
+                             
+                             // Broadcast for legacy UI sync
+                             val intent = Intent("com.txapp.musicplayer.action.FAVORITE_STATE_CHANGED")
+                             intent.putExtra("song_id", songId)
+                             intent.putExtra("is_favorite", newStatus)
+                             sendBroadcast(intent)
+                             
+                             updateMediaSessionLayout()
+                         }
+                     }
+                 }
+                 return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+            }
+            
+            // Handle Shuffle toggle from notification
+            if (customCommand.customAction == TXAMediaNotificationProvider.ACTION_TOGGLE_SHUFFLE) {
+                // Must toggle on Main Thread or safely
+                handler.post {
+                    isShuffleEnabled = !isShuffleEnabled
+                    player.shuffleModeEnabled = isShuffleEnabled
+                    
+                    com.txapp.musicplayer.util.TXAToast.show(this@MusicService, 
+                         if (isShuffleEnabled) "txamusic_shuffle_on".txa() 
+                         else "txamusic_shuffle_off".txa())
+                    
+                    updateMediaSessionLayout()
+                    
+                    // Broadcast for UI sync
+                    val shuffleBroadcast2 = Intent("com.txapp.musicplayer.action.SHUFFLE_MODE_CHANGED")
+                    shuffleBroadcast2.putExtra("is_enabled", isShuffleEnabled)
+                    sendBroadcast(shuffleBroadcast2)
+                }
+                    
+                return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+            }
+            
+            return super.onCustomCommand(session, controller, customCommand, args)
+        }
+    }
+}

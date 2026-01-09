@@ -1,0 +1,51 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Repeat arrows -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="
+            M7,7h9.5v2.5L21,6l-4.5,-3.5V5H5v6h2V7z
+            M17,17H7.5v-2.5L3,18l4.5,3.5V19H19v-6h-2V17z"/>
+
+    <!-- Number 1 (repeat once) -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="
+            M11.5,9.5
+            h1.5
+            v6
+            h-1.5
+            z"/>
+
+    <!-- Small letter T (top-right) -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="
+            M17.5,3
+            h4
+            v1.2
+            h-1.4
+            v3.8
+            h-1.2
+            v-3.8
+            h-1.4
+            z"/>
+
+    <!-- Music note icon (bottom-left) -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="
+            M5,14
+            v4.2
+            a1.8,1.8 0 1,0 1.2,1.7
+            V16.5
+            l4,-1
+            v3.7
+            a1.8,1.8 0 1,0 1.2,1.7
+            V13
+            z"/>
+</vector>

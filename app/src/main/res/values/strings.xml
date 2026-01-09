@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TXAMUSIC Player</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+    <string name="shuffle">Shuffle</string>
+    <string name="repeat">Repeat</string>
+    <string name="repeat_one">Repeat One</string>
+    <string name="home">Home</string>
+    <string name="library">Library</string>
+    <string name="now_playing">Now Playing</string>
+    <string name="recent">Recent</string>
+    <string name="top_tracks">Top Tracks</string>
+    <string name="genres">Genres</string>
+    <string name="artists">Artists</string>
+    <string name="albums">Albums</string>
+    <string name="smart_mix">Smart Mix</string>
+    <string name="favorites">Favorites</string>
+    <string name="txamusic_sleep_timer">Sleep Timer</string>
+    
+    <!-- Chooser Label -->
+    <string name="txamusic_open_label">Play with TXAMUSIC</string>
+
+    <!-- Crash Handler & Errors (Local only, no API) -->
+    <string name="txamusic_error_crash_title">Oops! It crashed.</string>
+    <string name="txamusic_error_action_restart">Restart App</string>
+    <string name="txamusic_error_action_details">View Details</string>
+    <string name="txamusic_error_action_share">Share Report</string>
+    <string name="txamusic_error_friendly_null">A null pointer exception occurred. Something expected was missing.</string>
+    <string name="txamusic_error_friendly_network">A network or connection error occurred. Please check your internet connection.</string>
+    <string name="txamusic_error_friendly_memory">The app ran out of memory. Please try closing other apps.</string>
+    <string name="txamusic_error_friendly_permission">A permission error occurred. The app tried to do something it wasn\'t allowed to.</string>
+    <string name="txamusic_error_friendly_gms">Google Play Services are missing or not working. This is required for the app to function.</string>
+    <string name="txamusic_error_friendly_location_api">Location Services API is unavailable on this device. Please check your Google Play Services.</string>
+    <string name="txamusic_error_friendly_resource">A required app resource was not found. Please reinstall the app.</string>
+    <string name="txamusic_error_friendly_activity">The screen became invalid. Please restart the app.</string>
+    <string name="txamusic_error_friendly_fragment">A navigation error occurred. Please restart.</string>
+    <string name="txamusic_error_friendly_database">A database error occurred. Your library might be corrupted.</string>
+    <string name="txamusic_error_friendly_unknown">An unknown error occurred. Please try restarting the app.</string>
+    <string name="txamusic_error_btn_ok">OK</string>
+    <string name="txamusic_error_copy_hint">Tap to copy details</string>
+    <string name="txamusic_error_copied">Copied to clipboard</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="for_you">For You</string>
+    <string name="songs">Songs</string>
+    <string name="playlists">Playlists</string>
+    <string name="txamusic_settings">Settings</string>
+
+    <!-- AOD & Screen Saver -->
+    <string name="txamusic_settings_screen_saver">Screen Saver</string>
+    <string name="txamusic_settings_screen_saver_desc">Display music info when device is idle</string>
+    <string name="txamusic_screen_saver_open_settings">Open Screen Saver Settings</string>
+    <string name="txamusic_screen_saver_hint">Enable TXAMUSIC as your screen saver in system settings</string>
+    <string name="txamusic_aod_settings_title">Display Options</string>
+    <string name="txamusic_aod_show_controls">Show Music Controls</string>
+    <string name="txamusic_aod_show_controls_desc">Display play/pause and skip buttons on screen saver</string>
+    <string name="txamusic_aod_show_date">Show Date</string>
+    <string name="txamusic_aod_date_format">Date Format</string>
+    <string name="txamusic_aod_show_battery">Show Battery Percentage</string>
+    <string name="txamusic_aod_clock_color">Clock Color</string>
+    <string name="txamusic_aod_night_mode">Night Mode</string>
+    <string name="txamusic_aod_night_mode_desc">Extra dim display for dark rooms - easier on eyes at night</string>
+    <string name="txamusic_aod_night">Night</string>
+    <string name="txamusic_aod_info">Screen saver activates when your device is charging and idle. Go to System Settings → Display → Screen Saver to enable.</string>
+    <string name="txamusic_aod_date_full">Full (Day, Date Month, Year)</string>
+    <string name="txamusic_aod_date_short">Short (Abbreviated Day)</string>
+    <string name="txamusic_aod_date_no_day">Date Only</string>
+    <string name="txamusic_aod_preview_song">Now Playing Song</string>
+    <string name="txamusic_aod_preview_artist">Artist Name</string>
+    <string name="txamusic_aod_color_white">White</string>
+    <string name="txamusic_aod_color_red">Red</string>
+    <string name="txamusic_aod_color_teal">Teal</string>
+    <string name="txamusic_aod_color_blue">Blue</string>
+    <string name="txamusic_aod_color_mint">Mint</string>
+    <string name="txamusic_aod_color_yellow">Yellow</string>
+    <string name="txamusic_aod_color_purple">Purple</string>
+    <string name="txamusic_aod_color_orange">Orange</string>
+    <string name="txamusic_aod_inactivity_timeout">Auto-dim after</string>
+    <string name="txamusic_aod_seconds">%d seconds</string>
+    <string name="txamusic_aod_minute">1 minute</string>
+    <string name="txamusic_aod_breathing">Breathing animation</string>
+    <string name="txamusic_aod_btn_preview">Preview Now</string>
+    <string name="txamusic_aod_check_not_selected">Note: TXAMUSIC not selected as Screen Saver.</string>
+    <string name="txamusic_aod_check_not_selected_desc">To make the \"Preview Now\" button work correctly, ensure you have selected TXAMUSIC Player as the default Screen Saver in system settings first.</string>
+    <string name="txamusic_aod_btn_select_system">Select in Settings</string>
+    <string name="txamusic_aod_no_music">No music playing</string>
+    <string name="txamusic_aod_tap_unlock">Tap to unlock</string>
+    <string name="txamusic_aod_color_custom">Custom Color</string>
+    <string name="txamusic_aod_btn_select">Select</string>
+    <string name="txamusic_btn_cancel">Cancel</string>
+    <string name="txamusic_settings_aod_brightness">AOD Auto Brightness</string>
+    <string name="txamusic_settings_aod_brightness_desc">Automatically dim screen brightness to minimum when AOD is active to save battery.</string>
+
+    <!-- Tag Editor -->
+    <string name="txamusic_tag_editor">Edit Song Info</string>
+    <string name="txamusic_edit_tag">Edit Info</string>
+    <string name="txamusic_btn_save">Save</string>
+    <string name="txamusic_tag_saved">Tags saved successfully</string>
+    <string name="txamusic_tag_save_failed">Failed to save tags</string>
+    <string name="txamusic_ringtone_permission_title">Allow Write Settings</string>
+    <string name="txamusic_ringtone_permission_desc">To set a ringtone, the app needs permission to change system settings.</string>
+    <string name="txamusic_btn_grant">Grant</string>
+</resources>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Root: FrameLayout để có thể overlay Full Player lên trên -->
+    <FrameLayout
+        android:id="@+id/mainContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface">
+
+        <!-- Layer 1: Landscape Layout - Navigation Rail bên trái + Content bên phải -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <!-- Navigation Rail (Compose) - Bên trái -->
+            <androidx.compose.ui.platform.ComposeView
+                android:id="@+id/bottomNavComposeView"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:minWidth="80dp"
+                android:elevation="16dp" />
+
+            <!-- Fragment Container - Chiếm phần còn lại -->
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/fragment_container"
+                android:name="androidx.navigation.fragment.NavHostFragment"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/colorSurface"
+                app:defaultNavHost="true"
+                app:navGraph="@navigation/main_graph"
+                tools:layout="@layout/fragment_home" />
+
+        </LinearLayout>
+
+        <!-- Mini Player Container - Ẩn trong landscape vì full player chiếm hết -->
+        <FrameLayout
+            android:id="@+id/miniPlayer"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/mini_player_height"
+            android:layout_gravity="bottom"
+            android:visibility="gone"
+            android:elevation="18dp"
+            tools:visibility="gone">
+
+            <fragment
+                android:id="@+id/miniPlayerFragment"
+                android:name="com.txapp.musicplayer.ui.fragment.MiniPlayerFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                tools:layout="@layout/fragment_mini_player" />
+        </FrameLayout>
+
+        <!-- Layer 2: Sliding Panel for Full Player - Overlay toàn bộ màn hình khi expand -->
+        <FrameLayout
+            android:id="@+id/slidingPanel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:elevation="20dp"
+            tools:visibility="gone">
+
+            <FrameLayout
+                android:id="@+id/playerFragmentContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/black" />
+
+        </FrameLayout>
+
+        <!-- Layer 3: Compose Overlay (for dialogs, modals) - Cao nhất -->
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/composeView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:elevation="24dp" />
+
+    </FrameLayout>
+</layout>

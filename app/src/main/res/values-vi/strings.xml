@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TXAMUSIC Player</string>
+    <string name="play">Phát</string>
+    <string name="pause">Tạm dừng</string>
+    <string name="next">Tiếp theo</string>
+    <string name="previous">Trước đó</string>
+    <string name="shuffle">Trộn bài</string>
+    <string name="repeat">Lặp lại</string>
+    <string name="repeat_one">Lặp 1 bài</string>
+    <string name="home">Trang chủ</string>
+    <string name="library">Thư viện</string>
+    <string name="now_playing">Đang phát</string>
+    <string name="recent">Gần đây</string>
+    <string name="top_tracks">Bài hát hay nghe</string>
+    <string name="genres">Thể loại</string>
+    <string name="artists">Nghệ sĩ</string>
+    <string name="smart_mix">Smart Mix</string>
+    <string name="favorites">Yêu thích</string>
+    <string name="txamusic_sleep_timer">Hẹn giờ ngủ</string>
+    
+    <!-- Chooser Label -->
+    <string name="txamusic_open_label">Phát nhạc bằng app</string>
+
+    <!-- Crash Handler & Errors (Local only, no API) -->
+    <string name="txamusic_error_crash_title">Úi! Chết mẹ mày rồi con giời ạ.</string>
+    <string name="txamusic_error_action_restart">Khởi động lại</string>
+    <string name="txamusic_error_action_details">Xem chi tiết</string>
+    <string name="txamusic_error_action_share">Chia sẻ báo cáo</string>
+
+    <string name="txamusic_error_friendly_null">
+        Dữ liệu trống trơn (null). Không có gì để bấu víu luôn.
+    </string>
+
+    <string name="txamusic_error_friendly_network">
+        Mất kết nối mạng rồi. Internet đi chơi đâu mất tiêu.
+    </string>
+
+    <string name="txamusic_error_friendly_memory">
+        Hết RAM rồi. Điện thoại đang thở oxy, đóng bớt app đi nha.
+    </string>
+
+    <string name="txamusic_error_friendly_permission">
+        Lỗi quyền truy cập. App lỡ làm chuyện vượt quá thẩm quyền.
+    </string>
+
+    <string name="txamusic_error_friendly_gms">
+        Thiếu Google Play Services. Không có cái này thì app chịu chết.
+    </string>
+
+    <string name="txamusic_error_friendly_location_api">
+        Dịch vụ vị trí không hoạt động. Google Play Services ổn không vậy?
+    </string>
+
+    <string name="txamusic_error_friendly_resource">
+        Không tìm thấy tài nguyên app. Cài lại có khi nhanh hơn ngồi đoán.
+    </string>
+
+    <string name="txamusic_error_friendly_activity">
+        Màn hình này bị lỗi rồi. Thử khởi động lại xem sao.
+    </string>
+
+    <string name="txamusic_error_friendly_fragment">
+        Điều hướng thất bại. App hơi lạc đường, khởi động lại nha.
+    </string>
+
+    <string name="txamusic_error_friendly_database">
+        Lỗi cơ sở dữ liệu. Thư viện nhạc có vẻ đang giận dỗi.
+    </string>
+
+    <string name="txamusic_error_friendly_unknown">
+        Lỗi không xác định. Nói thật là app cũng không hiểu chuyện gì vừa xảy ra.
+    </string>
+
+    <string name="txamusic_error_btn_ok">Ừ, hiểu rồi</string>
+
+    <string name="txamusic_error_copy_hint">Chạm để sao chép chi tiết</string>
+    <string name="txamusic_error_copied">Đã sao chép vào khay nhớ tạm</string>
+    <string name="txamusic_settings">Cài đặt</string>
+
+    <!-- AOD & Screen Saver -->
+    <string name="txamusic_settings_screen_saver">Trình bảo vệ màn hình</string>
+    <string name="txamusic_settings_screen_saver_desc">Hiển thị thông tin nhạc khi thiết bị không hoạt động</string>
+    <string name="txamusic_screen_saver_open_settings">Mở cài đặt trình bảo vệ màn hình</string>
+    <string name="txamusic_screen_saver_hint">Bật TXAMUSIC làm trình bảo vệ màn hình trong cài đặt hệ thống</string>
+    <string name="txamusic_aod_settings_title">Tùy chọn hiển thị</string>
+    <string name="txamusic_aod_show_controls">Hiển thị điều khiển nhạc</string>
+    <string name="txamusic_aod_show_controls_desc">Hiển thị nút phát/tạm dừng và bỏ qua trên màn hình chờ</string>
+    <string name="txamusic_aod_show_date">Hiển thị ngày tháng</string>
+    <string name="txamusic_aod_date_format">Định dạng ngày</string>
+    <string name="txamusic_aod_show_battery">Hiển thị pin</string>
+    <string name="txamusic_aod_clock_color">Màu sắc đồng hồ</string>
+    <string name="txamusic_aod_night_mode">Chế độ ban đêm</string>
+    <string name="txamusic_aod_night_mode_desc">Màn hình tối hơn cho phòng tối - dễ chịu hơn vào ban đêm</string>
+    <string name="txamusic_aod_night">Đêm</string>
+    <string name="txamusic_aod_info">Trình bảo vệ màn hình hoạt động khi thiết bị đang sạc và không hoạt động. Vào Cài đặt hệ thống → Màn hình → Trình bảo vệ màn hình để bật.</string>
+    <string name="txamusic_aod_date_full">Đầy đủ (Thứ, ngày tháng năm)</string>
+    <string name="txamusic_aod_date_short">Rút gọn (Thứ viết tắt)</string>
+    <string name="txamusic_aod_date_no_day">Chỉ ngày tháng</string>
+    <string name="txamusic_aod_preview_song">Bài hát đang phát</string>
+    <string name="txamusic_aod_preview_artist">Tên nghệ sĩ</string>
+    <string name="txamusic_aod_color_white">Trắng</string>
+    <string name="txamusic_aod_color_red">Đỏ</string>
+    <string name="txamusic_aod_color_teal">Xanh mòng két</string>
+    <string name="txamusic_aod_color_blue">Xanh dương</string>
+    <string name="txamusic_aod_color_mint">Bạc hà</string>
+    <string name="txamusic_aod_color_yellow">Vàng</string>
+    <string name="txamusic_aod_color_purple">Tím</string>
+    <string name="txamusic_aod_color_orange">Cam</string>
+    <string name="txamusic_aod_inactivity_timeout">Tự tắt sau</string>
+    <string name="txamusic_aod_seconds">%d giây</string>
+    <string name="txamusic_aod_minute">1 phút</string>
+    <string name="txamusic_aod_breathing">Hiệu ứng nhịp thở</string>
+    <string name="txamusic_aod_btn_preview">Thử ngay</string>
+    <string name="txamusic_aod_check_not_selected">Lưu ý: Bạn chưa chọn TXAMUSIC làm trình bảo vệ màn hình.</string>
+    <string name="txamusic_aod_check_not_selected_desc">Để nút \"Thử ngay\" hoạt động đúng, bạn cần đảm bảo đã chọn TXAMUSIC Player làm Trình bảo vệ màn hình mặc định trong cài đặt hệ thống trước đó.</string>
+    <string name="txamusic_aod_btn_select_system">Chọn trong Cài đặt</string>
+    <string name="txamusic_aod_no_music">Không có nhạc đang phát</string>
+    <string name="txamusic_aod_tap_unlock">Chạm để mở khóa</string>
+    <string name="txamusic_aod_color_custom">Màu tùy chỉnh</string>
+    <string name="txamusic_aod_btn_select">Chọn</string>
+    <string name="txamusic_btn_cancel">Hủy</string>
+    <string name="txamusic_settings_aod_brightness">Tự động độ sáng AOD</string>
+    <string name="txamusic_settings_aod_brightness_desc">Tự động giảm độ sáng màn hình xuống mức tối thiểu khi bật AOD để tiết kiệm pin.</string>
+</resources>

@@ -1,0 +1,111 @@
+<style>
+    body {
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: #e9ecef;
+        padding: 24px;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    h1 {
+        color: #4cc9f0;
+        font-size: 24px;
+        margin-top: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    h2 {
+        color: #f72585;
+        font-size: 18px;
+        border-bottom: 2px solid rgba(247, 37, 133, 0.3);
+        padding-bottom: 8px;
+        margin-top: 25px;
+    }
+
+    ul {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    li {
+        margin-bottom: 12px;
+        padding-left: 28px;
+        position: relative;
+    }
+
+    li::before {
+        content: '✦';
+        position: absolute;
+        left: 0;
+        color: #4cc9f0;
+    }
+
+    .badge {
+        background: #4361ee;
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .highlight {
+        color: #4cc9f0;
+        font-weight: 600;
+    }
+</style>
+
+<div class="container">
+    <h1>📱 Cập nhật phiên bản 2.1.0_txa <span class="badge">Mới</span></h1>
+
+    <h2>✨ Có gì mới?</h2>
+    <ul>
+        <li><span class="highlight">Thêm nhạc thủ công:</span> Giờ đây bạn có thể tự tay chọn các file nhạc từ bộ nhớ
+            máy hoặc thẻ nhớ mà không cần chờ hệ thống quét.</li>
+        <li><span class="highlight">Trình duyệt file TXA:</span> Trình quản lý file mới đẹp mắt, hỗ trợ xem chi tiết
+            dung lượng, ngày tháng và thời lượng bài hát trước khi thêm.</li>
+        <li><span class="highlight">Quét thư viện thông minh:</span> Ứng dụng tự động cập nhật nhạc mới ngay khi mở máy
+            cực kỳ nhanh chóng và tiết kiệm pin.</li>
+    </ul>
+
+    <h2>🐛 Sửa lỗi</h2>
+    <ul>
+        <li>Khắc phục triệt để lỗi crash khi làm mới thư viện nhạc có hàng ngàn bài hát.</li>
+        <li>Sửa lỗi nhạc mới thêm không xuất hiện trên các phiên bản Android mới (Scoped Storage).</li>
+        <li>Fix lỗi dữ liệu không đồng nhất giữa bộ nhớ máy và ứng dụng.</li>
+    </ul>
+
+    <h2>⚡ Cải thiện hiệu suất</h2>
+    <ul>
+        <li>Tối ưu hóa tốc độ tải danh sách nhạc, giúp ứng dụng hoạt động mượt mà và phản hồi nhanh hơn.</li>
+        <li>Cơ chế bảo vệ nhạc "Manual" giúp các bài hát bạn tự thêm không bao giờ bị mất đi khi quét lại thư viện.</li>
+    </ul>
+</div>
