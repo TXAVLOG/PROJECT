@@ -25,8 +25,12 @@ TXAPP Music Player được xây dựng dựa trên kiến trúc hiện đại, 
 | **Version** | v2.5.1_txa |
 | **Build Date** | 10/01/2026 |
 | **Size** | ~180 MB |
-| **SHA-256** | `32973fd5fc7a23b12ca9baab655549acbd4f32f1916c5ca2d76b554ae0b7e63f` |
 | **Status** | Stable / Signed |
+
+**SHA-256 Checksum:**
+```text
+32973fd5fc7a23b12ca9baab655549acbd4f32f1916c5ca2d76b554ae0b7e63f
+```
 
 > **Lưu ý:** Hãy kiểm tra mã SHA-256 sau khi tải về để đảm bảo file gốc không bị chỉnh sửa.
 
