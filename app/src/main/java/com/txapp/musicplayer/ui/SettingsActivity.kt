@@ -139,6 +139,8 @@ fun SettingsScreenContent(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showAccentDialog by remember { mutableStateOf(false) }
     var showGridDialog by remember { mutableStateOf(false) }
+    var showAlbumGridDialog by remember { mutableStateOf(false) }
+    var showArtistGridDialog by remember { mutableStateOf(false) }
     var showSocialDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit, languageVersion) {
@@ -197,7 +199,11 @@ fun SettingsScreenContent(
                 )
                 is SettingsRoute.Equalizer -> EqualizerScreen(onBack = onBack)
                 is SettingsRoute.NowPlaying -> NowPlayingSettings()
-                is SettingsRoute.Personalize -> PersonalizeSettings(onGridClick = { showGridDialog = true })
+                is SettingsRoute.Personalize -> PersonalizeSettings(
+                    onGridClick = { showGridDialog = true },
+                    onAlbumGridClick = { showAlbumGridDialog = true },
+                    onArtistGridClick = { showArtistGridDialog = true }
+                )
                 is SettingsRoute.Images -> ImageSettings()
                 is SettingsRoute.Other -> OtherSettings()
                 is SettingsRoute.About -> AboutSettings(
@@ -276,6 +282,28 @@ fun SettingsScreenContent(
             itemLabel = { "$it Column(s)" },
             onSelect = { TXAPreferences.currentGridSize = it; showGridDialog = false },
             onDismiss = { showGridDialog = false }
+        )
+    }
+
+    if (showAlbumGridDialog) {
+        SelectionDialog(
+            title = "txamusic_settings_album_grid_size".txa(),
+            items = listOf(1, 2, 3, 4),
+            selectedItem = TXAPreferences.currentAlbumGridSize,
+            itemLabel = { "$it Column(s)" },
+            onSelect = { TXAPreferences.currentAlbumGridSize = it; showAlbumGridDialog = false },
+            onDismiss = { showAlbumGridDialog = false }
+        )
+    }
+
+    if (showArtistGridDialog) {
+        SelectionDialog(
+            title = "txamusic_settings_artist_grid_size".txa(),
+            items = listOf(1, 2, 3, 4),
+            selectedItem = TXAPreferences.currentArtistGridSize,
+            itemLabel = { "$it Column(s)" },
+            onSelect = { TXAPreferences.currentArtistGridSize = it; showArtistGridDialog = false },
+            onDismiss = { showArtistGridDialog = false }
         )
     }
 
@@ -1382,7 +1410,11 @@ fun PlaybackSpeedDialog(
 }
 
 @Composable
-fun PersonalizeSettings(onGridClick: () -> Unit) {
+fun PersonalizeSettings(
+    onGridClick: () -> Unit,
+    onAlbumGridClick: () -> Unit,
+    onArtistGridClick: () -> Unit
+) {
     val gridSize by TXAPreferences.gridSize.collectAsState()
     val rememberLastTab by TXAPreferences.rememberLastTab.collectAsState()
     val albumGridSize by TXAPreferences.albumGridSize.collectAsState()
@@ -1404,11 +1436,7 @@ fun PersonalizeSettings(onGridClick: () -> Unit) {
                 icon = Icons.Outlined.GridView,
                 title = "txamusic_settings_album_grid_size".txa(),
                 subtitle = "$albumGridSize Columns",
-                onClick = {
-                    // Cycle 1-4
-                    val next = if (albumGridSize >= 4) 1 else albumGridSize + 1
-                    TXAPreferences.currentAlbumGridSize = next
-                }
+                onClick = onAlbumGridClick
             )
         }
         item {
@@ -1416,11 +1444,7 @@ fun PersonalizeSettings(onGridClick: () -> Unit) {
                 icon = Icons.Outlined.AccountCircle,
                 title = "txamusic_settings_artist_grid_size".txa(),
                 subtitle = "$artistGridSize Columns",
-                onClick = {
-                    // Cycle 1-4
-                    val next = if (artistGridSize >= 4) 1 else artistGridSize + 1
-                    TXAPreferences.currentArtistGridSize = next
-                }
+                onClick = onArtistGridClick
             )
         }
         item {

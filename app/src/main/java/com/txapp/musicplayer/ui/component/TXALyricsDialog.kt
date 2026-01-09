@@ -101,6 +101,24 @@ fun LyricsDialog(
         }
     }
 
+    var syncedBackup by remember { mutableStateOf<String?>(null) }
+
+    // Logic for tab switching conversion
+    LaunchedEffect(editTab) {
+        if (editTab == 1) { // Switching to Normal
+            // If it has timestamps, back it up and clean it
+            if (editContent.contains(Regex("""\[\d+:?\d{2}[:.]\d{2,3}\]"""))) {
+                syncedBackup = editContent
+                editContent = LyricsUtil.getCleanLyrics(editContent) ?: ""
+            }
+        } else { // Switching back to Synced
+            // Restore from backup if we have one
+            syncedBackup?.let {
+                editContent = it
+            }
+        }
+    }
+
     // Find current lyric index
     val activeIndex = remember(lyrics, currentPosition) {
         // Add 500ms offset to currentPosition to highlight upcoming line slightly early (like Retro Music)

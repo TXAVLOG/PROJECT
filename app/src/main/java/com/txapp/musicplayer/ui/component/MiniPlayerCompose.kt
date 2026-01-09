@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -134,11 +135,16 @@ fun MiniPlayerContent(
         }
     }
     
+    val defaultAccentColor = MaterialTheme.colorScheme.primary
     val accentColor = try {
          Color(android.graphics.Color.parseColor(TXAPreferences.currentAccent))
     } catch (e: Exception) {
-         MaterialTheme.colorScheme.primary
+         defaultAccentColor
     }
+    
+    val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
+    val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val onSurface = MaterialTheme.colorScheme.onSurface
     
     val safeProgress = if (state.duration > 0) state.position.toFloat() / state.duration else 0f
 
@@ -154,7 +160,7 @@ fun MiniPlayerContent(
                 .fillMaxSize()
                 .padding(horizontal = 12.dp, vertical = 8.dp) // Match XML margin
                 .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .background(surfaceVariant.copy(alpha = 0.5f))
         ) {
              // Progress Fill
              Box(
@@ -239,22 +245,49 @@ fun MiniPlayerContent(
                     )
                     
                     // Lyrics display snippet or Artist
-                    val lyricsSnippet = remember(state.lyrics, state.position) {
-                        val clean = LyricsUtil.getCleanLyrics(state.lyrics)
-                        if (clean.isNullOrBlank()) null
-                        else {
-                            clean.lines()
-                                .firstOrNull { it.isNotBlank() }
-                                ?: clean.take(30) + "..."
+                    val displayLyrics = remember(state.lyrics, state.position) {
+                        val raw = state.lyrics
+                        if (raw.isNullOrBlank()) return@remember null
+                        
+                        // Check if synced
+                        if (raw.contains(Regex("""\[\d+:?\d{2}[:.]\d{2,3}\]"""))) {
+                            val parsed = LyricsUtil.parseLrc(raw)
+                            val currentLine = parsed.findLast { it.timestamp <= state.position }
+                            currentLine?.text
+                        } else {
+                            // Normal lyrics: first 200 chars + ellipsis
+                            val clean = LyricsUtil.getCleanLyrics(raw) ?: ""
+                            if (clean.length > 200) {
+                                clean.take(200) + "..."
+                            } else {
+                                clean
+                            }
+                        }
+                    }
+                    
+                    val lyricsColor = remember(backgroundColor, accentColor, displayLyrics, onSurfaceVariant) {
+                        if (displayLyrics == null) return@remember onSurfaceVariant
+                        
+                        // If background is vibrant enough, use a high contrast color
+                        if (backgroundColor != Color.Transparent) {
+                             // Use a basic contrast check: if background is dark, use light text, and vice versa
+                             val backgroundLuminance = if (backgroundColor != Color.Transparent) {
+                                 backgroundColor.copy(alpha = 1f).luminance()
+                             } else 0.5f
+                             
+                             if (backgroundLuminance > 0.5f) Color.Black else Color.White
+                        } else {
+                             accentColor // Fallback to accent if no background color extracted
                         }
                     }
                     
                     Text(
-                        text = lyricsSnippet ?: (displayItem?.mediaMetadata?.artist?.toString() ?: "Unknown Artist"),
+                        text = displayLyrics ?: (displayItem?.mediaMetadata?.artist?.toString() ?: "Unknown Artist"),
                         style = MaterialTheme.typography.bodySmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = if (lyricsSnippet != null) accentColor else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = lyricsColor,
+                        fontWeight = if (displayLyrics != null) FontWeight.Bold else FontWeight.Normal
                     )
                 }
                 
@@ -271,7 +304,7 @@ fun MiniPlayerContent(
                           Icon(
                               imageVector = androidx.compose.material.icons.Icons.Outlined.Lyrics,
                               contentDescription = "Edit Lyrics",
-                              tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                              tint = onSurfaceVariant,
                               modifier = Modifier.size(20.dp)
                           )
                      }
@@ -280,7 +313,7 @@ fun MiniPlayerContent(
                           Icon(
                               imageVector = if (state.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                               contentDescription = "Favorite",
-                              tint = if (state.isFavorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
+                              tint = if (state.isFavorite) Color.Red else onSurfaceVariant,
                               modifier = Modifier.size(20.dp)
                           )
                      }

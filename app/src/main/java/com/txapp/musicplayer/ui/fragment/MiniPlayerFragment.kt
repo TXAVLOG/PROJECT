@@ -24,6 +24,7 @@ import com.txapp.musicplayer.R
 import com.txapp.musicplayer.databinding.FragmentMiniPlayerBinding
 import com.txapp.musicplayer.ui.MainActivity
 import com.txapp.musicplayer.ui.component.MiniPlayerContent
+import com.txapp.musicplayer.ui.component.MiniPlayerAndroid15
 import androidx.compose.material3.MaterialTheme
 
 /**
@@ -50,32 +51,59 @@ open class MiniPlayerFragment : Fragment(R.layout.fragment_mini_player) {
                     val itemCount = controller?.mediaItemCount ?: 0
                     val currentIndex = controller?.currentMediaItemIndex ?: 0
                     
-                    // Simple Theme Wrapper - inherit from app theme ideally, or defined here
+                    // Simple Theme Wrapper
                     MaterialTheme {
-                        MiniPlayerContent(
-                            state = state,
-                            itemCount = itemCount,
-                            currentIndex = currentIndex,
-                            getItem = { index -> 
-                                if (controller != null && index in 0 until controller.mediaItemCount) 
-                                    controller.getMediaItemAt(index) 
-                                else null 
-                            },
-                            onPlayPause = { 
-                                if (controller?.isPlaying == true) controller.pause() else controller?.play()
-                            },
-                            onNext = { controller?.seekToNext() },
-                            onPrevious = { controller?.seekToPrevious() },
-                            onToggleFavorite = { activity.toggleCurrentSongFavorite() },
-                            onSeekTo = { index ->
-                                controller?.seekToDefaultPosition(index)
-                                controller?.play()
-                            },
-                            onExpand = { activity.expandPanel() },
-                            onEditLyrics = { 
-                                activity.toggleLyricsDialog(state.lyrics.isNullOrBlank())
-                            }
-                        )
+                        if (android.os.Build.VERSION.SDK_INT >= 35) {
+                            com.txapp.musicplayer.ui.component.MiniPlayerAndroid15(
+                                state = state,
+                                itemCount = itemCount,
+                                currentIndex = currentIndex,
+                                getItem = { index -> 
+                                    if (controller != null && index in 0 until controller.mediaItemCount) 
+                                        controller.getMediaItemAt(index) 
+                                    else null 
+                                },
+                                onPlayPause = { 
+                                    if (controller?.isPlaying == true) controller.pause() else controller?.play()
+                                },
+                                onNext = { controller?.seekToNext() },
+                                onPrevious = { controller?.seekToPrevious() },
+                                onToggleFavorite = { activity.toggleCurrentSongFavorite() },
+                                onSeekTo = { index ->
+                                    controller?.seekToDefaultPosition(index)
+                                    controller?.play()
+                                },
+                                onExpand = { activity.expandPanel() },
+                                onEditLyrics = { 
+                                    activity.toggleLyricsDialog(state.lyrics.isNullOrBlank())
+                                }
+                            )
+                        } else {
+                            MiniPlayerContent(
+                                state = state,
+                                itemCount = itemCount,
+                                currentIndex = currentIndex,
+                                getItem = { index -> 
+                                    if (controller != null && index in 0 until controller.mediaItemCount) 
+                                        controller.getMediaItemAt(index) 
+                                    else null 
+                                },
+                                onPlayPause = { 
+                                    if (controller?.isPlaying == true) controller.pause() else controller?.play()
+                                },
+                                onNext = { controller?.seekToNext() },
+                                onPrevious = { controller?.seekToPrevious() },
+                                onToggleFavorite = { activity.toggleCurrentSongFavorite() },
+                                onSeekTo = { index ->
+                                    controller?.seekToDefaultPosition(index)
+                                    controller?.play()
+                                },
+                                onExpand = { activity.expandPanel() },
+                                onEditLyrics = { 
+                                    activity.toggleLyricsDialog(state.lyrics.isNullOrBlank())
+                                }
+                            )
+                        }
                     }
                 }
             }
