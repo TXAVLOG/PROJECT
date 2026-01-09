@@ -16,7 +16,7 @@ Nếu bạn có thắc mắc hoặc gặp lỗi, vui lòng:
 
 Chào mừng bạn đến với **TXA Music Player** - ứng dụng nghe nhạc hiện đại, giao diện đẹp mắt và nhiều tính năng tùy biến mạnh mẽ dành cho Android.
 
-![Version](https://img.shields.io/badge/Version-2.5.0__txa-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-2.5.1__txa-blue?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-GPL--3.0-orange?style=for-the-badge)
 
