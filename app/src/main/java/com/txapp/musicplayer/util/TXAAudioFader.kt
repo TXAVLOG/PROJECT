@@ -18,7 +18,7 @@ object TXAAudioFader {
      * @param onEnd Optional callback when fade ends
      */
     fun startFade(
-        player: ExoPlayer,
+        player: androidx.media3.common.Player,
         fadeIn: Boolean,
         duration: Long,
         onEnd: (() -> Unit)? = null

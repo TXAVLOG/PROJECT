@@ -71,7 +71,7 @@ private fun <T> CoroutineScope.future(block: suspend () -> T): ListenableFuture<
 
 class MusicService : MediaLibraryService() {
 
-    private lateinit var player: ExoPlayer
+    private lateinit var player: Player // Changed from ExoPlayer
     private lateinit var mediaLibrarySession: MediaLibraryService.MediaLibrarySession
     private lateinit var musicRepository: MusicRepository
     private lateinit var autoMusicProvider: AutoMusicProvider
@@ -181,7 +181,7 @@ class MusicService : MediaLibraryService() {
         }
     }
 
-    @OptIn(UnstableApi::class)
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class, com.txapp.musicplayer.media.ExperimentalApi::class)
     override fun onCreate() {
         super.onCreate()
 
@@ -206,8 +206,8 @@ class MusicService : MediaLibraryService() {
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
             
-        // Create ExoPlayer
-        player = ExoPlayer.Builder(this)
+        // Create CompositionPlayer (wrapping ExoPlayer)
+        player = com.txapp.musicplayer.media.CompositionPlayer.Builder(this)
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
@@ -220,8 +220,15 @@ class MusicService : MediaLibraryService() {
             .setLoadControl(loadControl)
             .build()
         
-        // Update audio session ID for Equalizer
-        audioSessionId = player.audioSessionId
+        // Update audio session ID
+        var sessionId = 0
+        if (player is com.txapp.musicplayer.media.CompositionPlayer) {
+             val internal = (player as com.txapp.musicplayer.media.CompositionPlayer).wrappedPlayer
+             if (internal is androidx.media3.exoplayer.ExoPlayer) {
+                 sessionId = internal.audioSessionId
+             }
+        }
+        audioSessionId = sessionId
         
         // Restore previous state
         restorePlaybackState()
@@ -387,8 +394,8 @@ class MusicService : MediaLibraryService() {
         })
         
         // Init Equalizer if ID is already available
-        if (player.audioSessionId > 0) {
-            com.txapp.musicplayer.util.TXAEqualizerManager.init(player.audioSessionId)
+        if (com.txapp.musicplayer.service.MusicService.audioSessionId > 0) {
+            com.txapp.musicplayer.util.TXAEqualizerManager.init(com.txapp.musicplayer.service.MusicService.audioSessionId)
         }
 
         // Periodic save for crash protection (every 10s)
