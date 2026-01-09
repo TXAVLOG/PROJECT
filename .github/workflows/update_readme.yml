@@ -19,10 +19,12 @@ jobs:
         id: read_version
         run: |
           VERSION=$(grep 'versionName' version.properties | cut -d'=' -f2)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Detected version: $VERSION"
 
       - name: Update README.md
+        env:
+          VERSION: ${{ steps.read_version.outputs.VERSION }}
         run: |
           # Use sed to replace content between markers
           sed -i "s/<!-- VERSION_START -->.*<!-- VERSION_END -->/<!-- VERSION_START -->$VERSION<!-- VERSION_END -->/" README.md
@@ -34,5 +36,5 @@ jobs:
       - name: Commit and Push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Docs: Auto-update README version to ${{ env.VERSION }}"
+          commit_message: "Docs: Auto-update README version to ${{ steps.read_version.outputs.VERSION }}"
           file_pattern: README.md
