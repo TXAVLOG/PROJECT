@@ -8,9 +8,11 @@ Nếu bạn có thắc mắc hoặc gặp lỗi, vui lòng:
 - Gửi yêu cầu kéo (Pull Request) tại repository này.
 - Hoặc liên hệ qua Facebook: [![Facebook](https://img.shields.io/badge/Facebook-1877F2?style=flat-square&logo=facebook&logoColor=white)](https://fb.com/vlog.txa.2311)
 
-### Xác minh Checksum
-Để đảm bảo tính toàn vẹn của file APK, bạn có thể so sánh Checksum (SHA-256) của file tải về với giá trị được công bố trong Release.
-Sử dụng lệnh: `certutil -hashfile app-debug.apk SHA256` hoặc các công cụ tương tự.
+### Thông tin File
+- **Phiên bản**: v2.5.1
+- **Kích thước**: ~180 MB
+- **Checksum (SHA-256)**: (Xem trong release)
+
 
 Chào mừng bạn đến với **TXA Music Player** - ứng dụng nghe nhạc hiện đại, giao diện đẹp mắt và nhiều tính năng tùy biến mạnh mẽ dành cho Android.
 
