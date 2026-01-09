@@ -95,7 +95,7 @@ class PlaylistDetailsFragment : Fragment() {
                             onSave = { editData ->
                                 scope.launch {
                                     val song = selectedSongForEdit!!
-                                    val success = repository.updateSongMetadata(
+                                    val result = repository.updateSongMetadata(
                                         context = context,
                                         songId = song.id,
                                         title = editData.title,
@@ -106,16 +106,17 @@ class PlaylistDetailsFragment : Fragment() {
                                         year = editData.year.toIntOrNull() ?: 0,
                                         trackNumber = song.trackNumber
                                     )
-                                    if (success) {
-                                        Toast.makeText(context, "txamusic_tag_saved".txa(), Toast.LENGTH_SHORT).show()
-                                        selectedSongForEdit = null
-                                    } else {
-                                        val intent = TXATagWriter.createWriteRequest(context, listOf(song.data))
-                                        if (intent != null) {
+                                    when (result) {
+                                        is TXATagWriter.WriteResult.Success -> {
+                                            Toast.makeText(context, "txamusic_tag_saved".txa(), Toast.LENGTH_SHORT).show()
+                                            selectedSongForEdit = null
+                                        }
+                                        is TXATagWriter.WriteResult.PermissionRequired -> {
                                             intentSenderLauncher.launch(
-                                                IntentSenderRequest.Builder(intent.intentSender).build()
+                                                IntentSenderRequest.Builder(result.intent.intentSender).build()
                                             )
-                                        } else {
+                                        }
+                                        else -> {
                                             Toast.makeText(
                                                 context,
                                                 "txamusic_tag_save_failed".txa(),
@@ -123,6 +124,7 @@ class PlaylistDetailsFragment : Fragment() {
                                             ).show()
                                         }
                                     }
+
                                 }
                             }
                         )

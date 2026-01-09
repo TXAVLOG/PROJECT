@@ -579,26 +579,15 @@ class MusicRepository(
         composer: String?,
         year: Int,
         trackNumber: Int
-    ): Boolean = withContext(Dispatchers.IO) {
+    ): com.txapp.musicplayer.util.TXATagWriter.WriteResult = withContext(Dispatchers.IO) {
         try {
             // 1. Get current song data to get file path
-            val song = database.songDao().getSongById(songId) ?: return@withContext false
+            val song = database.songDao().getSongById(songId) ?: return@withContext com.txapp.musicplayer.util.TXATagWriter.WriteResult.Failure
             val filePath = song.data
 
-            // 2. Update Database first (fast and local)
-            database.songDao().updateSongMetadata(
-                songId = songId,
-                title = title,
-                artist = artist,
-                album = album,
-                albumArtist = albumArtist,
-                composer = composer,
-                year = year,
-                trackNumber = trackNumber
-            )
-
-            // 3. Try to write to physical file
-            val success = com.txapp.musicplayer.util.TXATagWriter.writeTags(
+            // 2. Try to write to physical file FIRST. 
+            // If it needs permission, we stop here and return PermissionRequired.
+            val result = com.txapp.musicplayer.util.TXATagWriter.writeTags(
                 context,
                 com.txapp.musicplayer.model.SongTagInfo(
                     songId = songId,
@@ -613,16 +602,26 @@ class MusicRepository(
                 )
             )
 
-            if (success) {
+            if (result is com.txapp.musicplayer.util.TXATagWriter.WriteResult.Success) {
+                // 3. Update Database ONLY if file write was successful
+                database.songDao().updateSongMetadata(
+                    songId = songId,
+                    title = title,
+                    artist = artist,
+                    album = album,
+                    albumArtist = albumArtist,
+                    composer = composer,
+                    year = year,
+                    trackNumber = trackNumber
+                )
                 TXALogger.appI("MusicRepository", "Successfully updated metadata for song: $title")
-            } else {
-                TXALogger.appE("MusicRepository", "Failed to write tags to file, but database was updated.")
             }
 
-            return@withContext success
+            return@withContext result
         } catch (e: Exception) {
             TXALogger.appE("MusicRepository", "Failed to update song metadata", e)
-            false
+            com.txapp.musicplayer.util.TXATagWriter.WriteResult.Failure
         }
     }
+
 }

@@ -142,6 +142,7 @@ class MainActivity : AppCompatActivity() {
         get() = com.txapp.musicplayer.util.TXAAODSettings.inactivityTimeout.value
 
     private var pendingLyricsUpdate: String? = null
+    private var pendingTagUpdate: com.txapp.musicplayer.ui.component.TagEditData? = null
     private val writeRequestLauncher =
         registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult()) { result ->
             if (result.resultCode == android.app.Activity.RESULT_OK) {
@@ -151,9 +152,40 @@ class MainActivity : AppCompatActivity() {
                         saveLyricsUpdate(mediaUri, lyrics)
                     }
                 }
+                pendingTagUpdate?.let { data ->
+                    val songId = nowPlayingState.songId
+                    if (songId != -1L) {
+                         // We need to trigger the save again. 
+                         // To avoid duplicate code, I'll rely on the existing onSave logic or similar.
+                         // But since it's a simple call, I'll just redo it here.
+                         retryTagUpdate(songId, data)
+                    }
+                }
             }
             pendingLyricsUpdate = null
+            pendingTagUpdate = null
         }
+
+    private fun retryTagUpdate(songId: Long, data: com.txapp.musicplayer.ui.component.TagEditData) {
+        lifecycleScope.launch {
+             val result = repository.updateSongMetadata(
+                context = this@MainActivity,
+                songId = songId,
+                title = data.title,
+                artist = data.artist,
+                album = data.album,
+                albumArtist = data.albumArtist,
+                composer = data.composer,
+                year = data.year.toIntOrNull() ?: 0,
+                trackNumber = 0 // We don't have track number here easily, but repository handles it
+            )
+            if (result is com.txapp.musicplayer.util.TXATagWriter.WriteResult.Success) {
+                TXAToast.success(this@MainActivity, "txamusic_tag_saved".txa())
+                updateNowPlayingState()
+            }
+        }
+    }
+
     
     fun toggleLyricsDialog(inEditMode: Boolean = false) {
         startLyricsInEditMode = inEditMode
@@ -777,7 +809,7 @@ class MainActivity : AppCompatActivity() {
                             currentSongForEdit = null
                             
                             lifecycleScope.launch {
-                                val success = repository.updateSongMetadata(
+                                val result = repository.updateSongMetadata(
                                     context = this@MainActivity,
                                     songId = song.id,
                                     title = editData.title,
@@ -788,17 +820,30 @@ class MainActivity : AppCompatActivity() {
                                     year = editData.year.toIntOrNull() ?: 0,
                                     trackNumber = song.trackNumber
                                 )
-                                if (success) {
-                                    TXAToast.success(this@MainActivity, "txamusic_tag_saved".txa())
-                                    // Update now playing state with new info
-                                    nowPlayingState = nowPlayingState.copy(
-                                        title = editData.title,
-                                        artist = editData.artist
-                                    )
-                                } else {
-                                    TXAToast.show(this@MainActivity, "txamusic_tag_save_failed".txa())
+                                when (result) {
+                                    is com.txapp.musicplayer.util.TXATagWriter.WriteResult.Success -> {
+                                        TXAToast.success(this@MainActivity, "txamusic_tag_saved".txa())
+                                        // Update now playing state with new info
+                                        nowPlayingState = nowPlayingState.copy(
+                                            title = editData.title,
+                                            artist = editData.artist
+                                        )
+                                        updateNowPlayingState()
+                                    }
+                                    is com.txapp.musicplayer.util.TXATagWriter.WriteResult.PermissionRequired -> {
+                                        // Store data for retry
+                                        pendingTagUpdate = editData
+                                        writeRequestLauncher.launch(
+                                            androidx.activity.result.IntentSenderRequest.Builder(result.intent).build()
+                                        )
+                                    }
+
+                                    else -> {
+                                        TXAToast.show(this@MainActivity, "txamusic_tag_save_failed".txa())
+                                    }
                                 }
                             }
+
                         }
                     )
                 }
@@ -922,14 +967,25 @@ class MainActivity : AppCompatActivity() {
             if (path.isEmpty()) return@launch
 
             val result = com.txapp.musicplayer.ui.component.LyricsUtil.saveLyrics(this@MainActivity, path, lyrics)
-            if (result is com.txapp.musicplayer.ui.component.LyricsUtil.SaveResult.Success) {
-                TXAToast.success(this@MainActivity, "txamusic_lyrics_saved".txa())
-                updateNowPlayingState()
-            } else if (result is com.txapp.musicplayer.ui.component.LyricsUtil.SaveResult.Failure) {
-                TXAToast.error(this@MainActivity, "txamusic_lyrics_save_failed".txa())
+            when (result) {
+                is com.txapp.musicplayer.ui.component.LyricsUtil.SaveResult.Success -> {
+                    TXAToast.success(this@MainActivity, "txamusic_lyrics_saved".txa())
+                    updateNowPlayingState()
+                }
+                is com.txapp.musicplayer.ui.component.LyricsUtil.SaveResult.PermissionRequired -> {
+                    // This could happen if permission was lost or another file needed
+                    pendingLyricsUpdate = lyrics
+                    writeRequestLauncher.launch(
+                        androidx.activity.result.IntentSenderRequest.Builder(result.intent).build()
+                    )
+                }
+                is com.txapp.musicplayer.ui.component.LyricsUtil.SaveResult.Failure -> {
+                    TXAToast.error(this@MainActivity, "txamusic_lyrics_save_failed".txa())
+                }
             }
         }
     }
+
 
     override fun dispatchTouchEvent(ev: android.view.MotionEvent?): Boolean {
         try {

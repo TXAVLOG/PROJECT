@@ -52,12 +52,18 @@ object TXATagWriter {
         return null
     }
 
+    sealed class WriteResult {
+        object Success : WriteResult()
+        object Failure : WriteResult()
+        data class PermissionRequired(val intent: PendingIntent) : WriteResult()
+    }
+
     /**
      * Write tags to the file. 
      * Handles Android 11+ requirements by using a temporary cache file if needed.
      */
-    suspend fun writeTags(context: Context, tagInfo: SongTagInfo): Boolean = withContext(Dispatchers.IO) {
-        var allSuccess = true
+    suspend fun writeTags(context: Context, tagInfo: SongTagInfo): WriteResult = withContext(Dispatchers.IO) {
+        var anyPermissionRequired: PendingIntent? = null
         val resolver = context.contentResolver
 
         for (filePath in tagInfo.filePaths) {
@@ -65,8 +71,7 @@ object TXATagWriter {
                 val originalFile = File(filePath)
                 if (!originalFile.exists()) {
                     TXALogger.appE(TAG, "File does not exist: $filePath")
-                    allSuccess = false
-                    continue
+                    return@withContext WriteResult.Failure
                 }
 
                 // 1. Create a temporary cache file
@@ -88,43 +93,48 @@ object TXATagWriter {
                 tagInfo.albumArtist?.let { tag.setField(FieldKey.ALBUM_ARTIST, it) }
                 tagInfo.composer?.let { tag.setField(FieldKey.COMPOSER, it) }
                 
-                // Track number handling: JAudioTagger expects it without total tracks usually
                 tagInfo.trackNumber?.let { 
-                    try {
-                        tag.setField(FieldKey.TRACK, it)
-                    } catch (e: Exception) {
-                        TXALogger.appE(TAG, "Invalid track number: $it")
-                    }
+                    try { tag.setField(FieldKey.TRACK, it) } catch (e: Exception) {}
                 }
                 
                 tagInfo.year?.let { 
-                    try {
-                        tag.setField(FieldKey.YEAR, it)
-                    } catch (e: Exception) {
-                        TXALogger.appE(TAG, "Invalid year: $it")
-                    }
+                    try { tag.setField(FieldKey.YEAR, it) } catch (e: Exception) {}
                 }
 
                 audioFile.commit()
 
                 // 3. Copy back to original file
-                // If Android 11+, this will fail without MediaStore.createWriteRequest
-                // If it's a regular File API call, it might work for internal storage but fail for SD card
-                // FALLBACK: Use Root if available
+                val contentUri = getSongUri(context, filePath)
+                
                 try {
-                    cacheFile.inputStream().use { input ->
+                    if (contentUri != null) {
+                        resolver.openOutputStream(contentUri, "rwt")?.use { output ->
+                            cacheFile.inputStream().use { input ->
+                                input.copyTo(output)
+                            }
+                        }
+                    } else {
                         originalFile.outputStream().use { output ->
-                            input.copyTo(output)
+                            cacheFile.inputStream().use { input ->
+                                input.copyTo(output)
+                            }
                         }
                     }
-                    TXALogger.appI(TAG, "Successfully wrote tags back to $filePath")
                 } catch (e: Exception) {
-                    TXALogger.appW(TAG, "Standard copy failed for $filePath, trying root...")
-                    if (copyFileWithRoot(cacheFile, originalFile)) {
-                        TXALogger.appI(TAG, "Successfully wrote tags using Root for $filePath")
-                    } else {
-                        TXALogger.appE(TAG, "Failed to copy back to $filePath even with Root.", e)
-                        allSuccess = false
+                    // Check if it's a security exception on Android 11+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && 
+                        (e is SecurityException || e.javaClass.simpleName == "RecoverableSecurityException")) {
+                        val intent = createWriteRequest(context, listOf(filePath))
+                        if (intent != null) {
+                            anyPermissionRequired = intent
+                            return@withContext WriteResult.PermissionRequired(intent)
+                        }
+                    }
+
+                    TXALogger.appW(TAG, "Standard write failed for $filePath, trying root...")
+                    if (!copyFileWithRoot(cacheFile, originalFile)) {
+                        TXALogger.appE(TAG, "Failed to write back even with Root: $filePath")
+                        return@withContext WriteResult.Failure
                     }
                 } finally {
                     cacheFile.delete()
@@ -132,24 +142,22 @@ object TXATagWriter {
 
             } catch (e: Exception) {
                 TXALogger.appE(TAG, "Error processing $filePath", e)
-                allSuccess = false
+                return@withContext WriteResult.Failure
             }
         }
 
-        if (allSuccess) {
-            scanFiles(context, tagInfo.filePaths)
-        }
-
-        return@withContext allSuccess
+        scanFiles(context, tagInfo.filePaths)
+        return@withContext WriteResult.Success
     }
+
 
     /**
      * Write lyrics specifically to embedded tags
      */
-    suspend fun writeLyrics(context: Context, filePath: String, lyrics: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun writeLyrics(context: Context, filePath: String, lyrics: String): WriteResult = withContext(Dispatchers.IO) {
         try {
             val originalFile = File(filePath)
-            if (!originalFile.exists()) return@withContext false
+            if (!originalFile.exists()) return@withContext WriteResult.Failure
 
             val cacheFile = File(context.cacheDir, originalFile.name)
             originalFile.inputStream().use { input ->
@@ -164,35 +172,49 @@ object TXATagWriter {
             audioFile.commit()
 
             // Copy back
-            var success = true
+            val contentUri = getSongUri(context, filePath)
+            
             try {
-                cacheFile.inputStream().use { input ->
+                if (contentUri != null) {
+                    context.contentResolver.openOutputStream(contentUri, "rwt")?.use { output ->
+                        cacheFile.inputStream().use { input ->
+                            input.copyTo(output)
+                        }
+                    }
+                } else {
                     originalFile.outputStream().use { output ->
-                        input.copyTo(output)
+                        cacheFile.inputStream().use { input ->
+                            input.copyTo(output)
+                        }
                     }
                 }
             } catch (e: Exception) {
-                TXALogger.appW(TAG, "Standard copy failed for lyrics on $filePath, trying root...")
-                if (copyFileWithRoot(cacheFile, originalFile)) {
-                    TXALogger.appI(TAG, "Successfully wrote lyrics using Root for $filePath")
-                    success = true
-                } else {
-                    TXALogger.appE(TAG, "Failed to copy lyrics back to $filePath even with Root.", e)
-                    success = false
+                 // Check if it's a security exception on Android 11+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && 
+                    (e is SecurityException || e.javaClass.simpleName == "RecoverableSecurityException")) {
+                    val intent = createWriteRequest(context, listOf(filePath))
+                    if (intent != null) {
+                        return@withContext WriteResult.PermissionRequired(intent)
+                    }
+                }
+
+                TXALogger.appW(TAG, "Standard write failed for lyrics on $filePath, trying root...")
+                if (!copyFileWithRoot(cacheFile, originalFile)) {
+                    TXALogger.appE(TAG, "Failed to copy lyrics back even with Root: $filePath")
+                    return@withContext WriteResult.Failure
                 }
             } finally {
                 cacheFile.delete()
             }
 
-            if (success) {
-                scanFiles(context, listOf(filePath))
-            }
-            return@withContext success
+            scanFiles(context, listOf(filePath))
+            return@withContext WriteResult.Success
         } catch (e: Exception) {
             TXALogger.appE(TAG, "Error writing lyrics to $filePath", e)
-            return@withContext false
+            return@withContext WriteResult.Failure
         }
     }
+
 
 
     /**

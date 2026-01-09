@@ -268,22 +268,31 @@ fun LyricsDialog(
                                 coroutineScope.launch {
                                     isSaving = true
                                     val result = LyricsUtil.saveLyrics(context, songPath, editContent)
-                                    isSaving = false
                                     when (result) {
                                         is LyricsUtil.SaveResult.Success -> {
+                                            isSaving = false
                                             TXAToast.success(context, "txamusic_lyrics_saved".txa())
                                             isEditing = false
                                             onLyricsUpdated()
                                         }
                                         is LyricsUtil.SaveResult.PermissionRequired -> {
+                                            // Keep isSaving = true while permission dialog is showing
+                                            // The parent activity will handle the retry and eventually color/toast
                                             onPermissionRequest(result.intent, editContent)
+                                            // We reset it here too because the system dialog might be canceled
+                                            // or we might not come back to this exact coroutine state clearly
+                                            // But for the "effect", we can delay it
+                                            delay(1000)
+                                            isSaving = false
                                         }
                                         else -> {
+                                            isSaving = false
                                             TXAToast.error(context, "txamusic_lyrics_save_failed".txa())
                                         }
                                     }
                                 }
                             },
+
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !isSaving && hasChanges,
                             shape = RoundedCornerShape(12.dp),
@@ -732,19 +741,14 @@ object LyricsUtil {
     suspend fun saveLyrics(context: android.content.Context, audioFilePath: String, content: String): SaveResult = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         try {
             // 1. Save as .lrc file in same directory
-            // This might fail if we don't have Write External Storage permission (legacy) 
-            // but usually RetroMusic creates its own folder or we use scoped storage for .lrc files
             val lrcPath = audioFilePath.substringBeforeLast('.') + ".lrc"
             val lrcFile = File(lrcPath)
             
             try {
                 lrcFile.writeText(content)
             } catch (e: Exception) {
-                com.txapp.musicplayer.util.TXALogger.appW("LyricsUtil", "Failed to write .lrc file, trying root...")
-                val success = com.txapp.musicplayer.util.TXASuHelper.runAsRoot("echo '$content' > '${lrcFile.absolutePath}' && chmod 666 '${lrcFile.absolutePath}'")
-                if (!success) {
-                    com.txapp.musicplayer.util.TXALogger.appE("LyricsUtil", "Failed to write .lrc file even with root", e)
-                }
+                // Ignore .lrc write failure if it's permission issues, we'll try embedded tags next
+                com.txapp.musicplayer.util.TXALogger.appW("LyricsUtil", "Failed to write .lrc file, continuing to embedded tags...")
             }
 
             // 1.5 Save to central folder
@@ -759,23 +763,21 @@ object LyricsUtil {
                 com.txapp.musicplayer.util.TXALogger.appE("LyricsUtil", "Failed to write to central lrc folder", e)
             }
             
-            // 2. Also try to save to embedded tags
-            // Check for Scoped Storage write permission on Android 11+ for the audio file
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                val pendingIntent = TXATagWriter.createWriteRequest(context, listOf(audioFilePath))
-                if (pendingIntent != null) {
-                    return@withContext SaveResult.PermissionRequired(pendingIntent)
-                }
-            }
-
-            val success = TXATagWriter.writeLyrics(context, audioFilePath, content)
+            // 2. Save to embedded tags
+            // This now handles PermissionRequired correctly on Android 11+
+            val result = TXATagWriter.writeLyrics(context, audioFilePath, content)
             
-            return@withContext if (success) SaveResult.Success else SaveResult.Failure
+            return@withContext when (result) {
+                is TXATagWriter.WriteResult.Success -> SaveResult.Success
+                is TXATagWriter.WriteResult.PermissionRequired -> SaveResult.PermissionRequired(result.intent)
+                else -> SaveResult.Failure
+            }
         } catch (e: Exception) {
             com.txapp.musicplayer.util.TXALogger.appE("LyricsUtil", "Failed to save lyrics", e)
             return@withContext SaveResult.Failure
         }
     }
+
     
     /**
      * Load processed lyrics for display

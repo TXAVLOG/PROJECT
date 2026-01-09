@@ -83,7 +83,7 @@ class SongsFragment : Fragment() {
                         currentlyPlayingId = playingId,
                         onSaveTags = { song, editData ->
                             viewLifecycleOwner.lifecycleScope.launch {
-                                val success = repository.updateSongMetadata(
+                                val result = repository.updateSongMetadata(
                                     context = requireContext(),
                                     songId = song.id,
                                     title = editData.title,
@@ -94,18 +94,20 @@ class SongsFragment : Fragment() {
                                     year = editData.year.toIntOrNull() ?: 0,
                                     trackNumber = song.trackNumber
                                 )
-                                if (success) {
-                                    TXAToast.success(context, "txamusic_tag_saved".txa())
-                                } else {
-                                    val intent = TXATagWriter.createWriteRequest(context, listOf(song.data))
-                                    if (intent != null) {
+                                when (result) {
+                                    is TXATagWriter.WriteResult.Success -> {
+                                        TXAToast.success(context, "txamusic_tag_saved".txa())
+                                    }
+                                    is TXATagWriter.WriteResult.PermissionRequired -> {
                                         intentSenderLauncher.launch(
-                                            IntentSenderRequest.Builder(intent.intentSender).build()
+                                            IntentSenderRequest.Builder(result.intent.intentSender).build()
                                         )
-                                    } else {
+                                    }
+                                    else -> {
                                         TXAToast.error(context, "txamusic_tag_save_failed".txa())
                                     }
                                 }
+
                             }
                         },
                         onSetAsRingtone = { song ->

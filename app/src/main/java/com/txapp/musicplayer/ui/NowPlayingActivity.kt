@@ -626,7 +626,7 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
             val currentSong = repository.getSongById(songId)
             val currentTrackNumber = currentSong?.trackNumber ?: 0
 
-            val success = repository.updateSongMetadata(
+            val result = repository.updateSongMetadata(
                 context = this@NowPlayingActivity,
                 songId = songId,
                 title = data.title,
@@ -638,19 +638,27 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
                 trackNumber = currentTrackNumber
             )
 
-            if (success) {
-                TXAToast.show(this@NowPlayingActivity, "txamusic_tag_saved".txa())
-                // Update UI state immediately
-                uiState.value = uiState.value.copy(
-                    title = data.title,
-                    artist = data.artist,
-                    // If album changed, logic is complex (albumId changes), but for now updating text is enough
-                    // Ideally we should reload the song from DB, but manual set works for text
-                )
-                updateState()
-            } else {
-                TXAToast.show(this@NowPlayingActivity, "txamusic_tag_save_failed".txa())
+            when (result) {
+                is com.txapp.musicplayer.util.TXATagWriter.WriteResult.Success -> {
+                    TXAToast.show(this@NowPlayingActivity, "txamusic_tag_saved".txa())
+                    // Update UI state immediately
+                    uiState.value = uiState.value.copy(
+                        title = data.title,
+                        artist = data.artist,
+                    )
+                    updateState()
+                }
+                is com.txapp.musicplayer.util.TXATagWriter.WriteResult.PermissionRequired -> {
+                    pendingTagUpdate = data
+                    writeRequestLauncher.launch(
+                        androidx.activity.result.IntentSenderRequest.Builder(result.intent).build()
+                    )
+                }
+                else -> {
+                    TXAToast.show(this@NowPlayingActivity, "txamusic_tag_save_failed".txa())
+                }
             }
+
         }
     }
 
@@ -664,15 +672,25 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
             if (path.isEmpty()) return@launch
 
             val result = LyricsUtil.saveLyrics(this@NowPlayingActivity, path, lyrics)
-            if (result is LyricsUtil.SaveResult.Success) {
-                TXAToast.success(this@NowPlayingActivity, "txamusic_lyrics_saved".txa())
-                // Refresh state to show new lyrics
-                updateState()
-            } else if (result is LyricsUtil.SaveResult.Failure) {
-                TXAToast.error(this@NowPlayingActivity, "txamusic_lyrics_save_failed".txa())
+            when (result) {
+                is LyricsUtil.SaveResult.Success -> {
+                    TXAToast.success(this@NowPlayingActivity, "txamusic_lyrics_saved".txa())
+                    // Refresh state to show new lyrics
+                    updateState()
+                }
+                is LyricsUtil.SaveResult.PermissionRequired -> {
+                    pendingLyricsUpdate = lyrics
+                    writeRequestLauncher.launch(
+                        androidx.activity.result.IntentSenderRequest.Builder(result.intent).build()
+                    )
+                }
+                is LyricsUtil.SaveResult.Failure -> {
+                    TXAToast.error(this@NowPlayingActivity, "txamusic_lyrics_save_failed".txa())
+                }
             }
         }
     }
+
 
     override fun onDestroy() {
         super.onDestroy()
