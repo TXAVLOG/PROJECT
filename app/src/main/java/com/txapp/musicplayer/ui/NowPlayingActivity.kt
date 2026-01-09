@@ -50,6 +50,7 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
     private var showTagEditorSheet by mutableStateOf(false)
     private var isDriveModeActive by mutableStateOf(false)
     private var currentStyle by mutableStateOf("adaptive")
+    private var startLyricsInEditMode by mutableStateOf(false)
 
     // Store pending updates for retry after permission grant
     private var pendingTagUpdate: TagEditData? = null
@@ -98,7 +99,10 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
                     onShowQueue = { fetchQueueAndShow() },
                     onClose = { if (isDriveModeActive) isDriveModeActive = false else finish() },
                     onShowSleepTimer = { showSleepTimerDialog = true },
-                    onShowLyrics = { showLyricsDialog = true },
+                    onShowLyrics = { inEditMode -> 
+                        startLyricsInEditMode = inEditMode
+                        showLyricsDialog = true 
+                    },
                     onShowPlaybackSpeed = { showPlaybackSpeedDialog = true },
                     onAddToPlaylist = { showAddToPlaylistSheet = true },
                     onEditTag = { showTagEditorSheet = true },
@@ -248,6 +252,7 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
                         onDismiss = { showLyricsDialog = false },
                         onLyricsUpdated = {
                             lyricsVersion++
+                            updateState() // Refresh lyrics in player immediately
                         },
                         onSearchLyrics = {
                             // Open Google search for lyrics
@@ -264,7 +269,8 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
                             writeRequestLauncher.launch(
                                 androidx.activity.result.IntentSenderRequest.Builder(intent).build()
                             )
-                        }
+                        },
+                        startInEditMode = startLyricsInEditMode
                     )
                 }
             }

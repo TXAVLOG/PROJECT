@@ -83,7 +83,7 @@ fun NowPlayingFullStyle(
     onShowQueue: () -> Unit,
     onClose: () -> Unit,
     onShowSleepTimer: () -> Unit = {},
-    onShowLyrics: () -> Unit = {},
+    onShowLyrics: (Boolean) -> Unit = {},
     onShowPlaybackSpeed: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
     onEditTag: () -> Unit = {},
@@ -283,7 +283,7 @@ fun NowPlayingFullStyle(
                                         }
                                         
                                         Button(
-                                            onClick = onShowLyrics, // Open full lyrics dialog to add
+                                            onClick = { onShowLyrics(true) }, // Open full lyrics dialog to add
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = accentColor
                                             )
@@ -340,7 +340,7 @@ fun NowPlayingFullStyle(
 
                                     // Edit FAB
                                     FloatingActionButton(
-                                        onClick = onShowLyrics,
+                                        onClick = { onShowLyrics(true) },
                                         modifier = Modifier
                                             .align(Alignment.BottomEnd)
                                             .padding(8.dp)
@@ -1241,7 +1241,8 @@ fun NowPlayingLandscapeFullScreen(
     onDriveMode: () -> Unit = {},
     onShowSleepTimer: () -> Unit = {},
     onShowPlaybackSpeed: () -> Unit = {},
-    onAddToPlaylist: () -> Unit = {}
+    onAddToPlaylist: () -> Unit = {},
+    onShowLyrics: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val accentColor = Color(android.graphics.Color.parseColor(TXAPreferences.currentAccent))
@@ -1457,7 +1458,8 @@ fun NowPlayingLandscapeFullScreen(
                                     onAddToPlaylist = {
                                         menuExpanded = false
                                         onAddToPlaylist()
-                                    }
+                                    },
+                                    onShowLyrics = { onShowLyrics(false) }
                                 )
                             }
                         }

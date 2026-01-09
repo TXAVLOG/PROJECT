@@ -93,7 +93,7 @@ fun NowPlayingContent(
     onShowQueue: () -> Unit,
     onClose: () -> Unit,
     onShowSleepTimer: () -> Unit = {},
-    onShowLyrics: () -> Unit = {},
+    onShowLyrics: (Boolean) -> Unit = {},
     onShowPlaybackSpeed: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
     onEditTag: () -> Unit = {},
@@ -204,7 +204,8 @@ fun NowPlayingContent(
                 onDriveMode = onDriveMode,
                 onAddToPlaylist = onAddToPlaylist,
                 onEditTag = onEditTag,
-                onSetRingtone = onSetRingtone
+                onSetRingtone = onSetRingtone,
+                onShowLyrics = onShowLyrics
             )
 
             "vinyl" -> TXAPlayerVinylStyle(
@@ -221,7 +222,8 @@ fun NowPlayingContent(
                 onDriveMode = onDriveMode,
                 onAddToPlaylist = onAddToPlaylist,
                 onEditTag = onEditTag,
-                onSetRingtone = onSetRingtone
+                onSetRingtone = onSetRingtone,
+                onShowLyrics = onShowLyrics
             )
 
             "neon" -> TXAPlayerNeonStyle(
@@ -238,7 +240,8 @@ fun NowPlayingContent(
                 onDriveMode = onDriveMode,
                 onAddToPlaylist = onAddToPlaylist,
                 onEditTag = onEditTag,
-                onSetRingtone = onSetRingtone
+                onSetRingtone = onSetRingtone,
+                onShowLyrics = onShowLyrics
             )
 
             "spectrum" -> TXAPlayerSpectrumStyle(
@@ -255,7 +258,8 @@ fun NowPlayingContent(
                 onDriveMode = onDriveMode,
                 onAddToPlaylist = onAddToPlaylist,
                 onEditTag = onEditTag,
-                onSetRingtone = onSetRingtone
+                onSetRingtone = onSetRingtone,
+                onShowLyrics = onShowLyrics
             )
 
             "adaptive" -> NowPlayingAdaptiveStyle(
@@ -471,7 +475,7 @@ fun NowPlayingAdaptiveStyle(
     onSetRingtone: () -> Unit = {},
     onShowSleepTimer: () -> Unit = {},
     onShowPlaybackSpeed: () -> Unit = {},
-    onShowLyrics: () -> Unit = {}
+    onShowLyrics: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val albumUri = getAlbumArtUri(state)
@@ -551,7 +555,8 @@ fun NowPlayingAdaptiveStyle(
                             onDismiss = { showMoreOptions = false },
                             onAddToPlaylist = onAddToPlaylist,
                             onEditTag = onEditTag,
-                            onSetRingtone = onSetRingtone
+                            onSetRingtone = onSetRingtone,
+                            onShowLyrics = { onShowLyrics(false) }
                         )
                     }
                 }
@@ -735,7 +740,7 @@ fun NowPlayingAdaptiveStyle(
                             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
-                    IconButton(onClick = onShowLyrics) {
+                    IconButton(onClick = { onShowLyrics(true) }) {
                         Icon(
                             imageVector = TXAIcons.Lyrics,
                             contentDescription = "txamusic_playing".txa(),

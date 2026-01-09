@@ -82,7 +82,7 @@ fun TXAPlayerAuroraStyle(
     onSetRingtone: () -> Unit = {},
     onShowSleepTimer: () -> Unit = {},
     onShowPlaybackSpeed: () -> Unit = {},
-    onShowLyrics: () -> Unit = {},
+    onShowLyrics: (Boolean) -> Unit = {},
     onPageChanged: (Int) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -116,7 +116,8 @@ fun TXAPlayerAuroraStyle(
                 onShowQueue = onShowQueue,
                 onAddToPlaylist = onAddToPlaylist,
                 onEditTag = onEditTag,
-                onSetRingtone = onSetRingtone
+                onSetRingtone = onSetRingtone,
+                onShowLyrics = { onShowLyrics(false) }
             )
 
             Spacer(modifier = Modifier.weight(0.1f))
@@ -244,7 +245,8 @@ fun TXAPlayerGlassStyle(
     onDriveMode: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
     onEditTag: () -> Unit = {},
-    onSetRingtone: () -> Unit = {}
+    onSetRingtone: () -> Unit = {},
+    onShowLyrics: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val albumUri = remember(state.albumId, state.mediaUri) { getAlbumArtUri(state) }
@@ -278,7 +280,8 @@ fun TXAPlayerGlassStyle(
                 onShowQueue = onShowQueue,
                 onAddToPlaylist = onAddToPlaylist,
                 onEditTag = onEditTag,
-                onSetRingtone = onSetRingtone
+                onSetRingtone = onSetRingtone,
+                onShowLyrics = { onShowLyrics(false) }
             )
 
 
@@ -390,7 +393,8 @@ fun TXAPlayerVinylStyle(
     onDriveMode: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
     onEditTag: () -> Unit = {},
-    onSetRingtone: () -> Unit = {}
+    onSetRingtone: () -> Unit = {},
+    onShowLyrics: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val albumUri = remember(state.albumId, state.mediaUri) { getAlbumArtUri(state) }
@@ -426,7 +430,8 @@ fun TXAPlayerVinylStyle(
                 onShowQueue = onShowQueue,
                 onAddToPlaylist = onAddToPlaylist,
                 onEditTag = onEditTag,
-                onSetRingtone = onSetRingtone
+                onSetRingtone = onSetRingtone,
+                onShowLyrics = { onShowLyrics(false) }
             )
 
             Spacer(modifier = Modifier.weight(0.08f))
@@ -539,7 +544,8 @@ fun TXAPlayerNeonStyle(
     onDriveMode: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
     onEditTag: () -> Unit = {},
-    onSetRingtone: () -> Unit = {}
+    onSetRingtone: () -> Unit = {},
+    onShowLyrics: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val albumUri = remember(state.albumId, state.mediaUri) { getAlbumArtUri(state) }
@@ -576,7 +582,8 @@ fun TXAPlayerNeonStyle(
                 onShowQueue = onShowQueue,
                 onAddToPlaylist = onAddToPlaylist,
                 onEditTag = onEditTag,
-                onSetRingtone = onSetRingtone
+                onSetRingtone = onSetRingtone,
+                onShowLyrics = { onShowLyrics(false) }
             )
 
 
@@ -674,7 +681,8 @@ fun TXAPlayerSpectrumStyle(
     onDriveMode: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
     onEditTag: () -> Unit = {},
-    onSetRingtone: () -> Unit = {}
+    onSetRingtone: () -> Unit = {},
+    onShowLyrics: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val albumUri = remember(state.albumId, state.mediaUri) { getAlbumArtUri(state) }
@@ -717,7 +725,8 @@ fun TXAPlayerSpectrumStyle(
                 onShowQueue = onShowQueue,
                 onAddToPlaylist = onAddToPlaylist,
                 onEditTag = onEditTag,
-                onSetRingtone = onSetRingtone
+                onSetRingtone = onSetRingtone,
+                onShowLyrics = { onShowLyrics(false) }
             )
 
 
@@ -803,7 +812,8 @@ private fun TXAPlayerTopBar(
     onAddToPlaylist: () -> Unit,
     onEditTag: () -> Unit = {},
     onSetRingtone: () -> Unit = {},
-    tintColor: Color = Color.White
+    tintColor: Color = Color.White,
+    onShowLyrics: () -> Unit = {}
 ) {
     var showMoreOptions by remember { mutableStateOf(false) }
 
@@ -859,7 +869,8 @@ private fun TXAPlayerTopBar(
                     onDismiss = { showMoreOptions = false },
                     onAddToPlaylist = onAddToPlaylist,
                     onEditTag = onEditTag,
-                    onSetRingtone = onSetRingtone
+                    onSetRingtone = onSetRingtone,
+                    onShowLyrics = onShowLyrics
                 )
             }
         }
@@ -1088,12 +1099,23 @@ fun MoreOptionsPlayerDropdown(
     onDismiss: () -> Unit,
     onAddToPlaylist: () -> Unit,
     onEditTag: () -> Unit = {},
-    onSetRingtone: () -> Unit = {}
+    onSetRingtone: () -> Unit = {},
+    onShowLyrics: () -> Unit = {}
 ) {
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss
     ) {
+        DropdownMenuItem(
+            text = { Text("txamusic_lyrics".txa()) },
+            onClick = {
+                onDismiss()
+                onShowLyrics()
+            },
+            leadingIcon = { Icon(Icons.Default.Lyrics, null) }
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = Color.Gray.copy(alpha = 0.2f))
         DropdownMenuItem(
             text = { Text("txamusic_add_to_playlist".txa()) },
             onClick = {

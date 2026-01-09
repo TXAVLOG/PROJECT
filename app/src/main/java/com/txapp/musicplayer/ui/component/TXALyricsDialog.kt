@@ -57,14 +57,15 @@ fun LyricsDialog(
     onDismiss: () -> Unit,
     onSearchLyrics: () -> Unit = {},
     onLyricsUpdated: () -> Unit = {},
-    onPermissionRequest: (android.app.PendingIntent, String) -> Unit = { _, _ -> }
+    onPermissionRequest: (android.app.PendingIntent, String) -> Unit = { _, _ -> },
+    startInEditMode: Boolean = false
 ) {
     val context = LocalContext.current
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     
-    var isEditing by remember { mutableStateOf(false) }
-    var editContent by remember { mutableStateOf("") }
+    var isEditing by remember { mutableStateOf(startInEditMode) }
+    var editContent by remember { mutableStateOf(if (startInEditMode) LyricsUtil.getRawLyrics(songPath) ?: "" else "") }
     var isSaving by remember { mutableStateOf(false) }
     // Tab for edit mode: 0 = Synced (LRC), 1 = Normal (embedded)
     var editTab by remember { mutableIntStateOf(0) }

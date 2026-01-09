@@ -194,12 +194,31 @@ if ($uploadToRepo) {
 if ($uploadToGitHub) {
     Write-Step "Dang tạo GitHub Release..."
     if (Get-Command gh -ErrorAction SilentlyContinue) {
+        Write-Step "Kiem tra trang thai dang nhap GitHub..."
+        gh auth status 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Info "Chua dang nhap GitHub CLI. Dang chay setup..."
+            # Thu thiet lap git config neu chua co (quan trong cho CI/CD hoac moi truong moi)
+            gh auth setup-git 2>$null
+            
+            # Kiem tra lai sau khi setup (Thuc te neu chua login thi setup-git cung fail, nhung day la logic user yeu cau)
+            gh auth status 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                 Write-Error "Vui long dang nhap GitHub CLI bang lenh: gh auth login"
+                 Write-Info "Bo qua buoc upload release."
+                 return
+            }
+        }
+        
         $tagName = "v$versionName"
-        git tag -a $tagName -m "Release $tagName" 2>$null
-        git push origin $tagName 2>$null
+        # Force tag creation locally
+        git tag -f -a $tagName -m "Release $tagName" 2>$null
+        # Force push tag to origin to avoid "already exists" errors
+        git push origin $tagName --force 2>&1 | Out-Null
         
         $releaseNotes = "# 🚀 TXA Music Update v$versionName`n`n> 📝 *Mo ta ban cap nhat? Vao app se co nhe khoi phai xem o day!* 🎵`n`n---`n*Enjoy the music!* 🎧"
-        gh release create $tagName $targetPath --title "TXAMUSIC $tagName" --notes "$releaseNotes" 2>$null
+        # Add --latest flag to explicitly mark this release as the latest one
+        gh release create $tagName $targetPath --title "TXAMUSIC $tagName" --notes "$releaseNotes" --latest 2>$null
         if ($LASTEXITCODE -eq 0) {
             Write-Success "Da tao GitHub Release: $tagName"
         } else {
