@@ -421,6 +421,9 @@ object TXATranslation {
         "txamusic_lyrics_searching" to "Searching for lyrics...",
         "txamusic_lyrics_search_success" to "Lyrics found!",
         "txamusic_lyrics_search_failed" to "No lyrics found for this song",
+        "txamusic_lyrics_unsaved_title" to "Unsaved Changes",
+        "txamusic_lyrics_unsaved_desc" to "You have unsaved changes. Do you want to save them before leaving?",
+        "txamusic_btn_discard" to "Discard",
 
         "txamusic_permission_grant" to "Grant Permission",
         "txamusic_settings_remember_last_tab" to "Remember Last Tab",
@@ -949,6 +952,9 @@ object TXATranslation {
         "txamusic_paste_timeframe_lyrics_here" to "Dán lời LRC có nhãn thời gian vào đây...",
         "txamusic_paste_synced_lyrics_hint" to "Định dạng: [mm:ss.xx] Lời bài hát",
         "txamusic_paste_normal_lyrics_hint" to "Lời bài hát thuần văn bản",
+        "txamusic_lyrics_unsaved_title" to "Chưa lưu thay đổi",
+        "txamusic_lyrics_unsaved_desc" to "Bạn có thay đổi chưa được lưu. Bạn có muốn lưu trước khi thoát không?",
+        "txamusic_btn_discard" to "Bỏ qua",
 
         "txamusic_permission_grant" to "Cấp quyền",
         "txamusic_settings_remember_last_tab" to "Nhớ tab cuối cùng",

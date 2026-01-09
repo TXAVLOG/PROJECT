@@ -65,10 +65,36 @@ fun LyricsDialog(
     val coroutineScope = rememberCoroutineScope()
     
     var isEditing by remember { mutableStateOf(startInEditMode) }
-    var editContent by remember { mutableStateOf(if (startInEditMode) LyricsUtil.getRawLyrics(songPath) ?: "" else "") }
+    val originalContent = remember { mutableStateOf(if (startInEditMode) LyricsUtil.getRawLyrics(songPath) ?: "" else "") }
+    var editContent by remember { mutableStateOf(originalContent.value) }
     var isSaving by remember { mutableStateOf(false) }
     // Tab for edit mode: 0 = Synced (LRC), 1 = Normal (embedded)
     var editTab by remember { mutableIntStateOf(0) }
+    // Show unsaved changes warning
+    var showUnsavedWarning by remember { mutableStateOf(false) }
+    
+    // Check if content has changed from original
+    val hasChanges = remember(editContent, originalContent.value) {
+        editContent != originalContent.value
+    }
+    
+    // Handler for dismiss with unsaved changes check
+    val handleDismiss: () -> Unit = {
+        if (isEditing && hasChanges) {
+            showUnsavedWarning = true
+        } else {
+            onDismiss()
+        }
+    }
+    
+    // Handler for cancel edit with unsaved changes check
+    val handleCancelEdit: () -> Unit = {
+        if (hasChanges) {
+            showUnsavedWarning = true
+        } else {
+            isEditing = false
+        }
+    }
 
     // Find current lyric index
     val activeIndex = remember(lyrics, currentPosition) {
@@ -90,10 +116,10 @@ fun LyricsDialog(
     }
     
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = handleDismiss,
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
-            dismissOnBackPress = true,
+            dismissOnBackPress = !isEditing || !hasChanges, // Only allow direct back dismiss if no changes
             dismissOnClickOutside = !isEditing
         )
     ) {
@@ -139,7 +165,7 @@ fun LyricsDialog(
                         Row {
                             if (isEditing) {
                                 // Cancel button in edit mode
-                                TextButton(onClick = { isEditing = false }) {
+                                TextButton(onClick = handleCancelEdit) {
                                     Text("txamusic_btn_cancel".txa(), color = Color.White.copy(alpha = 0.7f))
                                 }
                             } else {
@@ -151,7 +177,7 @@ fun LyricsDialog(
                                     )
                                 }
                             }
-                            IconButton(onClick = onDismiss) {
+                            IconButton(onClick = handleDismiss) {
                                 Icon(
                                     Icons.Outlined.Close,
                                     contentDescription = "Close",
@@ -249,7 +275,7 @@ fun LyricsDialog(
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            enabled = !isSaving && editContent.isNotBlank(),
+                            enabled = !isSaving && hasChanges,
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary
@@ -312,7 +338,8 @@ fun LyricsDialog(
                                     
                                     Button(
                                         onClick = {
-                                            editContent = LyricsUtil.getRawLyrics(songPath) ?: ""
+                                            originalContent.value = LyricsUtil.getRawLyrics(songPath) ?: ""
+                                            editContent = originalContent.value
                                             isEditing = true
                                         },
                                         colors = ButtonDefaults.buttonColors(
@@ -368,7 +395,8 @@ fun LyricsDialog(
             if (!isEditing && lyrics.isNotEmpty()) {
                 FloatingActionButton(
                     onClick = {
-                        editContent = LyricsUtil.getRawLyrics(songPath) ?: ""
+                        originalContent.value = LyricsUtil.getRawLyrics(songPath) ?: ""
+                        editContent = originalContent.value
                         isEditing = true
                     },
                     modifier = Modifier
@@ -384,6 +412,55 @@ fun LyricsDialog(
                 }
             }
         }
+    }
+    
+    // Unsaved changes warning dialog
+    if (showUnsavedWarning) {
+        AlertDialog(
+            onDismissRequest = { showUnsavedWarning = false },
+            title = { Text("txamusic_lyrics_unsaved_title".txa()) },
+            text = { Text("txamusic_lyrics_unsaved_desc".txa()) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showUnsavedWarning = false
+                        coroutineScope.launch {
+                            isSaving = true
+                            val result = LyricsUtil.saveLyrics(context, songPath, editContent)
+                            isSaving = false
+                            when (result) {
+                                is LyricsUtil.SaveResult.Success -> {
+                                    TXAToast.success(context, "txamusic_lyrics_saved".txa())
+                                    isEditing = false
+                                    onLyricsUpdated()
+                                    onDismiss()
+                                }
+                                is LyricsUtil.SaveResult.PermissionRequired -> {
+                                    onPermissionRequest(result.intent, editContent)
+                                }
+                                else -> {
+                                    TXAToast.error(context, "txamusic_lyrics_save_failed".txa())
+                                }
+                            }
+                        }
+                    }
+                ) {
+                    Text("txamusic_btn_save".txa())
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showUnsavedWarning = false
+                        editContent = originalContent.value // Reset changes
+                        isEditing = false
+                        onDismiss()
+                    }
+                ) {
+                    Text("txamusic_btn_discard".txa())
+                }
+            }
+        )
     }
 }
 
