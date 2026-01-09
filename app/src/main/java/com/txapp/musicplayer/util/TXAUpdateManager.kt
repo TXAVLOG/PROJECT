@@ -87,6 +87,8 @@ object TXAUpdateManager {
                     val currentVersionCode = TXADeviceInfo.getVersionCode()
                     
                     
+                    val checksum = latest.optJSONObject("checksum")
+                    
                     val info = UpdateInfo(
                         updateAvailable = true,
                         forceUpdate = json.optBoolean("force_update") || latest.optBoolean("mandatory"),
