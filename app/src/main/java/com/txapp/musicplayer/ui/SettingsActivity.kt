@@ -975,6 +975,7 @@ fun NowPlayingSettings() {
             SettingsSwitchItem(
                 icon = Icons.Outlined.Shuffle,
                 title = "txamusic_settings_show_shuffle".txa(),
+                subtitle = "txamusic_settings_show_shuffle_desc".txa(),
                 checked = showShuffle,
                 onCheckedChange = { TXAPreferences.isShowShuffleBtn = it }
             )
@@ -983,6 +984,7 @@ fun NowPlayingSettings() {
             SettingsSwitchItem(
                 icon = Icons.Outlined.FavoriteBorder,
                 title = "txamusic_settings_show_favorite".txa(),
+                subtitle = "txamusic_settings_show_favorite_desc".txa(),
                 checked = showFavorite,
                 onCheckedChange = { TXAPreferences.isShowFavoriteBtn = it }
             )
