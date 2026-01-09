@@ -11,7 +11,6 @@ Nếu bạn có thắc mắc hoặc gặp lỗi, vui lòng:
 ### Thông tin File
 - **Phiên bản**: v2.5.2
 - **Kích thước**: ~183 MB
-- **Checksum (SHA-256)**: 0FE739282A2E1EC27C4BC7C8FBC140A3C48FB14A5EF366AE300451616DA69F9B
 
 
 Chào mừng bạn đến với **TXA Music Player** - ứng dụng nghe nhạc hiện đại, giao diện đẹp mắt và nhiều tính năng tùy biến mạnh mẽ dành cho Android.
