@@ -27,16 +27,11 @@ local.properties
 proguard/
 intro_txa.mp3
 
-# TXABUILD folder - ignore all EXCEPT APK files
-TXABUILD/*.jpg
-TXABUILD/*.png
-TXABUILD/*.mp4
-TXABUILD/*.zip
-TXABUILD/*.mp3
-TXABUILD/*.xml
-TXABUILD/*.json
-TXABUILD/*.properties
-TXABUILD/*.apk
+# APK files
+*.apk
+
+# TXABUILD folder
+TXABUILD/
 
 # Log and text files
 *.log

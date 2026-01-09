@@ -772,7 +772,8 @@ fun NowPlayingDriveModeStyle(
     onToggleRepeat: () -> Unit = {},
     onShowSleepTimer: () -> Unit = {},
     onClose: () -> Unit,
-    onSetAsRingtone: () -> Unit = {}
+    onSetAsRingtone: () -> Unit = {},
+    onShowLyrics: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val accentColor = state.vibrantColor

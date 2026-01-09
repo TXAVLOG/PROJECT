@@ -316,7 +316,8 @@ fun NowPlayingContent(
                 onToggleRepeat = onToggleRepeat,
                 onShowSleepTimer = onShowSleepTimer,
                 onClose = onDriveMode,
-                onSetAsRingtone = onSetRingtone
+                onSetAsRingtone = onSetRingtone,
+                onShowLyrics = onShowLyrics
             )
 
             // Default to Aurora (new default)
