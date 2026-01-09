@@ -635,7 +635,8 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
                 albumArtist = data.albumArtist.ifEmpty { null },
                 composer = data.composer.ifEmpty { null },
                 year = data.year.toIntOrNull() ?: 0,
-                trackNumber = currentTrackNumber
+                trackNumber = currentTrackNumber,
+                artwork = data.artworkBitmap
             )
 
             when (result) {

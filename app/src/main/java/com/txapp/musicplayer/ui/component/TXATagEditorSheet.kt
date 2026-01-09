@@ -4,8 +4,10 @@
 
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -37,7 +39,8 @@ data class TagEditData(
     val album: String,
     val albumArtist: String,
     val composer: String,
-    val year: String
+    val year: String,
+    val artworkBitmap: android.graphics.Bitmap? = null
 )
 
 /**
@@ -62,13 +65,30 @@ fun TXATagEditorSheet(
     var year by remember { mutableStateOf(if (song.year > 0) song.year.toString() else "") }
     
     // Check if data changed
-    val hasChanges = remember(title, artist, album, albumArtist, composer, year) {
+    var newlyPickedArtwork by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    
+    // Image picker launcher
+    val pickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        uri?.let {
+            // Process image using TXA class as requested
+            val processedFile = com.txapp.musicplayer.util.TXAImageUtils.processImage(context, it)
+            if (processedFile != null) {
+                newlyPickedArtwork = android.graphics.BitmapFactory.decodeFile(processedFile.absolutePath)
+                processedFile.delete() // Clean up temp file
+            }
+        }
+    }
+
+    val hasChanges = remember(title, artist, album, albumArtist, composer, year, newlyPickedArtwork) {
         title != song.title ||
         artist != song.artist ||
         album != song.album ||
         albumArtist != (song.albumArtist ?: "") ||
         composer != (song.composer ?: "") ||
-        year != (if (song.year > 0) song.year.toString() else "")
+        year != (if (song.year > 0) song.year.toString() else "") ||
+        newlyPickedArtwork != null
     }
     
     val albumArtUri = remember(song.albumId) {
@@ -115,7 +135,8 @@ fun TXATagEditorSheet(
                             album = album,
                             albumArtist = albumArtist,
                             composer = composer,
-                            year = year
+                            year = year,
+                            artworkBitmap = newlyPickedArtwork
                         ))
                     },
                     enabled = hasChanges,
@@ -138,12 +159,21 @@ fun TXATagEditorSheet(
             ) {
                 // Album Art
                 Card(
-                    modifier = Modifier.size(80.dp),
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clickable { pickerLauncher.launch("image/*") },
                     shape = RoundedCornerShape(12.dp),
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {
-                    if (albumArtUri != null) {
-                        AsyncImage(
+                    if (newlyPickedArtwork != null) {
+                        coil.compose.AsyncImage(
+                            model = newlyPickedArtwork,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else if (albumArtUri != null) {
+                        coil.compose.AsyncImage(
                             model = ImageRequest.Builder(context)
                                 .data(albumArtUri)
                                 .crossfade(true)

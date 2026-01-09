@@ -578,7 +578,8 @@ class MusicRepository(
         albumArtist: String?,
         composer: String?,
         year: Int,
-        trackNumber: Int
+        trackNumber: Int,
+        artwork: android.graphics.Bitmap? = null
     ): com.txapp.musicplayer.util.TXATagWriter.WriteResult = withContext(Dispatchers.IO) {
         try {
             // 1. Get current song data to get file path
@@ -586,7 +587,6 @@ class MusicRepository(
             val filePath = song.data
 
             // 2. Try to write to physical file FIRST. 
-            // If it needs permission, we stop here and return PermissionRequired.
             val result = com.txapp.musicplayer.util.TXATagWriter.writeTags(
                 context,
                 com.txapp.musicplayer.model.SongTagInfo(
@@ -598,7 +598,8 @@ class MusicRepository(
                     albumArtist = albumArtist,
                     composer = composer,
                     year = year.toString(),
-                    trackNumber = trackNumber.toString()
+                    trackNumber = trackNumber.toString(),
+                    artwork = artwork
                 )
             )
 

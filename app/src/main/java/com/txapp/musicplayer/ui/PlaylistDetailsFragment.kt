@@ -104,7 +104,8 @@ class PlaylistDetailsFragment : Fragment() {
                                         albumArtist = editData.albumArtist,
                                         composer = editData.composer,
                                         year = editData.year.toIntOrNull() ?: 0,
-                                        trackNumber = song.trackNumber
+                                        trackNumber = song.trackNumber,
+                                        artwork = editData.artworkBitmap
                                     )
                                     when (result) {
                                         is TXATagWriter.WriteResult.Success -> {
