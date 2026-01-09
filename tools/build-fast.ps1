@@ -198,7 +198,8 @@ if ($uploadToGitHub) {
         git tag -a $tagName -m "Release $tagName" 2>$null
         git push origin $tagName 2>$null
         
-        gh release create $tagName $targetPath --title "TXAMUSIC $tagName" --notes "Mo ta ban cap nhat? Vao app se co! 🎵" 2>$null
+        $releaseNotes = "# 🚀 TXA Music Update v$versionName`n`n> 📝 *Mo ta ban cap nhat? Vao app se co nhe khoi phai xem o day!* 🎵`n`n---`n*Enjoy the music!* 🎧"
+        gh release create $tagName $targetPath --title "TXAMUSIC $tagName" --notes "$releaseNotes" 2>$null
         if ($LASTEXITCODE -eq 0) {
             Write-Success "Da tao GitHub Release: $tagName"
         } else {
