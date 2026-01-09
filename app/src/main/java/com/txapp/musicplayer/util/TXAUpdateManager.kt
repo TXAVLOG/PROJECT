@@ -86,13 +86,6 @@ object TXAUpdateManager {
                     val latestVersionCode = latest.optInt("versionCode")
                     val currentVersionCode = TXADeviceInfo.getVersionCode()
                     
-                    // Safety check: local version must be lower than latest version to show update
-                    if (latestVersionCode <= currentVersionCode) {
-                        TXALogger.apiI("UpdateManager", "Server returned older or same version ($latestVersionCode <= $currentVersionCode), ignoring update")
-                        return@withContext null
-                    }
-
-                    val checksum = latest.optJSONObject("checksum")
                     
                     val info = UpdateInfo(
                         updateAvailable = true,
@@ -106,6 +99,17 @@ object TXAUpdateManager {
                         checksumType = checksum?.optString("type") ?: "",
                         checksumValue = checksum?.optString("value") ?: ""
                     )
+
+                    // Safety check: local version must be lower than latest version to show update
+                    // BUT if we just want to fetch info (e.g. for changelog display), we might want it anyway.
+                    // The standard checkForUpdate() returns null if no update needed.
+                    if (latestVersionCode <= currentVersionCode) {
+                        TXALogger.apiI("UpdateManager", "Server returned older or same version ($latestVersionCode <= $currentVersionCode)")
+                        // Logic changed: return null for checkForUpdate usage, but we need a way to get changelog.
+                        // We will keep existing behavior for checkForUpdate() but add fetchChangelog() separately.
+                        return@withContext null
+                    }
+                    
                     updateInfo.value = info
                     return@withContext info
                 }
@@ -113,6 +117,41 @@ object TXAUpdateManager {
             null
         } catch (e: Exception) {
             TXALogger.apiE("UpdateManager", "Update check failed", e)
+            null
+        }
+    }
+
+    /**
+     * Fetch latest changelog from server regardless of version check
+     */
+    suspend fun fetchChangelog(): String? = withContext(Dispatchers.IO) {
+        try {
+            val jsonBody = JSONObject().apply {
+                put("packageId", "com.txapp.musicplayer")
+                put("versionCode", TXADeviceInfo.getVersionCode()) // Current version
+                put("versionName", TXADeviceInfo.getVersionName())
+                put("platform", "android")
+                put("locale", TXATranslation.getSystemLanguage())
+            }
+
+            val request = Request.Builder()
+                .url(API_URL)
+                .post(jsonBody.toString().toRequestBody("application/json".toMediaType()))
+                .build()
+
+            val response = TXAHttp.client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val body = response.body?.string() ?: return@withContext null
+                val json = JSONObject(body)
+                
+                if (json.optBoolean("ok")) {
+                    val latest = json.optJSONObject("latest")
+                    return@withContext latest?.optString("changelog")
+                }
+            }
+            null
+        } catch (e: Exception) {
+            TXALogger.apiE("UpdateManager", "Fetch changelog failed", e)
             null
         }
     }

@@ -353,20 +353,19 @@ class SplashActivity : AppCompatActivity() {
                     // User just updated! Show changelog
                     TXALogger.appI(TAG, "App was updated from $lastSeenVersion to $currentVersion. Showing PostUpdateDialog.")
                     
-                    // Get changelog (use same logic as UpdateDialog)
+                    // Get changelog via API (same as UpdateDialog)
                     val changelogHtml = try {
-                        val lang = TXAPreferences.getCurrentLanguage()
-                        val changelogUrl = if (lang == "vi") {
-                            "https://raw.githubusercontent.com/TXAVLOG/PROJECT/main/CHANGELOG.html"
-                        } else {
-                            "https://raw.githubusercontent.com/TXAVLOG/PROJECT/main/CHANGELOG.html"
-                        }
-                        withContext(Dispatchers.IO) {
-                            java.net.URL(changelogUrl).readText()
-                        }
+                         TXAUpdateManager.fetchChangelog() ?: throw Exception("API returned valid response but no changelog")
                     } catch (e: Exception) {
-                        TXALogger.appW(TAG, "Failed to fetch changelog: ${e.message}")
-                        "<p>Có gì mới? Vui lòng kiểm tra trong phần Cài đặt > Giới thiệu.</p>"
+                         TXALogger.appW(TAG, "Failed to fetch changelog from API, falling back to static file: ${e.message}")
+                         try {
+                             val changelogUrl = "https://raw.githubusercontent.com/TXAVLOG/PROJECT/main/CHANGELOG.html"
+                             withContext(Dispatchers.IO) {
+                                 java.net.URL(changelogUrl).readText()
+                             }
+                         } catch (ex: Exception) {
+                             "<p>Có gì mới? Vui lòng kiểm tra trong phần Cài đặt > Giới thiệu.</p>"
+                         }
                     }
                     
                     postUpdateChangelog.value = changelogHtml
