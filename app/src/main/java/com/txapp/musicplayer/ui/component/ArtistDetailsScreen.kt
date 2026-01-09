@@ -11,10 +11,16 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
+import androidx.compose.material3.ExperimentalMaterial3Api
+import kotlin.OptIn
+import androidx.compose.runtime.*
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +53,9 @@ fun ArtistDetailsScreen(
     currentSongId: Long = -1L
 ) {
     val accentColor = Color(android.graphics.Color.parseColor(TXAPreferences.currentAccent))
+    
+    // State for expanded image
+    var expandedImageUrl by remember { mutableStateOf<String?>(null) }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
@@ -55,7 +64,9 @@ fun ArtistDetailsScreen(
         ) {
             // Header
             item {
-                ArtistHeader(artist, accentColor, onPlayAll, onShuffleAll)
+                ArtistHeader(artist, accentColor, onPlayAll, onShuffleAll) { imageUrl ->
+                    expandedImageUrl = imageUrl
+                }
             }
 
             // Albums Section
@@ -116,6 +127,15 @@ fun ArtistDetailsScreen(
                 navigationIconContentColor = Color.White
             )
         )
+
+        // Expanded image dialog
+        expandedImageUrl?.let { url ->
+            ExpandedArtistImageDialog(
+                artist = artist,
+                imageSource = url,
+                onDismiss = { expandedImageUrl = null }
+            )
+        }
     }
 }
 
@@ -124,7 +144,8 @@ fun ArtistHeader(
     artist: Artist,
     accentColor: Color,
     onPlayAll: (List<Song>) -> Unit,
-    onShuffleAll: (List<Song>) -> Unit
+    onShuffleAll: (List<Song>) -> Unit,
+    onImageClick: (String?) -> Unit
 ) {
     val context = LocalContext.current
     Column(
@@ -159,7 +180,7 @@ fun ArtistHeader(
                 .background(Color.Gray.copy(alpha = 0.2f))
                 .border(4.dp, accentColor.copy(alpha = 0.3f), CircleShape)
                 .clickable {
-                    // TODO: Add manual search/pick image feature later if needed
+                    onImageClick(imageSource.toString())
                 }
         ) {
             SubcomposeAsyncImage(
@@ -345,5 +366,129 @@ fun ArtistSongItem(
             fontSize = 12.sp,
             color = if (isCurrent) accentColor else Color.Gray
         )
+    }
+}
+
+/**
+ * Artist image expand dialog with zoom animation
+ */
+@Composable
+fun ExpandedArtistImageDialog(
+    artist: Artist,
+    imageSource: Any?,
+    onDismiss: () -> Unit
+) {
+    // Animation states
+    var isVisible by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0.3f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "scale"
+    )
+    val alpha by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0f,
+        animationSpec = tween(300),
+        label = "alpha"
+    )
+    
+    // Trigger animation on composition
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
+    
+    Dialog(
+        onDismissRequest = {
+            isVisible = false
+            onDismiss()
+        },
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = alpha * 0.85f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    isVisible = false
+                    onDismiss()
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        this.alpha = alpha
+                    }
+                    .padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Expanded image
+                Card(
+                    modifier = Modifier
+                        .size(300.dp)
+                        .clip(CircleShape),
+                    shape = CircleShape,
+                    elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+                ) {
+                    SubcomposeAsyncImage(
+                        model = ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                            .data(imageSource)
+                            .crossfade(true)
+                            .size(1000)
+                            .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        val state = painter.state
+                        if (state is coil.compose.AsyncImagePainter.State.Loading || state is coil.compose.AsyncImagePainter.State.Error) {
+                            DefaultAlbumArt(iconSize = 80.dp)
+                        } else {
+                            SubcomposeAsyncImageContent()
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                // Artist name
+                Text(
+                    text = artist.name,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Details
+                Text(
+                    text = "${artist.albumCount} ${"txamusic_albums".txa()} • ${artist.songCount} ${"txamusic_media_songs".txa()}",
+                    fontSize = 16.sp,
+                    color = Color.White.copy(alpha = 0.7f)
+                )
+                
+                Spacer(modifier = Modifier.height(48.dp))
+                
+                // Close hint
+                Text(
+                    text = "txamusic_tap_to_close".txa(),
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.5f)
+                )
+            }
+        }
     }
 }

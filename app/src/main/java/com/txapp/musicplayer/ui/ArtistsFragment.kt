@@ -90,10 +90,7 @@ fun ArtistsScreen(
     val windowSize = com.txapp.musicplayer.util.rememberWindowSize()
     val gridColumns = windowSize.artistGridColumns()
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
-    
-    // State for expanded image dialog
-    var expandedArtist by remember { mutableStateOf<Artist?>(null) }
-    var expandedImageUrl by remember { mutableStateOf<Any?>(null) }
+
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // Header
@@ -131,148 +128,9 @@ fun ArtistsScreen(
                 items(artists) { artist ->
                     ArtistGridItem(
                         artist = artist,
-                        onClick = { onArtistClick(artist.id) },
-                        onImageClick = { imageUrl ->
-                            expandedArtist = artist
-                            expandedImageUrl = imageUrl
-                        }
+                        onClick = { onArtistClick(artist.id) }
                     )
                 }
-            }
-        }
-    }
-    
-    // Expanded image dialog
-    expandedArtist?.let { artist ->
-        ExpandedArtistImageDialog(
-            artist = artist,
-            imageSource = expandedImageUrl,
-            onDismiss = { 
-                expandedArtist = null
-                expandedImageUrl = null
-            }
-        )
-    }
-}
-
-/**
- * Artist image expand dialog with zoom animation
- */
-@Composable
-fun ExpandedArtistImageDialog(
-    artist: Artist,
-    imageSource: Any?,
-    onDismiss: () -> Unit
-) {
-    // Animation states
-    var isVisible by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0.3f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
-        label = "scale"
-    )
-    val alpha by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0f,
-        animationSpec = tween(300),
-        label = "alpha"
-    )
-    
-    // Trigger animation on composition
-    LaunchedEffect(Unit) {
-        isVisible = true
-    }
-    
-    Dialog(
-        onDismissRequest = {
-            isVisible = false
-            onDismiss()
-        },
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true
-        )
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = alpha * 0.85f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) {
-                    isVisible = false
-                    onDismiss()
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                modifier = Modifier
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        this.alpha = alpha
-                    }
-                    .padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Expanded image
-                Card(
-                    modifier = Modifier
-                        .size(280.dp)
-                        .clip(CircleShape),
-                    shape = CircleShape,
-                    elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
-                ) {
-                    SubcomposeAsyncImage(
-                        model = ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
-                            .data(imageSource)
-                            .crossfade(true)
-                            .size(800)
-                            .build(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        val state = painter.state
-                        if (state is coil.compose.AsyncImagePainter.State.Loading || state is coil.compose.AsyncImagePainter.State.Error) {
-                            DefaultAlbumArt(iconSize = 80.dp)
-                        } else {
-                            SubcomposeAsyncImageContent()
-                        }
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Artist name
-                Text(
-                    text = artist.name,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Album count
-                Text(
-                    text = "${artist.albumCount} ${"txamusic_albums".txa()} • ${artist.songCount} ${"txamusic_songs".txa()}",
-                    fontSize = 14.sp,
-                    color = Color.White.copy(alpha = 0.7f)
-                )
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Close hint
-                Text(
-                    text = "txamusic_tap_to_close".txa(),
-                    fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.4f)
-                )
             }
         }
     }
@@ -281,8 +139,7 @@ fun ExpandedArtistImageDialog(
 @Composable
 fun ArtistGridItem(
     artist: Artist,
-    onClick: (Long) -> Unit,
-    onImageClick: (Any) -> Unit = {}
+    onClick: (Long) -> Unit
 ) {
     val artistImageUrl by produceState<String?>(initialValue = null, artist.name) {
         if (TXAPreferences.isAutoDownloadImagesEnabled) {
@@ -302,8 +159,7 @@ fun ArtistGridItem(
         Surface(
             modifier = Modifier
                 .aspectRatio(1f)
-                .clip(CircleShape)
-                .clickable { onImageClick(imageSource) },
+                .clip(CircleShape),
             shadowElevation = 4.dp,
             shape = CircleShape
         ) {

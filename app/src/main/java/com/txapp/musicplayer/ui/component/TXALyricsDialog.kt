@@ -234,7 +234,7 @@ fun LyricsDialog(
                                     isSaving = false
                                     when (result) {
                                         is LyricsUtil.SaveResult.Success -> {
-                                            TXAToast.show(context, "txamusic_lyrics_saved".txa())
+                                            TXAToast.success(context, "txamusic_lyrics_saved".txa())
                                             isEditing = false
                                             onLyricsUpdated()
                                         }
@@ -242,7 +242,7 @@ fun LyricsDialog(
                                             onPermissionRequest(result.intent, editContent)
                                         }
                                         else -> {
-                                            TXAToast.show(context, "txamusic_lyrics_save_failed".txa())
+                                            TXAToast.error(context, "txamusic_lyrics_save_failed".txa())
                                         }
                                     }
                                 }

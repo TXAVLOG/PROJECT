@@ -1847,6 +1847,9 @@ fun BackupRestoreSettings() {
                                     pendingRenameFile = file
                                     renameValue = file.nameWithoutExtension.removePrefix("TXA_")
                                     showRenameDialog = true
+                                },
+                                onShare = {
+                                    shareBackupFile(context, file)
                                 }
                             )
                         }
@@ -2328,6 +2331,31 @@ private fun sendEmail(context: Context) {
     }
 }
 
+/**
+ * Share backup file via system share sheet
+ */
+private fun shareBackupFile(context: Context, file: File) {
+    try {
+        val uri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+        
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/octet-stream"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, "TXA Music Backup: ${file.name}")
+            putExtra(Intent.EXTRA_TEXT, "txamusic_share_backup_text".txa())
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        
+        context.startActivity(Intent.createChooser(intent, "txamusic_share_backup_title".txa()))
+    } catch (e: Exception) {
+        TXAToast.error(context, "Error sharing file: ${e.message}")
+    }
+}
+
 // --- Common UI Components ---
 
 @Composable
@@ -2547,7 +2575,8 @@ fun BackupFileItem(
     file: File,
     onRestore: () -> Unit,
     onDelete: () -> Unit,
-    onRename: () -> Unit
+    onRename: () -> Unit,
+    onShare: () -> Unit
 ) {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
     val formattedDate = dateFormat.format(Date(file.lastModified()))
@@ -2588,6 +2617,13 @@ fun BackupFileItem(
                 Icon(
                     imageVector = Icons.Outlined.Restore,
                     contentDescription = "Restore",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            IconButton(onClick = onShare) {
+                Icon(
+                    imageVector = Icons.Outlined.Share,
+                    contentDescription = "Share",
                     tint = MaterialTheme.colorScheme.primary
                 )
             }

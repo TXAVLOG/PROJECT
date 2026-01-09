@@ -206,13 +206,11 @@ fun NowPlayingFullStyle(
             Spacer(modifier = Modifier.weight(0.08f))
 
             // ═══════════════════════════════════════════════════════════════
-            // ALBUM ART vs LYRICS
+            // ALBUM ART vs LYRICS 
             // ═══════════════════════════════════════════════════════════════
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 16.dp).clickable { 
-                    TXAPreferences.setShowLyricsInPlayer(!showLyrics)
-                }
+                modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 16.dp)
             ) {
                 androidx.compose.animation.AnimatedContent(
                     targetState = showLyrics,
@@ -227,6 +225,11 @@ fun NowPlayingFullStyle(
                             modifier = Modifier.fillMaxSize().padding(16.dp),
                             contentAlignment = Alignment.Center
                         ) {
+                            // Background tap area - to toggle back to album art
+                            Box(modifier = Modifier.fillMaxSize().clickable { 
+                                TXAPreferences.setShowLyricsInPlayer(false) 
+                            })
+
                             val cleanLyrics = LyricsUtil.getCleanLyrics(state.lyrics)
                             
                             if (cleanLyrics.isNullOrBlank()) {
@@ -259,9 +262,10 @@ fun NowPlayingFullStyle(
                                                 // Open Google search for lyrics
                                                 val url = LyricsUtil.buildSearchUrl(state.title, state.artist)
                                                 try {
+                                                    com.txapp.musicplayer.util.TXAToast.info(context, "txamusic_lyrics_searching".txa())
                                                     context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
                                                 } catch (e: Exception) {
-                                                    // Browser not available
+                                                    com.txapp.musicplayer.util.TXAToast.error(context, "txamusic_browser_not_found".txa())
                                                 }
                                             },
                                             colors = ButtonDefaults.outlinedButtonColors(
@@ -355,7 +359,12 @@ fun NowPlayingFullStyle(
                         }
                     } else {
                         // Album Art with Progress Ring
-                        Box(contentAlignment = Alignment.Center) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.clickable { 
+                                TXAPreferences.setShowLyricsInPlayer(true) 
+                            }
+                        ) {
                             // Progress Ring
                             val progress = state.progress / 1000f
                             CircularProgressIndicator(

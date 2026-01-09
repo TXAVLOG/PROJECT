@@ -253,9 +253,10 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
                             // Open Google search for lyrics
                             val url = LyricsUtil.buildSearchUrl(state.title, state.artist)
                             try {
+                                com.txapp.musicplayer.util.TXAToast.info(this@NowPlayingActivity, "txamusic_lyrics_searching".txa())
                                 startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
                             } catch (e: Exception) {
-                                // Browser not available
+                                com.txapp.musicplayer.util.TXAToast.error(this@NowPlayingActivity, "txamusic_browser_not_found".txa())
                             }
                         },
                         onPermissionRequest = { intent, content ->
@@ -657,11 +658,11 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
 
             val result = LyricsUtil.saveLyrics(this@NowPlayingActivity, path, lyrics)
             if (result is LyricsUtil.SaveResult.Success) {
-                TXAToast.show(this@NowPlayingActivity, "txamusic_lyrics_saved".txa())
+                TXAToast.success(this@NowPlayingActivity, "txamusic_lyrics_saved".txa())
                 // Refresh state to show new lyrics
                 updateState()
             } else if (result is LyricsUtil.SaveResult.Failure) {
-                TXAToast.show(this@NowPlayingActivity, "txamusic_lyrics_save_failed".txa())
+                TXAToast.error(this@NowPlayingActivity, "txamusic_lyrics_save_failed".txa())
             }
         }
     }

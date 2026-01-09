@@ -415,6 +415,9 @@ object TXATranslation {
         "txamusic_paste_timeframe_lyrics_here" to "Paste LRC lyrics with timestamps here...",
         "txamusic_paste_synced_lyrics_hint" to "Format: [mm:ss.xx] Lyric text",
         "txamusic_paste_normal_lyrics_hint" to "Plain text lyrics without timestamps",
+        "txamusic_lyrics_searching" to "Searching for lyrics...",
+        "txamusic_lyrics_search_success" to "Lyrics found!",
+        "txamusic_lyrics_search_failed" to "No lyrics found for this song",
 
         "txamusic_permission_grant" to "Grant Permission",
         "txamusic_settings_remember_last_tab" to "Remember Last Tab",
@@ -425,6 +428,8 @@ object TXATranslation {
         "txamusic_settings_refresh_playlists_desc" to "Re-scan and update all playlists",
         "txamusic_backup_rename" to "Rename Backup",
         "txamusic_backup_rename_hint" to "Enter new backup name",
+        "txamusic_share_backup_text" to "Here is my backup file for TXA Music Player.",
+        "txamusic_share_backup_title" to "Share Backup",
         "txamusic_backup_rename_success" to "Backup renamed successfully",
 
         // Device Info
@@ -1072,7 +1077,19 @@ object TXATranslation {
         "txamusic_song_deleted" to "Đã xóa bài hát khỏi thư viện",
         
         // UI Hints
-        "txamusic_tap_to_close" to "Chạm vào đâu đó để đóng"
+        "txamusic_tap_to_close" to "Chạm vào đâu đó để đóng",
+
+        // Post Update Dialog
+        "txamusic_post_update_title" to "Cập nhật thành công!",
+        "txamusic_post_update_intro" to "Cảm ơn bạn đã cài đặt %s v%s",
+        "txamusic_btn_close" to "Đóng",
+
+        // Lyrics Search
+        "txamusic_lyrics_searching" to "Đang tìm kiếm lời bài hát...",
+        "txamusic_lyrics_search_success" to "Đã tìm thấy lời bài hát!",
+        "txamusic_lyrics_search_failed" to "Không tìm thấy lời cho bài hát này",
+        "txamusic_share_backup_text" to "Đây là file sao lưu của tôi cho trình phát nhạc TXA Music Player.",
+        "txamusic_share_backup_title" to "Chia sẻ bản sao lưu"
     )
 
     suspend fun init(context: Context) = withContext(Dispatchers.IO) {
