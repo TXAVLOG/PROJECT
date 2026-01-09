@@ -14,8 +14,8 @@ TXAPP Music Player được xây dựng dựa trên kiến trúc hiện đại, 
 - **Material You**: Giao diện thích ứng theo màu sắc hệ thống.
 - **Tag Editor**: Chỉnh sửa thông tin bài hát trực tiếp.
 
-> **Phiên bản hiện tại:** `2.5.0_txa`
-> *(Xem chi tiết tại tệp [version.properties](version.properties))*
+> **Phiên bản hiện tại:** <!-- VERSION_START -->2.5.0_txa<!-- VERSION_END -->
+> *(Được cập nhật tự động từ [version.properties](version.properties))*
 
 ---
 
@@ -23,7 +23,7 @@ TXAPP Music Player được xây dựng dựa trên kiến trúc hiện đại, 
 
 1. **Cài đặt**:
    - Tải file APK mới nhất từ thư mục `TXABUILD/` hoặc từ trang Releases.
-   - Cài đặt vào thiết bị Android (Yêu cầu Android 8.0+).
+   - Cài đặt vào thiết bị Android (Yêu cầu Android 9.0+).
 
 2. **Cấp quyền**:
    - Mở ứng dụng và cấp quyền truy cập bộ nhớ (Storage) để app có thể quét nhạc.

@@ -30,7 +30,7 @@ android {
 
     defaultConfig {
         applicationId = "com.txapp.musicplayer"
-        minSdk = 21
+        minSdk = 28
         targetSdk = 34
         versionCode = versionProps.getProperty("versionCode", "100").toInt()
         versionName = versionProps.getProperty("versionName", "1.0.0_txa")

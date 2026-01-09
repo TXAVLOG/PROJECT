@@ -1,0 +1,38 @@
+name: Update README Version
+
+on:
+  push:
+    paths:
+      - 'version.properties'
+  workflow_dispatch:
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read version from properties
+        id: read_version
+        run: |
+          VERSION=$(grep 'versionName' version.properties | cut -d'=' -f2)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Detected version: $VERSION"
+
+      - name: Update README.md
+        run: |
+          # Use sed to replace content between markers
+          sed -i "s/<!-- VERSION_START -->.*<!-- VERSION_END -->/<!-- VERSION_START -->${{ env.VERSION }}<!-- VERSION_END -->/" README.md
+          
+          # Also update the badge URL if it exists (optional polish)
+          VERSION_BADGE=$(echo "${{ env.VERSION }}" | sed 's/-/__/g' | sed 's/_/__/g')
+          sed -i "s/badge\/Version-.*-blue/badge\/Version-${VERSION_BADGE}-blue/" README.md
+
+      - name: Commit and Push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Docs: Auto-update README version to ${{ env.VERSION }}"
+          file_pattern: README.md
