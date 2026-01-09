@@ -163,9 +163,13 @@ object TXAPreferences {
 
     // Network Restricted Mode (Memory only, resets on app launch)
     var isRestrictedMode: Boolean = false
+    
+    // App context for language helper
+    private var appContext: Context? = null
 
     fun init(context: Context) {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        appContext = context.applicationContext  // Store for language helper
         _theme.value = prefs.getString(KEY_THEME, DEF_THEME) ?: DEF_THEME
         _accentColor.value = prefs.getString(KEY_ACCENT, DEF_ACCENT) ?: DEF_ACCENT
         _gridSize.value = prefs.getInt(KEY_GRID_SIZE, DEF_GRID_SIZE)
@@ -452,4 +456,22 @@ object TXAPreferences {
     
     fun getVirtualizerStrength(): Int = prefs.getInt(KEY_VIRTUALIZER_STRENGTH, 0)
     fun setVirtualizerStrength(strength: Int) = prefs.edit().putInt(KEY_VIRTUALIZER_STRENGTH, strength).apply()
+
+    // ============== POST UPDATE TRACKING ==============
+    private const val KEY_LAST_SEEN_VERSION_CODE = "setting_last_seen_version_code"
+
+    fun getLastSeenVersionCode(): Long = prefs.getLong(KEY_LAST_SEEN_VERSION_CODE, 0L)
+    fun setLastSeenVersionCode(code: Long) = prefs.edit().putLong(KEY_LAST_SEEN_VERSION_CODE, code).apply()
+
+    // ============== LANGUAGE HELPER ==============
+    fun getCurrentLanguage(): String {
+        return try {
+            appContext?.let { ctx ->
+                val langPrefs = ctx.getSharedPreferences("txa_translation_prefs", Context.MODE_PRIVATE)
+                langPrefs.getString("current_locale", "en") ?: "en"
+            } ?: "en"
+        } catch (e: Exception) {
+            "en"
+        }
+    }
 }

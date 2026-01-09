@@ -366,6 +366,11 @@ object TXATranslation {
         "txamusic_action_cancel" to "Cancel",
         "txamusic_action_confirm" to "Confirm",
 
+        // Post Update Dialog
+        "txamusic_post_update_title" to "Update Successful!",
+        "txamusic_post_update_intro" to "Thank you for installing %s v%s",
+        "txamusic_btn_close" to "Close",
+
         // Restore warning
         "txamusic_restore_warning_title" to "Overwrite Data?",
         "txamusic_restore_warning_desc" to "Your current favorites and play history will be overwritten by the backup data. This action cannot be undone.",

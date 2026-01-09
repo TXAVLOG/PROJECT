@@ -63,6 +63,11 @@ class SplashActivity : AppCompatActivity() {
     private val showNetworkRestrictedDialog = mutableStateOf(false)
     private var networkRestrictedContinuation: kotlin.coroutines.Continuation<Unit>? = null
 
+    // Post Update Dialog (after app update success)
+    private val showPostUpdateDialog = mutableStateOf(false)
+    private val postUpdateChangelog = mutableStateOf("")
+    private var postUpdateContinuation: kotlin.coroutines.Continuation<Unit>? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setTheme(R.style.Theme_TXMusicPlayer)
@@ -213,6 +218,23 @@ class SplashActivity : AppCompatActivity() {
                     }
                 )
             }
+
+            // Post Update Dialog (after updating app)
+            if (showPostUpdateDialog.value) {
+                com.txapp.musicplayer.ui.component.PostUpdateDialog(
+                    appName = getString(R.string.app_name),
+                    versionName = TXADeviceInfo.getVersionName(),
+                    changelog = postUpdateChangelog.value,
+                    onDismiss = {
+                        TXALogger.appI(TAG, "PostUpdateDialog dismissed, saving version flag")
+                        // Save current version to prevent showing again
+                        TXAPreferences.setLastSeenVersionCode(TXADeviceInfo.getVersionCode())
+                        showPostUpdateDialog.value = false
+                        postUpdateContinuation?.resume(Unit)
+                        postUpdateContinuation = null
+                    }
+                )
+            }
         }
     }
     
@@ -321,6 +343,43 @@ class SplashActivity : AppCompatActivity() {
                     return@launch
                 }
                 updateProgress(30)
+
+                // Step 2.5: Check Post-Update (show "Thank you for updating" dialog)
+                val lastSeenVersion = TXAPreferences.getLastSeenVersionCode()
+                val currentVersion = TXADeviceInfo.getVersionCode()
+                TXALogger.appD(TAG, "Version Check: Current=$currentVersion, LastSeen=$lastSeenVersion")
+                
+                if (lastSeenVersion > 0 && currentVersion > lastSeenVersion) {
+                    // User just updated! Show changelog
+                    TXALogger.appI(TAG, "App was updated from $lastSeenVersion to $currentVersion. Showing PostUpdateDialog.")
+                    
+                    // Get changelog (use same logic as UpdateDialog)
+                    val changelogHtml = try {
+                        val lang = TXAPreferences.getCurrentLanguage()
+                        val changelogUrl = if (lang == "vi") {
+                            "https://raw.githubusercontent.com/TXAVLOG/PROJECT/main/CHANGELOG.html"
+                        } else {
+                            "https://raw.githubusercontent.com/TXAVLOG/PROJECT/main/CHANGELOG.html"
+                        }
+                        withContext(Dispatchers.IO) {
+                            java.net.URL(changelogUrl).readText()
+                        }
+                    } catch (e: Exception) {
+                        TXALogger.appW(TAG, "Failed to fetch changelog: ${e.message}")
+                        "<p>Có gì mới? Vui lòng kiểm tra trong phần Cài đặt > Giới thiệu.</p>"
+                    }
+                    
+                    postUpdateChangelog.value = changelogHtml
+                    
+                    suspendCancellableCoroutine<Unit> { continuation ->
+                        postUpdateContinuation = continuation
+                        showPostUpdateDialog.value = true
+                    }
+                } else if (lastSeenVersion == 0L) {
+                    // First install - just save current version
+                    TXAPreferences.setLastSeenVersionCode(currentVersion)
+                    TXALogger.appI(TAG, "First install detected, saving version $currentVersion")
+                }
 
                 // Step 3: Permissions (30-60%)
                 TXALogger.appD(TAG, "Step 3: Checking permissions...")

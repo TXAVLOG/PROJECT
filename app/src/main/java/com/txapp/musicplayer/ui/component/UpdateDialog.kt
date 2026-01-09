@@ -318,3 +318,142 @@ fun ErrorAndCopyUI(url: String, errorMessage: String) {
         }
     }
 }
+
+/**
+ * Post Update Dialog - Hiển thị sau khi cập nhật app thành công
+ * Giống UpdateDialog nhưng chỉ để cảm ơn và hiển thị changelog
+ */
+@Composable
+fun PostUpdateDialog(
+    appName: String,
+    versionName: String,
+    changelog: String,
+    onDismiss: () -> Unit
+) {
+    var showContent by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(100)
+        showContent = true
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        AnimatedVisibility(
+            visible = showContent,
+            enter = fadeIn(
+                animationSpec = androidx.compose.animation.core.tween(
+                    durationMillis = 300,
+                    easing = androidx.compose.animation.core.FastOutSlowInEasing
+                )
+            ) + slideInVertically(
+                animationSpec = androidx.compose.animation.core.tween(
+                    durationMillis = 300,
+                    easing = androidx.compose.animation.core.FastOutSlowInEasing
+                ),
+                initialOffsetY = { it / 4 }
+            ) + scaleIn(
+                animationSpec = androidx.compose.animation.core.tween(
+                    durationMillis = 300,
+                    easing = androidx.compose.animation.core.FastOutSlowInEasing
+                ),
+                initialScale = 0.9f
+            ),
+            exit = fadeOut(animationSpec = androidx.compose.animation.core.tween(200))
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(0.9f).wrapContentHeight(),
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp
+            ) {
+                Column(modifier = Modifier.padding(24.dp)) {
+                    // Header với icon celebrate
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            Icons.Default.Celebration,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "txamusic_post_update_title".txa(),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "txamusic_post_update_intro".txa().format(appName, versionName),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Changelog label
+                    Text(
+                        text = "txamusic_update_whats_new".txa(),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    // WebView Changelog
+                    Box(
+                        modifier = Modifier
+                            .height(250.dp)
+                            .fillMaxWidth()
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            .padding(4.dp)
+                    ) {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color.Transparent,
+                            border = androidx.compose.foundation.BorderStroke(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            )
+                        ) {
+                            AndroidView(
+                                modifier = Modifier.padding(8.dp),
+                                factory = { ctx ->
+                                    WebView(ctx).apply {
+                                        setBackgroundColor(0)
+                                        loadDataWithBaseURL(null, changelog, "text/html", "UTF-8", null)
+                                    }
+                                }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Close button
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Button(
+                            onClick = onDismiss,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text("txamusic_btn_close".txa())
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
