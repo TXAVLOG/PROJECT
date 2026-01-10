@@ -64,9 +64,13 @@ object TXATagWriter {
         cursorMatch?.use {
             if (it.moveToFirst()) {
                 val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
-                return ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
+                val uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
+                TXALogger.appI(TAG, "Resolved URI by name/size for $filePath: $uri")
+                return uri
             }
         }
+        
+        TXALogger.appW(TAG, "Could not resolve MediaStore URI for $filePath")
 
         return null
     }
@@ -106,8 +110,9 @@ object TXATagWriter {
                     return@withContext WriteResult.Failure
                 }
 
-                // 1. Create a temporary cache file
-                val cacheFile = File(context.cacheDir, originalFile.name)
+                // 1. Create a temporary cache file with a safe name but keeping the extension for JAudioTagger
+                val extension = originalFile.extension
+                val cacheFile = File(context.cacheDir, "edit_${filePath.hashCode()}.$extension")
                 originalFile.inputStream().use { input ->
                     cacheFile.outputStream().use { output ->
                         input.copyTo(output)
@@ -229,7 +234,8 @@ object TXATagWriter {
             val originalFile = File(filePath)
             if (!originalFile.exists()) return@withContext WriteResult.Failure
 
-            val cacheFile = File(context.cacheDir, originalFile.name)
+            val extension = originalFile.extension
+            val cacheFile = File(context.cacheDir, "lyrics_${filePath.hashCode()}.$extension")
             originalFile.inputStream().use { input ->
                 cacheFile.outputStream().use { output ->
                     input.copyTo(output)
@@ -293,7 +299,9 @@ object TXATagWriter {
     private fun copyFileWithRoot(source: File, destination: File): Boolean {
         val src = source.absolutePath.replace("'", "'\\''")
         val dest = destination.absolutePath.replace("'", "'\\''")
-        return TXASuHelper.runAsRoot("cp -f '$src' '$dest' && chmod 664 '$dest'")
+        // Use 'cat' redirect instead of 'cp' to avoid Protocol Error (EPROTO) on shared mounts/VirtIO-9P
+        // also try to chmod after, but ignore if it fails (FAT/shared partitions don't support chmod)
+        return TXASuHelper.runAsRoot("cat '$src' > '$dest' && (chmod 664 '$dest' || true)")
     }
 
     /**
