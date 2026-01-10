@@ -607,7 +607,7 @@ class MusicService : MediaLibraryService() {
         )
     }
 
-    private fun saveCurrentSongProgress() {
+    private fun saveCurrentSongProgress(blocking: Boolean = false) {
         if (!com.txapp.musicplayer.util.TXAPreferences.isRememberPlaybackPositionEnabled) return
         
         val currentItem = player.currentMediaItem ?: return
@@ -615,16 +615,26 @@ class MusicService : MediaLibraryService() {
         val pos = player.currentPosition
         val duration = player.duration
         
+        TXALogger.playbackI("MusicService", "Saving progress for $path: $pos ms")
+
         // Only save if:
         // 1. Position > 5s (don't save if just started)
         // 2. Position < Duration - 5s (don't save if finished or almost finished)
         if (pos > 5000 && (duration <= 0 || pos < duration - 5000)) {
             com.txapp.musicplayer.util.TXAPlaybackHistory.saveProgress(this, path, pos)
-            serviceScope.launch { com.txapp.musicplayer.util.TXAPlaybackHistory.persist(this@MusicService) }
+            if (blocking) {
+                runBlocking { com.txapp.musicplayer.util.TXAPlaybackHistory.persist(this@MusicService) }
+            } else {
+                serviceScope.launch { com.txapp.musicplayer.util.TXAPlaybackHistory.persist(this@MusicService) }
+            }
         } else if (duration > 0 && pos >= duration - 5000) {
             // Remove if finished
              com.txapp.musicplayer.util.TXAPlaybackHistory.clearPosition(path)
-             serviceScope.launch { com.txapp.musicplayer.util.TXAPlaybackHistory.persist(this@MusicService) }
+             if (blocking) {
+                 runBlocking { com.txapp.musicplayer.util.TXAPlaybackHistory.persist(this@MusicService) }
+             } else {
+                 serviceScope.launch { com.txapp.musicplayer.util.TXAPlaybackHistory.persist(this@MusicService) }
+             }
         }
     }
 
@@ -667,7 +677,8 @@ class MusicService : MediaLibraryService() {
             TXALogger.appE("MusicService", "Error unregistering receiver", e)
         }
         savePlaybackState()
-        saveCurrentSongProgress()
+        savePlaybackState()
+        saveCurrentSongProgress(blocking = true)
         mediaLibrarySession.release()
         player.release()
         super.onDestroy()
@@ -675,7 +686,7 @@ class MusicService : MediaLibraryService() {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         savePlaybackState()
-        saveCurrentSongProgress()
+        saveCurrentSongProgress(blocking = true)
         super.onTaskRemoved(rootIntent)
         player.stop()
         stopSelf()

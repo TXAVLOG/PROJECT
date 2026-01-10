@@ -147,6 +147,13 @@ object TXAPlaybackHistory {
     }
     
     /**
+     * Get all saved history as a Map for UI display
+     */
+    fun getHistoryMap(): Map<String, Long> {
+        return historyCache.toMap()
+    }
+
+    /**
      * Get count of saved songs
      */
     fun getSavedCount(): Int {
