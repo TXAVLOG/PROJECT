@@ -114,6 +114,9 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         private val _currentLyricsList = MutableStateFlow<List<LyricLine>>(emptyList())
         val currentLyricsList = _currentLyricsList.asStateFlow()
 
+        private val _duration = MutableStateFlow(1L)
+        val duration = _duration.asStateFlow()
+
         private val _isPlaying = MutableStateFlow(false)
         val isPlaying = _isPlaying.asStateFlow()
 
@@ -129,6 +132,10 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
 
         fun updatePlaybackState(isPlaying: Boolean) {
             _isPlaying.value = isPlaying
+        }
+
+        fun updateDuration(duration: Long) {
+            _duration.value = if (duration > 0) duration else 1L
         }
 
         fun updatePosition(position: Long) {
@@ -631,6 +638,7 @@ private fun FloatingLyricsBubble(
                 CollapsedBubble(
                     hasLyrics = lyricsList.isNotEmpty(),
                     currentPosition = position,
+                    isPlaying = isPlaying, // Pass isPlaying
                     onClick = { if (!isDragging) isExpanded = true },
                     // Pass empty lambdas for drag as they are handled by parent Box
                     onDragStart = {},
@@ -646,11 +654,17 @@ private fun FloatingLyricsBubble(
 fun CollapsedBubble(
     hasLyrics: Boolean,
     currentPosition: Long,
+    isPlaying: Boolean, // Added argument
     onClick: () -> Unit,
     onDragStart: () -> Unit,
     onDragEnd: () -> Unit,
     onDrag: (Float, Float) -> Unit
 ) {
+    val duration by FloatingLyricsService.duration.collectAsState()
+    val progress = remember(currentPosition, duration) {
+        if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f
+    }
+    
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.8f,
@@ -664,26 +678,42 @@ fun CollapsedBubble(
 
     Box(
         modifier = Modifier
-            .size(60.dp)
-            .shadow(8.dp, CircleShape)
-            .clip(CircleShape)
-            .background(Color(0xFF1F1F1F))
-            .border(2.dp, Color.White.copy(alpha = 0.3f), CircleShape)
+            .size(64.dp) // Increased slightly to accommodate progress
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.ic_launcher),
-            contentDescription = "App Logo",
-            modifier = Modifier.size(56.dp).clip(CircleShape),
-            alpha = if (hasLyrics) pulseAlpha else 1f
-        )
+        // Main Bubble Background
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .shadow(8.dp, CircleShape)
+                .clip(CircleShape)
+                .background(Color(0xFF1F1F1F))
+                .border(2.dp, Color.White.copy(alpha = 0.2f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_launcher),
+                contentDescription = "App Logo",
+                modifier = Modifier.size(52.dp).clip(CircleShape),
+                alpha = if (isPlaying) pulseAlpha else 1f // Pulse only when playing
+            )
+        }
         
+        // Circular Progress Indicator
+        CircularProgressIndicator(
+            progress = progress,
+            modifier = Modifier.size(60.dp),
+            color = if (isPlaying) Color(0xFF1DB954) else Color.Gray, // Green if playing, Grey if paused
+            strokeWidth = 3.dp,
+            trackColor = Color.Transparent
+        )
+
         // Timer overlay with formatted duration
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .offset(y = (-8).dp)
+                .offset(y = (-4).dp)
                 .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
                 .padding(horizontal = 4.dp, vertical = 1.dp)
         ) {
@@ -695,18 +725,16 @@ fun CollapsedBubble(
             )
         }
         
-        // Indicator dot when has lyrics
-        if (hasLyrics) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-8).dp, y = (8).dp)
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF22C55E))
-                    .border(1.dp, Color.White, CircleShape)
-            )
-        }
+        // Playback State Indicator (Replaces Lyrics Dot)
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(x = (-10).dp, y = (10).dp)
+                .size(12.dp)
+                .clip(CircleShape)
+                .background(if (isPlaying) Color(0xFF22C55E) else Color(0xFFFFB300)) // Green for Playing, Amber for Paused
+                .border(1.dp, Color.White, CircleShape)
+        )
     }
 }
 

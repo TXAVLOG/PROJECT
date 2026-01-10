@@ -727,6 +727,7 @@ class MusicService : MediaLibraryService() {
         
         FloatingLyricsService.updateSongInfo(title, albumArtUri)
         FloatingLyricsService.updatePlaybackState(player.isPlaying)
+        FloatingLyricsService.updateDuration(player.duration)
         
         serviceScope.launch(Dispatchers.IO) {
             val raw = LyricsUtil.getRawLyrics(path, title, artist)
