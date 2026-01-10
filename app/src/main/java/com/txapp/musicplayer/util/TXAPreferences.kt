@@ -197,6 +197,7 @@ object TXAPreferences {
         _artistGridSize.value = prefs.getInt(KEY_ARTIST_GRID_SIZE, DEF_ARTIST_GRID_SIZE)
         _lyricsScreenOn.value = prefs.getBoolean(KEY_LYRICS_SCREEN_ON, DEF_LYRICS_SCREEN_ON)
         _showLyricsInPlayer.value = prefs.getBoolean(KEY_SHOW_LYRICS_IN_PLAYER, DEF_SHOW_LYRICS_IN_PLAYER)
+        _rememberPlaybackPosition.value = prefs.getBoolean(KEY_REMEMBER_PLAYBACK_POSITION, DEF_REMEMBER_PLAYBACK_POSITION)
 
     }
 
@@ -474,4 +475,18 @@ object TXAPreferences {
             "en"
         }
     }
+
+    // ============== PLAYBACK HISTORY ==============
+    private const val KEY_REMEMBER_PLAYBACK_POSITION = "setting_remember_playback_pos"
+    private const val DEF_REMEMBER_PLAYBACK_POSITION = true
+
+    private val _rememberPlaybackPosition = MutableStateFlow(DEF_REMEMBER_PLAYBACK_POSITION)
+    val rememberPlaybackPosition: StateFlow<Boolean> = _rememberPlaybackPosition.asStateFlow()
+
+    var isRememberPlaybackPositionEnabled: Boolean
+        get() = _rememberPlaybackPosition.value
+        set(value) {
+            _rememberPlaybackPosition.value = value
+            prefs.edit().putBoolean(KEY_REMEMBER_PLAYBACK_POSITION, value).apply()
+        }
 }

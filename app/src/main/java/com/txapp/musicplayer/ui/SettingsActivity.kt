@@ -48,6 +48,8 @@ import com.txapp.musicplayer.ui.component.TXAIcons
 import com.txapp.musicplayer.util.*
 import com.txapp.musicplayer.ui.component.EqualizerScreen
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import java.io.File
@@ -537,6 +539,7 @@ fun AudioSettings(
     var showCrossfadeDialog by remember { mutableStateOf(false) }
     var showAudioFadeDialog by remember { mutableStateOf(false) }
     var showPlaybackSpeedDialog by remember { mutableStateOf(false) }
+    var showClearHistoryDialog by remember { mutableStateOf(false) }
     val equalizerEnabled by remember { mutableStateOf(TXAPreferences.isEqualizerEnabled) }
 
         val hasBluetooth = remember { TXADeviceInfo.hasBluetooth() }
@@ -655,6 +658,65 @@ fun AudioSettings(
                 )
             }
         }
+
+        // 8. Remember Playback Position
+        item {
+            val rememberPosition by TXAPreferences.rememberPlaybackPosition.collectAsState()
+            
+            // Refresh count
+            var savedCount by remember { mutableStateOf(0) }
+            val scope = rememberCoroutineScope()
+            LaunchedEffect(Unit) {
+                withContext(Dispatchers.IO) {
+                    com.txapp.musicplayer.util.TXAPlaybackHistory.load(context)
+                    savedCount = com.txapp.musicplayer.util.TXAPlaybackHistory.getSavedCount()
+                }
+            }
+
+            SettingsSwitchItem(
+                icon = Icons.Outlined.Restore,
+                title = "txamusic_settings_remember_pos".txa(),
+                checked = rememberPosition,
+                onCheckedChange = { TXAPreferences.isRememberPlaybackPositionEnabled = it }
+            )
+            
+            if (rememberPosition && savedCount > 0) {
+                 SettingsToggleCard(
+                     icon = Icons.Outlined.Delete, // Changed from DeleteHistory
+                     title = "txamusic_settings_clear_history".txa(),
+                     subtitle = "txamusic_settings_history_count".txa(savedCount),
+                     onClick = { showClearHistoryDialog = true }
+                 )
+            }
+        }
+    }
+    
+    if (showClearHistoryDialog) {
+        val scope = rememberCoroutineScope()
+        AlertDialog(
+            onDismissRequest = { showClearHistoryDialog = false },
+            title = { Text("txamusic_settings_clear_history".txa()) },
+            text = { Text("txamusic_clear_history_confirm".txa()) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        scope.launch {
+                            com.txapp.musicplayer.util.TXAPlaybackHistory.clearAll(context)
+                            TXAToast.success(context, "txamusic_history_deleted".txa())
+                        }
+                        showClearHistoryDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("txamusic_action_delete".txa())
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showClearHistoryDialog = false }) {
+                    Text("txamusic_action_cancel".txa())
+                }
+            }
+        )
     }
     
     if (showCrossfadeDialog) {
