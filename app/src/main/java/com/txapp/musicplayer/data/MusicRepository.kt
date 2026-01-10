@@ -599,7 +599,8 @@ class MusicRepository(
                     composer = composer,
                     year = year.toString(),
                     trackNumber = trackNumber.toString(),
-                    artwork = artwork
+                    artwork = artwork,
+                    albumId = song.albumId
                 )
             )
 

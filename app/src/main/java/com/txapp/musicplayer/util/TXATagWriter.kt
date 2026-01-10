@@ -1,17 +1,23 @@
 package com.txapp.musicplayer.util
 
 import android.app.PendingIntent
+import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
+import android.graphics.Bitmap
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import androidx.core.net.toUri
 import com.txapp.musicplayer.model.SongTagInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
+import org.jaudiotagger.tag.images.AndroidArtwork
 import java.io.File
+import java.io.IOException
 
 /**
  * Utility to write metadata directly to audio files using JAudioTagger
@@ -146,6 +152,13 @@ object TXATagWriter {
             }
         }
 
+        // If artwork was provided, also update the MediaStore album art cache
+        if (tagInfo.artwork != null && tagInfo.albumId > 0) {
+            updateAlbumArtCache(context, tagInfo.albumId, tagInfo.artwork)
+        } else if (tagInfo.deleteArtwork && tagInfo.albumId > 0) {
+            deleteAlbumArt(context, tagInfo.albumId)
+        }
+        
         scanFiles(context, tagInfo.filePaths)
         return@withContext WriteResult.Success
     }
@@ -234,6 +247,55 @@ object TXATagWriter {
             null
         ) { path, uri ->
             TXALogger.appI(TAG, "Scanned $path: $uri")
+        }
+    }
+    
+    /**
+     * Update the MediaStore album art cache for immediate UI refresh.
+     * This is CRITICAL for lists/playlists to show the new artwork.
+     */
+    private fun updateAlbumArtCache(context: Context, albumId: Long, artwork: Bitmap) {
+        try {
+            // 1. Create temp file for artwork
+            val artDir = File(context.cacheDir, "albumthumbs")
+            if (!artDir.exists()) artDir.mkdirs()
+            val artFile = File(artDir, "${System.currentTimeMillis()}.jpg")
+            artFile.outputStream().use { out ->
+                artwork.compress(Bitmap.CompressFormat.JPEG, 95, out)
+            }
+            
+            // 2. Delete old art from MediaStore
+            val artworkUri = "content://media/external/audio/albumart".toUri()
+            context.contentResolver.delete(ContentUris.withAppendedId(artworkUri, albumId), null, null)
+            
+            // 3. Insert new art into MediaStore
+            val values = ContentValues().apply {
+                put("album_id", albumId)
+                put("_data", artFile.absolutePath)
+            }
+            try {
+                context.contentResolver.insert(artworkUri, values)
+                context.contentResolver.notifyChange(artworkUri, null)
+                TXALogger.appI(TAG, "Updated album art cache for albumId: $albumId")
+            } catch (e: Exception) {
+                TXALogger.appE(TAG, "Failed to insert album art into MediaStore", e)
+            }
+        } catch (e: Exception) {
+            TXALogger.appE(TAG, "Failed to update album art cache", e)
+        }
+    }
+    
+    /**
+     * Delete album art from MediaStore cache.
+     */
+    private fun deleteAlbumArt(context: Context, albumId: Long) {
+        try {
+            val artworkUri = "content://media/external/audio/albumart".toUri()
+            context.contentResolver.delete(ContentUris.withAppendedId(artworkUri, albumId), null, null)
+            context.contentResolver.notifyChange(artworkUri, null)
+            TXALogger.appI(TAG, "Deleted album art cache for albumId: $albumId")
+        } catch (e: Exception) {
+            TXALogger.appE(TAG, "Failed to delete album art from cache", e)
         }
     }
 }

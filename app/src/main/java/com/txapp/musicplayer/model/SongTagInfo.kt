@@ -16,5 +16,6 @@ data class SongTagInfo(
     val year: String? = null,
     val trackNumber: String? = null,
     val artwork: Bitmap? = null,
-    val deleteArtwork: Boolean = false
+    val deleteArtwork: Boolean = false,
+    val albumId: Long = 0
 )
