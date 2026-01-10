@@ -478,5 +478,7 @@
   "txamusic_settings_clear_history": "Clear Playback History",
   "txamusic_settings_history_count": "Saved progress for %d songs",
   "txamusic_history_deleted": "Playback history cleared",
-  "txamusic_clear_history_confirm": "Are you sure you want to clear saved playback positions for all songs?"
+  "txamusic_clear_history_confirm": "Are you sure you want to clear saved playback positions for all songs?",
+  "txamusic_settings_remember_pos_desc": "Resume songs from where you left off.",
+  "txamusic_history_dialog_title": "Playback History"
 }
