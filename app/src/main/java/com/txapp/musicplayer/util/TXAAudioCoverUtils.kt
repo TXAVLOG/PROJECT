@@ -16,6 +16,30 @@ object TXAAudioCoverUtils {
         "cover.webp", "album.webp", "folder.webp"
     )
 
+    fun getArtwork(context: android.content.Context, uri: android.net.Uri): ByteArray? {
+        if (uri.scheme == "file") {
+            return getArtwork(uri.path ?: "")
+        }
+        
+        // Resolve Content URI to real path
+        var path: String? = null
+        try {
+            val cursor = context.contentResolver.query(uri, arrayOf(android.provider.MediaStore.Audio.Media.DATA), null, null, null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    val idx = it.getColumnIndex(android.provider.MediaStore.Audio.Media.DATA)
+                    if (idx != -1) {
+                        path = it.getString(idx)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to resolve URI: $uri", e)
+        }
+        
+        return if (path != null) getArtwork(path) else null
+    }
+
     fun getArtwork(path: String): ByteArray? {
         // Method 1: use embedded high resolution album art
         try {
@@ -33,7 +57,7 @@ object TXAAudioCoverUtils {
             }
         } catch (e: Exception) {
             // Ignore read errors, proceed to fallback
-            Log.w(TAG, "Failed to read embedded artwork: ${e.message}")
+            Log.w(TAG, "Failed to read embedded artwork from $path: ${e.message}")
         }
 
         // Method 2: look for album art in external files

@@ -128,16 +128,12 @@ fun AlbumCoverPager(
                     key1 = item.mediaUri,
                     key2 = TXAImageUtils.artworkSignature
                 ) {
-                    val path = Uri.parse(item.mediaUri).path
-                    if (path != null && File(path).exists()) {
-                         // Background load from file
-                         val bytes = withContext(Dispatchers.IO) {
-                             TXAAudioCoverUtils.getArtwork(path)
-                         }
-                         value = bytes ?: albumArtUri
-                    } else {
-                        value = albumArtUri
+                    val uri = Uri.parse(item.mediaUri)
+                    // Background load from file using URI resolution
+                    val bytes = withContext(Dispatchers.IO) {
+                        TXAAudioCoverUtils.getArtwork(context, uri)
                     }
+                    value = bytes ?: albumArtUri
                 }
                 
                 Box(
@@ -214,15 +210,11 @@ fun AlbumCoverWithTransform(
         key1 = mediaUri,
         key2 = TXAImageUtils.artworkSignature
     ) {
-        val path = Uri.parse(mediaUri).path
-        if (path != null && File(path).exists()) {
-             val bytes = withContext(Dispatchers.IO) {
-                 TXAAudioCoverUtils.getArtwork(path)
-             }
-             value = bytes ?: albumArtUri
-        } else {
-            value = albumArtUri
+        val uri = Uri.parse(mediaUri)
+        val bytes = withContext(Dispatchers.IO) {
+             TXAAudioCoverUtils.getArtwork(context, uri)
         }
+        value = bytes ?: albumArtUri
     }
     
     Box(
