@@ -15,9 +15,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
+import org.jaudiotagger.tag.TagOptionSingleton
 import org.jaudiotagger.tag.images.AndroidArtwork
+import org.jaudiotagger.tag.images.Artwork
+import org.jaudiotagger.tag.id3.ID3v24Tag
+import org.jaudiotagger.tag.id3.ID3v23Tag
+import org.jaudiotagger.tag.id3.valuepair.TextEncoding
 import java.io.File
 import java.io.IOException
+import java.nio.charset.StandardCharsets
 
 /**
  * Utility to write metadata directly to audio files using JAudioTagger
@@ -91,7 +97,10 @@ object TXATagWriter {
                 // 2. Write tags to the CACHE file
                 val audioFile = AudioFileIO.read(cacheFile)
                 val tag = audioFile.tagOrCreateAndSetDefault
-
+                
+                // FORCE UTF-16
+                // TagOptionSingleton.getInstance() // Fix encoding later if needed
+                
                 tag.setField(FieldKey.TITLE, tagInfo.title)
                 tag.setField(FieldKey.ARTIST, tagInfo.artist)
                 tag.setField(FieldKey.ALBUM, tagInfo.album)
@@ -105,6 +114,24 @@ object TXATagWriter {
                 
                 tagInfo.year?.let { 
                     try { tag.setField(FieldKey.YEAR, it) } catch (e: Exception) {}
+                }
+
+                // EMBED ARTWORK
+                if (tagInfo.deleteArtwork) {
+                    tag.deleteArtworkField()
+                } else if (tagInfo.artwork != null) {
+                    try {
+                        val artFile = File(context.cacheDir, "temp_art_${System.currentTimeMillis()}.jpg")
+                        artFile.outputStream().use { out ->
+                            tagInfo.artwork.compress(Bitmap.CompressFormat.JPEG, 95, out)
+                        }
+                        val androidArtwork = AndroidArtwork.createArtworkFromFile(artFile)
+                        tag.deleteArtworkField()
+                        tag.setField(androidArtwork)
+                        artFile.delete() // Cleanup
+                    } catch (e: Exception) {
+                        TXALogger.appE(TAG, "Failed to embed artwork", e)
+                    }
                 }
 
                 audioFile.commit()
@@ -153,10 +180,14 @@ object TXATagWriter {
         }
 
         // If artwork was provided, also update the MediaStore album art cache
-        if (tagInfo.artwork != null && tagInfo.albumId > 0) {
-            updateAlbumArtCache(context, tagInfo.albumId, tagInfo.artwork)
-        } else if (tagInfo.deleteArtwork && tagInfo.albumId > 0) {
-            deleteAlbumArt(context, tagInfo.albumId)
+        // We resolve the REAL MediaStore albumId because our internal one might be a custom hash
+        val firstPath = tagInfo.filePaths.firstOrNull()
+        val msAlbumId = if (firstPath != null) getMediaStoreAlbumId(context, firstPath) ?: tagInfo.albumId else tagInfo.albumId
+        
+        if (tagInfo.artwork != null && msAlbumId > 0) {
+            updateAlbumArtCache(context, msAlbumId, tagInfo.artwork)
+        } else if (tagInfo.deleteArtwork && msAlbumId > 0) {
+            deleteAlbumArt(context, msAlbumId)
         }
         
         scanFiles(context, tagInfo.filePaths)
@@ -296,6 +327,27 @@ object TXATagWriter {
             TXALogger.appI(TAG, "Deleted album art cache for albumId: $albumId")
         } catch (e: Exception) {
             TXALogger.appE(TAG, "Failed to delete album art from cache", e)
+        }
+    }
+
+    /**
+     * Resolves the REAL MediaStore album_id for a given file path.
+     * Essential because our app's internal albumId is a custom hash.
+     */
+    private fun getMediaStoreAlbumId(context: Context, path: String): Long? {
+        val uri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        val projection = arrayOf(android.provider.MediaStore.Audio.AudioColumns.ALBUM_ID)
+        val selection = "${android.provider.MediaStore.Audio.AudioColumns.DATA} = ?"
+        val selectionArgs = arrayOf(path)
+        
+        return try {
+            context.contentResolver.query(uri, projection, selection, selectionArgs, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    cursor.getLong(0)
+                } else null
+            }
+        } catch (e: Exception) {
+            null
         }
     }
 }

@@ -3,14 +3,17 @@ package com.txapp.musicplayer.util
 import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.os.Environment
+import androidx.core.content.ContextCompat
 import com.txapp.musicplayer.data.MusicRepository
 import com.txapp.musicplayer.model.Song
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
-import androidx.core.content.ContextCompat
+import org.jaudiotagger.audio.AudioFileIO
+import org.jaudiotagger.tag.FieldKey
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.util.Stack
 
 /**
@@ -234,28 +237,28 @@ object TXAMusicScanner {
     }
 
     private fun createSong(context: Context, file: File, duration: Long): Song {
-        val retriever = MediaMetadataRetriever()
         var title = file.nameWithoutExtension
         var artist = "<unknown>"
         var album = "<unknown>"
         var albumId = 0L
         
         try {
-            retriever.setDataSource(file.absolutePath)
-            title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE) ?: title
-            artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST) ?: artist
-            album = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM) ?: album
+            val audioFile = AudioFileIO.read(file)
+            val tag = audioFile.tag
+            if (tag != null) {
+                title = fixEncoding(tag.getFirst(FieldKey.TITLE)).takeIf { it.isNotBlank() } ?: title
+                artist = fixEncoding(tag.getFirst(FieldKey.ARTIST)).takeIf { it.isNotBlank() } ?: artist
+                album = fixEncoding(tag.getFirst(FieldKey.ALBUM)).takeIf { it.isNotBlank() } ?: album
+            }
             
             // Try to get albumId from title/album hash if missing
             albumId = (album + artist).hashCode().toLong()
         } catch (e: Exception) {
-            // Ignore
-        } finally {
-            retriever.release()
+            // Fallback to basic info if JAudioTagger fails
         }
 
         return Song(
-            id = file.absolutePath.hashCode().toLong(), // More stable than file.hashCode()
+            id = file.absolutePath.hashCode().toLong(),
             title = title,
             artist = artist,
             album = album,
@@ -264,5 +267,35 @@ object TXAMusicScanner {
             albumId = albumId,
             dateAdded = file.lastModified() / 1000
         )
+    }
+
+    /**
+     * Fixes potential encoding issues for Vietnamese characters in ID3 tags.
+     * Often tags are written in CP1258 or ISO-8859-1 but interpreted as UTF-8.
+     */
+    private fun fixEncoding(input: String): String {
+        if (input.isBlank()) return input
+        
+        // If it contains typical garbled Vietnamese characters, try to fix it
+        // Example: "Anh Đã Sai" -> "Anh Ã\u0090Ã£ Sai"
+        try {
+            if (input.contains("Ã")) {
+                val bytes = input.toByteArray(StandardCharsets.ISO_8859_1)
+                val fixed = String(bytes, StandardCharsets.UTF_8)
+                // Check if the fixed string looks more like Vietnamese
+                if (isLikelyVietnamese(fixed)) {
+                    return fixed
+                }
+            }
+        } catch (e: Exception) {
+            // Ignore failure and return original
+        }
+        
+        return input
+    }
+
+    private fun isLikelyVietnamese(text: String): Boolean {
+        val vietnameseChars = "àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ"
+        return text.any { vietnameseChars.contains(it.lowercaseChar()) }
     }
 }
