@@ -94,9 +94,10 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
 
         fun startService(context: Context) {
             if (!Settings.canDrawOverlays(context)) {
-                TXALogger.w("FloatingLyricsService", "Cannot start service: overlay permission not granted")
+                TXALogger.floatingE("FloatingLyricsService", "Cannot start service: overlay permission not granted")
                 return
             }
+            TXALogger.floatingI("FloatingLyricsService", "Starting service via startForegroundService")
             val intent = Intent(context, FloatingLyricsService::class.java)
             context.startForegroundService(intent)
         }
@@ -130,8 +131,9 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         }
         try {
             floatingView?.let { windowManager.updateViewLayout(it, layoutParams) }
+            TXALogger.floatingI("FloatingLyricsService", "Position updated: x=$posX, y=$posY")
         } catch (e: Exception) {
-            TXALogger.e("FloatingLyricsService", "Failed to update layout", e)
+            TXALogger.floatingE("FloatingLyricsService", "Failed to update layout at x=$posX, y=$posY", e)
         }
     }
     
@@ -141,8 +143,9 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         layoutParams?.x = posX
         try {
             floatingView?.let { windowManager.updateViewLayout(it, layoutParams) }
+            TXALogger.floatingI("FloatingLyricsService", "Snapped to edge: x=$posX")
         } catch (e: Exception) {
-            TXALogger.e("FloatingLyricsService", "Failed to snap layout", e)
+            TXALogger.floatingE("FloatingLyricsService", "Failed to snap layout at x=$posX", e)
         }
     }
 
@@ -165,7 +168,7 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         
         createNotificationChannel()
         _isServiceRunning.value = true
-        TXALogger.i("FloatingLyricsService", "Service created")
+        TXALogger.floatingI("FloatingLyricsService", "Service onCreate")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -176,10 +179,12 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         }
         
         if (!Settings.canDrawOverlays(this)) {
-            TXALogger.w("FloatingLyricsService", "Overlay permission not granted, stopping service")
+            TXALogger.floatingE("FloatingLyricsService", "Overlay permission not granted in onStartCommand, stopping")
             stopSelf()
             return START_NOT_STICKY
         }
+
+        TXALogger.floatingI("FloatingLyricsService", "onStartCommand: Starting foreground and showing view")
 
         startForeground(NOTIFICATION_ID, createNotification())
         lifecycleRegistry.currentState = Lifecycle.State.STARTED
@@ -196,7 +201,7 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         removeFloatingView()
         serviceScope.cancel()
         _isServiceRunning.value = false
-        TXALogger.i("FloatingLyricsService", "Service destroyed")
+        TXALogger.floatingI("FloatingLyricsService", "Service onDestroy - Floating view cleaned up")
         super.onDestroy()
     }
 
@@ -273,9 +278,9 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
 
         try {
             windowManager.addView(floatingView, layoutParams)
-            TXALogger.i("FloatingLyricsService", "Floating bubble added")
+            TXALogger.floatingI("FloatingLyricsService", "Floating bubble added to WindowManager at x=$posX, y=$posY")
         } catch (e: Exception) {
-            TXALogger.e("FloatingLyricsService", "Failed to add floating view", e)
+            TXALogger.floatingE("FloatingLyricsService", "Failed to add floating view to WindowManager", e)
         }
     }
 
@@ -314,6 +319,17 @@ private fun FloatingLyricsBubble(
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "bubbleSize"
     )
+
+    // Logging state changes
+    LaunchedEffect(isExpanded) {
+        TXALogger.floatingI("FloatingLyricsBubble", "State changed: isExpanded=$isExpanded")
+    }
+
+    LaunchedEffect(currentLyric) {
+        if (currentLyric.isNotBlank()) {
+            TXALogger.floatingI("FloatingLyricsBubble", "Lyrics updated: ${currentLyric.take(30)}...")
+        }
+    }
 
     Box(
         modifier = Modifier

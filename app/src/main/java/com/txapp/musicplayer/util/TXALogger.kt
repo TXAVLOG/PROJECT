@@ -16,7 +16,7 @@ import java.util.Locale
 object TXALogger {
     
     enum class LogType {
-        APP, CRASH, API, LANG, RESOLVE, DOWNLOAD, MISSING_KEY, ALBUMART, HOLIDAY, PLAYBACK, FALLBACK_KEY
+        APP, CRASH, API, LANG, RESOLVE, DOWNLOAD, MISSING_KEY, ALBUMART, HOLIDAY, PLAYBACK, FALLBACK_KEY, FLOATING
     }
     
     private const val MAX_FILE_SIZE = 1024 * 1024 // 1MB
@@ -288,6 +288,16 @@ object TXALogger {
     fun playbackE(tag: String, message: String, throwable: Throwable? = null) {
         writeLog(LogType.PLAYBACK, "E", tag, message, throwable)
         writeToSeparateFile("txa_playback", "[E] $tag: $message")
+    }
+
+    // FLOATING logs - writes to separate file for floating lyrics tracking
+    fun floatingI(tag: String, message: String) {
+        writeLog(LogType.FLOATING, "I", tag, message)
+        writeToSeparateFile("txa_floating", "[I] $tag: $message")
+    }
+    fun floatingE(tag: String, message: String, throwable: Throwable? = null) {
+        writeLog(LogType.FLOATING, "E", tag, message, throwable)
+        writeToSeparateFile("txa_floating", "[E] $tag: $message")
     }
 
     // ERROR API logs - writes to separate file for error report api tracking
