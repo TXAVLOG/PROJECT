@@ -175,23 +175,7 @@ class SongsFragment : Fragment() {
 
     private fun playSong(song: Song) {
         val mainActivity = activity as? MainActivity ?: return
-        val controller = mainActivity.getPlayerController()
-
-        if (controller != null && controller.isPlaying) {
-            com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                .setTitle("txamusic_play_options_title".txa())
-                .setMessage("txamusic_play_options_desc".txa())
-                .setPositiveButton("txamusic_play_now".txa()) { _, _ ->
-                    mainActivity.playSongs(allSongs, allSongs.indexOf(song))
-                }
-                .setNegativeButton("txamusic_add_to_queue".txa()) { _, _ ->
-                    mainActivity.addSongsToQueue(listOf(song))
-                }
-                .setNeutralButton("txamusic_btn_cancel".txa(), null)
-                .show()
-        } else {
-            mainActivity.playSongs(allSongs, allSongs.indexOf(song))
-        }
+        mainActivity.checkAndPlayOptions(allSongs, allSongs.indexOf(song))
     }
 }
 

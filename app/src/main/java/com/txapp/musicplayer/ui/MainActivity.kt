@@ -1314,6 +1314,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun checkAndPlayOptions(songs: List<com.txapp.musicplayer.model.Song>, startIndex: Int) {
+        val controller = mediaController
+        if (controller != null && controller.isPlaying) {
+             com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("txamusic_play_options_title".txa())
+                .setMessage("txamusic_play_options_desc".txa())
+                .setPositiveButton("txamusic_play_now".txa()) { _, _ ->
+                    playSongs(songs, startIndex)
+                }
+                .setNegativeButton("txamusic_add_to_queue".txa()) { _, _ ->
+                    if (startIndex in songs.indices) {
+                        addSongsToQueue(listOf(songs[startIndex]))
+                        TXAToast.success(this, "txamusic_added_to_queue".txa())
+                    }
+                }
+                .setNeutralButton("txamusic_btn_cancel".txa(), null)
+                .show()
+        } else {
+            playSongs(songs, startIndex)
+        }
+    }
 
     fun playSongs(songs: List<com.txapp.musicplayer.model.Song>, startIndex: Int = 0, shuffle: Boolean = false) {
         val controller = mediaController ?: return

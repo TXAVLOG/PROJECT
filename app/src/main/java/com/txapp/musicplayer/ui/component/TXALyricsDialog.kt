@@ -138,6 +138,16 @@ fun LyricsDialog(
         }
     }
     
+    var rawLyrics by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(songPath) {
+        if (lyrics.isEmpty()) {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                rawLyrics = LyricsUtil.getRawLyrics(songPath)
+            }
+        }
+    }
+    
     Dialog(
         onDismissRequest = handleDismiss,
         properties = DialogProperties(
@@ -291,6 +301,8 @@ fun LyricsDialog(
                                             isSaving = false
                                             TXAToast.success(context, "txamusic_lyrics_saved".txa())
                                             isEditing = false
+                                            // Refresh raw lyrics
+                                            rawLyrics = editContent
                                             onLyricsUpdated()
                                         }
                                         is LyricsUtil.SaveResult.PermissionRequired -> {
@@ -328,7 +340,7 @@ fun LyricsDialog(
                                 Text("txamusic_btn_save".txa())
                             }
                         }
-                    } else if (lyrics.isEmpty()) {
+                    } else if (lyrics.isEmpty() && rawLyrics.isNullOrBlank()) {
                         // No lyrics found - show empty state with edit button
                         Box(
                             modifier = Modifier
@@ -392,6 +404,28 @@ fun LyricsDialog(
                                         Text("txamusic_add_lyrics".txa())
                                     }
                                 }
+                            }
+                        }
+                    } else if (lyrics.isEmpty() && !rawLyrics.isNullOrBlank()) {
+                        // Display Raw Lyrics (Normal Mode)
+                         LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .weight(1f),
+                            contentPadding = PaddingValues(vertical = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            item {
+                                Text(
+                                    text = rawLyrics!!,
+                                    fontSize = 18.sp,
+                                    color = Color.White.copy(alpha = 0.9f),
+                                    textAlign = TextAlign.Center,
+                                    lineHeight = 32.sp,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 32.dp)
+                                )
                             }
                         }
                     } else {

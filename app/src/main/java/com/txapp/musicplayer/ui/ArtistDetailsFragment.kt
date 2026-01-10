@@ -77,7 +77,7 @@ class ArtistDetailsFragment : Fragment() {
 
     private fun playSong(song: Song, list: List<Song>) {
         val index = list.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
-        playSongs(list, index)
+        (activity as? MainActivity)?.checkAndPlayOptions(list, index)
     }
 
     private fun playSongs(list: List<Song>, index: Int) {
