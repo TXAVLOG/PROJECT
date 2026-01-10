@@ -1204,7 +1204,14 @@ fun NowPlayingSettings() {
                     } else {
                         Switch(
                             checked = showLyricsInPlayer,
-                            onCheckedChange = { TXAPreferences.setShowLyricsInPlayer(it) }
+                            onCheckedChange = { enabled ->
+                                TXAPreferences.setShowLyricsInPlayer(enabled)
+                                if (enabled) {
+                                    com.txapp.musicplayer.service.FloatingLyricsService.startService(context)
+                                } else {
+                                    com.txapp.musicplayer.service.FloatingLyricsService.stopService(context)
+                                }
+                            }
                         )
                     }
                 }
