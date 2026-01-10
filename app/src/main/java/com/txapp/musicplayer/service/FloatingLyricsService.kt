@@ -19,6 +19,7 @@ import android.widget.FrameLayout
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
@@ -60,6 +61,8 @@ import com.txapp.musicplayer.ui.component.LyricLine
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -345,9 +348,12 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         }
 
         try {
+            TXALogger.floatingI("FloatingLyricsService", "Attempting to add view to WindowManager...")
+            if (floatingView?.parent != null) {
+                windowManager.removeView(floatingView)
+            }
             windowManager.addView(floatingView, layoutParams)
-            TXALogger.floatingI("FloatingLyricsService", "Floating bubble successfully added to WindowManager.")
-            TXALogger.floatingI("FloatingLyricsService", "Initial position: x=$posX, y=$posY, screen: ${screenWidth}x${screenHeight}")
+            TXALogger.floatingI("FloatingLyricsService", "SUCCESS: Floating bubble added. Visible at $posX, $posY")
         } catch (e: Exception) {
             TXALogger.floatingE("FloatingLyricsService", "CRITICAL: Failed to add floating view to WindowManager", e)
         }
@@ -543,11 +549,11 @@ private fun CollapsedBubble(
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = Icons.Outlined.MusicNote,
-            contentDescription = "Lyrics",
-            tint = Color.White.copy(alpha = if (hasLyrics) pulseAlpha else 0.7f),
-            modifier = Modifier.size(28.dp)
+        Image(
+            painter = painterResource(id = R.drawable.ic_launcher),
+            contentDescription = "App Logo",
+            modifier = Modifier.size(56.dp).clip(CircleShape),
+            alpha = if (hasLyrics) pulseAlpha else 1f
         )
         
         // Indicator dot when has lyrics
@@ -555,11 +561,12 @@ private fun CollapsedBubble(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = (-4).dp, y = 4.dp)
-                    .size(12.dp)
+                    .offset(x = 0.dp, y = 0.dp)
+                    .size(14.dp)
                     .shadow(2.dp, CircleShape)
                     .clip(CircleShape)
                     .background(Color(0xFF22C55E)) // Green
+                    .border(1.dp, Color.White, CircleShape)
             )
         }
     }
