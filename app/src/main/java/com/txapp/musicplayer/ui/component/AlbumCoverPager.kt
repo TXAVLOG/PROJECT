@@ -27,6 +27,7 @@ import coil.request.ImageRequest
 import com.txapp.musicplayer.transform.PagerTransformStyle
 import com.txapp.musicplayer.transform.pagerTransform
 import com.txapp.musicplayer.util.TXAPreferences
+import com.txapp.musicplayer.util.TXAImageUtils
 import kotlin.math.abs
 
 /**
@@ -136,6 +137,7 @@ fun AlbumCoverPager(
                                 .data(albumArtUri)
                                 .size(600)
                                 .crossfade(true)
+                                .setParameter("sig", TXAImageUtils.artworkSignature)
                                 .build(),
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
@@ -212,6 +214,7 @@ fun AlbumCoverWithTransform(
                     .data(albumArtUri)
                     .size(600)
                     .crossfade(true)
+                    .setParameter("sig", TXAImageUtils.artworkSignature)
                     .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,

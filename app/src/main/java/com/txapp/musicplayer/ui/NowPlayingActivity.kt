@@ -622,6 +622,9 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
         when (result) {
             is com.txapp.musicplayer.util.TXATagWriter.WriteResult.Success -> {
                 TXAToast.show(this@NowPlayingActivity, "txamusic_tag_saved".txa())
+                // Invalidate artwork cache to force reload
+                com.txapp.musicplayer.util.TXAImageUtils.invalidateArtworkCache()
+                
                 // Update UI state immediately
                 uiState.value = uiState.value.copy(
                     title = data.title,

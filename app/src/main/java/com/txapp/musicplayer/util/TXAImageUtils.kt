@@ -14,6 +14,14 @@ import java.io.InputStream
 object TXAImageUtils {
     private const val TAG = "TXAImageUtils"
     
+    // Global signature for forcing artwork refresh
+    private val _artworkSignature = androidx.compose.runtime.mutableLongStateOf(System.currentTimeMillis())
+    val artworkSignature: Long get() = _artworkSignature.longValue
+    
+    fun invalidateArtworkCache() {
+        _artworkSignature.longValue = System.currentTimeMillis()
+    }
+    
     // Fixed size for Artist logos and Album Art for optimal display
     const val FIXED_SIZE = 1000
     
