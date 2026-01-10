@@ -28,6 +28,10 @@ import com.txapp.musicplayer.transform.PagerTransformStyle
 import com.txapp.musicplayer.transform.pagerTransform
 import com.txapp.musicplayer.util.TXAPreferences
 import com.txapp.musicplayer.util.TXAImageUtils
+import com.txapp.musicplayer.util.TXAAudioCoverUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 import kotlin.math.abs
 
 /**
@@ -118,6 +122,24 @@ fun AlbumCoverPager(
             if (item != null) {
                 val albumArtUri = getAlbumArtUriForItem(item)
                 
+                // Load artwork asynchronously: prefer raw bytes from file (for instant updates), fallback to system URI
+                val artworkData by produceState<Any?>(
+                    initialValue = albumArtUri,
+                    key1 = item.mediaUri,
+                    key2 = TXAImageUtils.artworkSignature
+                ) {
+                    val path = Uri.parse(item.mediaUri).path
+                    if (path != null && File(path).exists()) {
+                         // Background load from file
+                         val bytes = withContext(Dispatchers.IO) {
+                             TXAAudioCoverUtils.getArtwork(path)
+                         }
+                         value = bytes ?: albumArtUri
+                    } else {
+                        value = albumArtUri
+                    }
+                }
+                
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -134,7 +156,7 @@ fun AlbumCoverPager(
                     ) {
                         SubcomposeAsyncImage(
                             model = ImageRequest.Builder(context)
-                                .data(albumArtUri)
+                                .data(artworkData)
                                 .size(600)
                                 .crossfade(true)
                                 .setParameter("sig", TXAImageUtils.artworkSignature)
@@ -177,13 +199,29 @@ fun AlbumCoverWithTransform(
     val albumArtUri = remember(albumId, mediaUri, webArtUrl) {
         when {
             webArtUrl.isNotEmpty() -> webArtUrl
-            // Prioritize actual file/content URI over system ID
-            mediaUri.isNotEmpty() -> Uri.parse(mediaUri)
             albumId != -1L -> ContentUris.withAppendedId(
                 Uri.parse("content://media/external/audio/albumart"),
                 albumId
             )
+            mediaUri.isNotEmpty() -> Uri.parse(mediaUri)
             else -> ""
+        }
+    }
+    
+    // Load artwork asynchronously: prefer raw bytes from file
+    val artworkData by produceState<Any?>(
+        initialValue = albumArtUri,
+        key1 = mediaUri,
+        key2 = TXAImageUtils.artworkSignature
+    ) {
+        val path = Uri.parse(mediaUri).path
+        if (path != null && File(path).exists()) {
+             val bytes = withContext(Dispatchers.IO) {
+                 TXAAudioCoverUtils.getArtwork(path)
+             }
+             value = bytes ?: albumArtUri
+        } else {
+            value = albumArtUri
         }
     }
     
@@ -212,7 +250,7 @@ fun AlbumCoverWithTransform(
         ) {
             SubcomposeAsyncImage(
                 model = ImageRequest.Builder(context)
-                    .data(albumArtUri)
+                    .data(artworkData)
                     .size(600)
                     .crossfade(true)
                     .setParameter("sig", TXAImageUtils.artworkSignature)
@@ -239,12 +277,11 @@ fun AlbumCoverWithTransform(
 private fun getAlbumArtUriForItem(item: AlbumCoverItem): Any {
     return when {
         item.webArtUrl.isNotEmpty() -> item.webArtUrl
-        // Prioritize actual file/content URI over system ID to ensure instant updates after tag editing
-        item.mediaUri.isNotEmpty() -> Uri.parse(item.mediaUri)
         item.albumId != -1L -> ContentUris.withAppendedId(
             Uri.parse("content://media/external/audio/albumart"),
             item.albumId
         )
+        item.mediaUri.isNotEmpty() -> Uri.parse(item.mediaUri)
         else -> ""
     }
 }
