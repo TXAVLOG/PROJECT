@@ -35,6 +35,10 @@ object TXATagWriter {
      * Get MediaStore Uri for a file path
      */
     fun getSongUri(context: Context, filePath: String): Uri? {
+        val file = File(filePath)
+        if (!file.exists()) return null
+        
+        // 1. Try exact path match
         val cursor = context.contentResolver.query(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
             arrayOf(MediaStore.Audio.Media._ID),
@@ -45,9 +49,25 @@ object TXATagWriter {
         cursor?.use {
             if (it.moveToFirst()) {
                 val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
-                return Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id.toString())
+                return ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
             }
         }
+        
+        // 2. Try match by filename and size if the path might be different in MediaStore
+        val cursorMatch = context.contentResolver.query(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            arrayOf(MediaStore.Audio.Media._ID),
+            "${MediaStore.Audio.Media.DISPLAY_NAME}=? AND ${MediaStore.Audio.Media.SIZE}=?",
+            arrayOf(file.name, file.length().toString()),
+            null
+        )
+        cursorMatch?.use {
+            if (it.moveToFirst()) {
+                val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
+                return ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
+            }
+        }
+
         return null
     }
 
@@ -182,8 +202,14 @@ object TXATagWriter {
         // If artwork was provided, also update the MediaStore album art cache
         // We resolve the REAL MediaStore albumId because our internal one might be a custom hash
         val firstPath = tagInfo.filePaths.firstOrNull()
-        val msAlbumId = if (firstPath != null) getMediaStoreAlbumId(context, firstPath) ?: tagInfo.albumId else tagInfo.albumId
+        val msAlbumId = if (firstPath != null) {
+            val resolvedId = getMediaStoreAlbumId(context, firstPath)
+            TXALogger.appI(TAG, "Resolved MediaStore albumId for $firstPath: $resolvedId (Internal ID was ${tagInfo.albumId})")
+            resolvedId ?: tagInfo.albumId
+        } else tagInfo.albumId
         
+        TXALogger.appI(TAG, "Artwork status: ${if (tagInfo.artwork != null) "Provided" else "Null"}, DeleteArt: ${tagInfo.deleteArtwork}, msAlbumId: $msAlbumId")
+
         if (tagInfo.artwork != null && msAlbumId > 0) {
             updateAlbumArtCache(context, msAlbumId, tagInfo.artwork)
         } else if (tagInfo.deleteArtwork && msAlbumId > 0) {
@@ -265,7 +291,9 @@ object TXATagWriter {
      * Copy file using root as a fallback
      */
     private fun copyFileWithRoot(source: File, destination: File): Boolean {
-        return TXASuHelper.runAsRoot("cp -f '${source.absolutePath}' '${destination.absolutePath}' && chmod 664 '${destination.absolutePath}'")
+        val src = source.absolutePath.replace("'", "'\\''")
+        val dest = destination.absolutePath.replace("'", "'\\''")
+        return TXASuHelper.runAsRoot("cp -f '$src' '$dest' && chmod 664 '$dest'")
     }
 
     /**

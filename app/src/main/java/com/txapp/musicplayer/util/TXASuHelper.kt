@@ -85,6 +85,13 @@ object TXASuHelper {
             os.writeBytes("exit\n")
             os.flush()
             val exitValue = process.waitFor()
+            
+            if (exitValue != 0) {
+                val error = process.errorStream.bufferedReader().readText()
+                val output = process.inputStream.bufferedReader().readText()
+                TXALogger.e(TAG, "Root command failed (code $exitValue): $command\nError: $error\nOutput: $output")
+            }
+            
             exitValue == 0
         } catch (e: Exception) {
             TXALogger.e(TAG, "Error running as root: $command", e)
