@@ -850,46 +850,37 @@ class MainActivity : AppCompatActivity() {
                             currentSongForEdit = null
                         },
                         onSave = { editData ->
-                            showTagEditorSheet = false
-                            val song = currentSongForEdit ?: return@TXATagEditorSheet
-                            currentSongForEdit = null
-                            
-                            lifecycleScope.launch {
-                                val result = repository.updateSongMetadata(
-                                    context = this@MainActivity,
-                                    songId = song.id,
-                                    title = editData.title,
-                                    artist = editData.artist,
-                                    album = editData.album,
-                                    albumArtist = editData.albumArtist,
-                                    composer = editData.composer,
-                                    year = editData.year.toIntOrNull() ?: 0,
-                                    trackNumber = song.trackNumber
-                                )
-                                when (result) {
-                                    is com.txapp.musicplayer.util.TXATagWriter.WriteResult.Success -> {
-                                        TXAToast.success(this@MainActivity, "txamusic_tag_saved".txa())
-                                        // Update now playing state with new info
-                                        nowPlayingState = nowPlayingState.copy(
-                                            title = editData.title,
-                                            artist = editData.artist
-                                        )
-                                        updateNowPlayingState()
-                                    }
-                                    is com.txapp.musicplayer.util.TXATagWriter.WriteResult.PermissionRequired -> {
-                                        // Store data for retry
-                                        pendingTagUpdate = editData
-                                        writeRequestLauncher.launch(
-                                            androidx.activity.result.IntentSenderRequest.Builder(result.intent).build()
-                                        )
-                                    }
-
-                                    else -> {
-                                        TXAToast.show(this@MainActivity, "txamusic_tag_save_failed".txa())
-                                    }
+                            val song = currentSongForEdit ?: return@TXATagEditorSheet false
+                            val result = repository.updateSongMetadata(
+                                context = this@MainActivity,
+                                songId = song.id,
+                                title = editData.title,
+                                artist = editData.artist,
+                                album = editData.album,
+                                albumArtist = editData.albumArtist,
+                                composer = editData.composer,
+                                year = editData.year.toIntOrNull() ?: 0,
+                                trackNumber = song.trackNumber,
+                                artwork = editData.artworkBitmap
+                            )
+                            when (result) {
+                                is com.txapp.musicplayer.util.TXATagWriter.WriteResult.Success -> {
+                                    com.txapp.musicplayer.util.TXAToast.success(this@MainActivity, "txamusic_tag_saved".txa())
+                                    currentSongForEdit = null
+                                    true
+                                }
+                                is com.txapp.musicplayer.util.TXATagWriter.WriteResult.PermissionRequired -> {
+                                    pendingTagUpdate = editData
+                                    writeRequestLauncher.launch(
+                                        androidx.activity.result.IntentSenderRequest.Builder(result.intent).build()
+                                    )
+                                    false
+                                }
+                                else -> {
+                                    com.txapp.musicplayer.util.TXAToast.error(this@MainActivity, "txamusic_tag_save_failed".txa())
+                                    false
                                 }
                             }
-
                         }
                     )
                 }

@@ -25,6 +25,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.core.context.GlobalContext
+import com.txapp.musicplayer.data.MusicRepository
 
 class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
 
@@ -63,7 +64,9 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
                 pendingTagUpdate?.let { data ->
                     val songId = uiState.value.songId
                     if (songId != -1L) {
-                        saveTagUpdate(songId, data)
+                        lifecycleScope.launch {
+                            saveTagUpdate(songId, data)
+                        }
                     }
                 }
                 pendingLyricsUpdate?.let { lyrics ->
@@ -150,7 +153,6 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
                             onDismiss = { showTagEditorSheet = false },
                             onSave = { data ->
                                 saveTagUpdate(s.id, data)
-                                showTagEditorSheet = false
                             }
                         )
                     }
@@ -597,70 +599,49 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
         }
     }
 
-    private fun saveTagUpdate(songId: Long, data: TagEditData) {
-        lifecycleScope.launch {
-            val repository: com.txapp.musicplayer.data.MusicRepository = GlobalContext.get().get()
+    private suspend fun saveTagUpdate(songId: Long, data: TagEditData): Boolean {
+        val context = this@NowPlayingActivity
+        val repository: MusicRepository = GlobalContext.get().get()
 
-            // Check for Scoped Storage write permission on Android 11+
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                val song = repository.getSongById(songId)
-                if (song != null) {
-                    val pendingIntent = com.txapp.musicplayer.util.TXATagWriter.createWriteRequest(
-                        this@NowPlayingActivity,
-                        listOf(song.data)
-                    )
+        val currentSong = repository.getSongById(songId)
+        val currentTrackNumber = currentSong?.trackNumber ?: 0
 
-                    if (pendingIntent != null) {
-                        // Store the data so we can retry after permission is granted
-                        pendingTagUpdate = data
-                        val intentSenderRequest = androidx.activity.result.IntentSenderRequest.Builder(pendingIntent)
-                            .build()
-                        writeRequestLauncher.launch(intentSenderRequest)
-                        return@launch
-                    }
-                }
+        val result = repository.updateSongMetadata(
+            context = this@NowPlayingActivity,
+            songId = songId,
+            title = data.title,
+            artist = data.artist,
+            album = data.album,
+            albumArtist = data.albumArtist.ifEmpty { null },
+            composer = data.composer.ifEmpty { null },
+            year = data.year.toIntOrNull() ?: 0,
+            trackNumber = currentTrackNumber,
+            artwork = data.artworkBitmap
+        )
+
+        when (result) {
+            is com.txapp.musicplayer.util.TXATagWriter.WriteResult.Success -> {
+                TXAToast.show(this@NowPlayingActivity, "txamusic_tag_saved".txa())
+                // Update UI state immediately
+                uiState.value = uiState.value.copy(
+                    title = data.title,
+                    artist = data.artist,
+                    dateModified = System.currentTimeMillis()
+                )
+                updateState()
+                return true
             }
-
-            // Proceed with update (either legacy storage or permission already granted/not needed)
-            // Need to fetch song to get current track number since editor doesn't have it
-            val currentSong = repository.getSongById(songId)
-            val currentTrackNumber = currentSong?.trackNumber ?: 0
-
-            val result = repository.updateSongMetadata(
-                context = this@NowPlayingActivity,
-                songId = songId,
-                title = data.title,
-                artist = data.artist,
-                album = data.album,
-                albumArtist = data.albumArtist.ifEmpty { null },
-                composer = data.composer.ifEmpty { null },
-                year = data.year.toIntOrNull() ?: 0,
-                trackNumber = currentTrackNumber,
-                artwork = data.artworkBitmap
-            )
-
-            when (result) {
-                is com.txapp.musicplayer.util.TXATagWriter.WriteResult.Success -> {
-                    TXAToast.show(this@NowPlayingActivity, "txamusic_tag_saved".txa())
-                    // Update UI state immediately
-                    uiState.value = uiState.value.copy(
-                        title = data.title,
-                        artist = data.artist,
-                        dateModified = System.currentTimeMillis()
-                    )
-                    updateState()
-                }
-                is com.txapp.musicplayer.util.TXATagWriter.WriteResult.PermissionRequired -> {
-                    pendingTagUpdate = data
-                    writeRequestLauncher.launch(
-                        androidx.activity.result.IntentSenderRequest.Builder(result.intent).build()
-                    )
-                }
-                else -> {
-                    TXAToast.show(this@NowPlayingActivity, "txamusic_tag_save_failed".txa())
-                }
+            is com.txapp.musicplayer.util.TXATagWriter.WriteResult.PermissionRequired -> {
+                pendingTagUpdate = data
+                writeRequestLauncher.launch(
+                    androidx.activity.result.IntentSenderRequest.Builder(result.intent).build()
+                )
+                return false
             }
-
+            else -> {
+                TXAToast.show(this@NowPlayingActivity, "txamusic_tag_save_failed".txa())
+                return false
+            }
         }
     }
 

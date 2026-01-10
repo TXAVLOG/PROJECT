@@ -299,9 +299,26 @@ object TXATagWriter {
     private fun copyFileWithRoot(source: File, destination: File): Boolean {
         val src = source.absolutePath.replace("'", "'\\''")
         val dest = destination.absolutePath.replace("'", "'\\''")
-        // Use 'cat' redirect instead of 'cp' to avoid Protocol Error (EPROTO) on shared mounts/VirtIO-9P
-        // also try to chmod after, but ignore if it fails (FAT/shared partitions don't support chmod)
-        return TXASuHelper.runAsRoot("cat '$src' > '$dest' && (chmod 664 '$dest' || true)")
+        
+        // 1. Try 'cat' redirect (fastest and handles some protocol errors)
+        if (TXASuHelper.runAsRoot("cat '$src' > '$dest' && (chmod 664 '$dest' || true)")) {
+            return true
+        }
+        
+        // 2. If 'cat' fails, try to chmod the parent folder and try again
+        TXALogger.appW(TAG, "Cat failed, trying to chmod parent folder: ${destination.parent}")
+        val parentPath = destination.parent?.replace("'", "'\\''")
+        if (parentPath != null) {
+            TXASuHelper.runAsRoot("chmod 777 '$parentPath'")
+            
+            // Try cat again after chmod
+            if (TXASuHelper.runAsRoot("cat '$src' > '$dest' && (chmod 664 '$dest' || true)")) {
+                TXALogger.appI(TAG, "Write success after chmod parent folder")
+                return true
+            }
+        }
+        
+        return false
     }
 
     /**

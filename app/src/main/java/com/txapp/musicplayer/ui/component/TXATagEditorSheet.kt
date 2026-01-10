@@ -28,6 +28,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.txapp.musicplayer.model.Song
 import com.txapp.musicplayer.util.TXAFormat
+import kotlinx.coroutines.launch
 import com.txapp.musicplayer.util.txa
 
 /**
@@ -51,10 +52,11 @@ data class TagEditData(
 fun TXATagEditorSheet(
     song: Song,
     onDismiss: () -> Unit,
-    onSave: (TagEditData) -> Unit
+    onSave: suspend (TagEditData) -> Boolean
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
     
     // Edit state
     var title by remember { mutableStateOf(song.title) }
@@ -63,6 +65,7 @@ fun TXATagEditorSheet(
     var albumArtist by remember { mutableStateOf(song.albumArtist ?: "") }
     var composer by remember { mutableStateOf(song.composer ?: "") }
     var year by remember { mutableStateOf(if (song.year > 0) song.year.toString() else "") }
+    var isSaving by remember { mutableStateOf(false) }
     
     // Check if data changed
     var newlyPickedArtwork by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
@@ -72,11 +75,10 @@ fun TXATagEditorSheet(
         androidx.activity.result.contract.ActivityResultContracts.GetContent()
     ) { uri: android.net.Uri? ->
         uri?.let {
-            // Process image using TXA class as requested
             val processedFile = com.txapp.musicplayer.util.TXAImageUtils.processImage(context, it)
             if (processedFile != null) {
                 newlyPickedArtwork = android.graphics.BitmapFactory.decodeFile(processedFile.absolutePath)
-                processedFile.delete() // Clean up temp file
+                processedFile.delete()
             }
         }
     }
@@ -101,7 +103,7 @@ fun TXATagEditorSheet(
     }
     
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = if (isSaving) { {} } else onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         dragHandle = { BottomSheetDefaults.DragHandle() }
@@ -129,24 +131,42 @@ fun TXATagEditorSheet(
                 // Save button
                 Button(
                     onClick = {
-                        onSave(TagEditData(
-                            title = title,
-                            artist = artist,
-                            album = album,
-                            albumArtist = albumArtist,
-                            composer = composer,
-                            year = year,
-                            artworkBitmap = newlyPickedArtwork
-                        ))
+                        if (isSaving) return@Button
+                        isSaving = true
+                        scope.launch {
+                            val success = onSave(TagEditData(
+                                title = title,
+                                artist = artist,
+                                album = album,
+                                albumArtist = albumArtist,
+                                composer = composer,
+                                year = year,
+                                artworkBitmap = newlyPickedArtwork
+                            ))
+                            if (success) {
+                                onDismiss()
+                            } else {
+                                isSaving = false
+                            }
+                        }
                     },
-                    enabled = hasChanges,
+                    enabled = hasChanges && !isSaving,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
-                    )
+                    ),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                 ) {
-                    Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("txamusic_btn_save".txa())
+                    if (isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (isSaving) "txamusic_saving".txa() else "txamusic_btn_save".txa())
                 }
             }
             

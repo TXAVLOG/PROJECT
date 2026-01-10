@@ -105,39 +105,34 @@ class DetailListFragment : Fragment() {
                             song = selectedSongForEdit!!,
                             onDismiss = { selectedSongForEdit = null },
                             onSave = { editData ->
-                                scope.launch {
-                                    val song = selectedSongForEdit!!
-                                    val result = repository.updateSongMetadata(
-                                        context = context,
-                                        songId = song.id,
-                                        title = editData.title,
-                                        artist = editData.artist,
-                                        album = editData.album,
-                                        albumArtist = editData.albumArtist,
-                                        composer = editData.composer,
-                                        year = editData.year.toIntOrNull() ?: 0,
-                                        trackNumber = song.trackNumber,
-                                        artwork = editData.artworkBitmap
-                                    )
-                                    when (result) {
-                                        is TXATagWriter.WriteResult.Success -> {
-                                            Toast.makeText(context, "txamusic_tag_saved".txa(), Toast.LENGTH_SHORT).show()
-                                            selectedSongForEdit = null
-                                        }
-                                        is TXATagWriter.WriteResult.PermissionRequired -> {
-                                            intentSenderLauncher.launch(
-                                                IntentSenderRequest.Builder(result.intent.intentSender).build()
-                                            )
-                                        }
-                                        else -> {
-                                            Toast.makeText(
-                                                context,
-                                                "txamusic_tag_save_failed".txa(),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
+                                val song = selectedSongForEdit!!
+                                val result = repository.updateSongMetadata(
+                                    context = context,
+                                    songId = song.id,
+                                    title = editData.title,
+                                    artist = editData.artist,
+                                    album = editData.album,
+                                    albumArtist = editData.albumArtist,
+                                    composer = editData.composer,
+                                    year = editData.year.toIntOrNull() ?: 0,
+                                    trackNumber = song.trackNumber,
+                                    artwork = editData.artworkBitmap
+                                )
+                                when (result) {
+                                    is TXATagWriter.WriteResult.Success -> {
+                                        Toast.makeText(context, "txamusic_tag_saved".txa(), Toast.LENGTH_SHORT).show()
+                                        true
                                     }
-
+                                    is TXATagWriter.WriteResult.PermissionRequired -> {
+                                        intentSenderLauncher.launch(
+                                            IntentSenderRequest.Builder(result.intent.intentSender).build()
+                                        )
+                                        false
+                                    }
+                                    else -> {
+                                        Toast.makeText(context, "txamusic_tag_save_failed".txa(), Toast.LENGTH_SHORT).show()
+                                        false
+                                    }
                                 }
                             }
                         )

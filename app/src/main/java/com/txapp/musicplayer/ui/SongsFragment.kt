@@ -82,32 +82,33 @@ class SongsFragment : Fragment() {
                         onSongClick = { song -> playSong(song) },
                         currentlyPlayingId = playingId,
                         onSaveTags = { song, editData ->
-                            viewLifecycleOwner.lifecycleScope.launch {
-                                val result = repository.updateSongMetadata(
-                                    context = requireContext(),
-                                    songId = song.id,
-                                    title = editData.title,
-                                    artist = editData.artist,
-                                    album = editData.album,
-                                    albumArtist = editData.albumArtist,
-                                    composer = editData.composer,
-                                    year = editData.year.toIntOrNull() ?: 0,
-                                    trackNumber = song.trackNumber
-                                )
-                                when (result) {
-                                    is TXATagWriter.WriteResult.Success -> {
-                                        TXAToast.success(context, "txamusic_tag_saved".txa())
-                                    }
-                                    is TXATagWriter.WriteResult.PermissionRequired -> {
-                                        intentSenderLauncher.launch(
-                                            IntentSenderRequest.Builder(result.intent.intentSender).build()
-                                        )
-                                    }
-                                    else -> {
-                                        TXAToast.error(context, "txamusic_tag_save_failed".txa())
-                                    }
+                            val result = repository.updateSongMetadata(
+                                context = context,
+                                songId = song.id,
+                                title = editData.title,
+                                artist = editData.artist,
+                                album = editData.album,
+                                albumArtist = editData.albumArtist.ifEmpty { null },
+                                composer = editData.composer.ifEmpty { null },
+                                year = editData.year.toIntOrNull() ?: 0,
+                                trackNumber = song.trackNumber,
+                                artwork = editData.artworkBitmap
+                            )
+                            when (result) {
+                                is TXATagWriter.WriteResult.Success -> {
+                                    TXAToast.success(context, "txamusic_tag_saved".txa())
+                                    true
                                 }
-
+                                is TXATagWriter.WriteResult.PermissionRequired -> {
+                                    intentSenderLauncher.launch(
+                                        IntentSenderRequest.Builder(result.intent.intentSender).build()
+                                    )
+                                    false
+                                }
+                                else -> {
+                                    TXAToast.error(context, "txamusic_tag_save_failed".txa())
+                                    false
+                                }
                             }
                         },
                         onSetAsRingtone = { song ->
@@ -185,7 +186,7 @@ fun SongsScreen(
     songs: List<Song>,
     onSongClick: (Song) -> Unit,
     currentlyPlayingId: Long = -1L,
-    onSaveTags: (Song, TagEditData) -> Unit = { _, _ -> },
+    onSaveTags: suspend (Song, TagEditData) -> Boolean = { _, _ -> true },
     onSetAsRingtone: (Song) -> Unit = {},
     onAddManualSongs: (List<android.net.Uri>) -> Unit = {},
     onDeleteFromApp: (Song) -> Unit = {}
@@ -232,7 +233,6 @@ fun SongsScreen(
             onDismiss = { selectedSongForEdit = null },
             onSave = { editData ->
                 onSaveTags(selectedSongForEdit!!, editData)
-                selectedSongForEdit = null
             }
         )
     }
