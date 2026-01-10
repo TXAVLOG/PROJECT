@@ -351,6 +351,7 @@ class MusicService : MediaLibraryService() {
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 updateMediaSessionLayout()
+                FloatingLyricsService.updatePlaybackState(isPlaying)
                 if (!isPlaying) {
                     savePlaybackState()
                     saveCurrentSongProgress()
@@ -725,6 +726,7 @@ class MusicService : MediaLibraryService() {
         TXALogger.floatingI("MusicService", "Updating Song Info: Title='$title', URI='$mediaUri'")
         
         FloatingLyricsService.updateSongInfo(title, albumArtUri)
+        FloatingLyricsService.updatePlaybackState(player.isPlaying)
         
         serviceScope.launch(Dispatchers.IO) {
             val raw = LyricsUtil.getRawLyrics(path, title, artist)

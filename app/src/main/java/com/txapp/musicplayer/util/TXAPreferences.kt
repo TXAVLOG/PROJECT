@@ -489,4 +489,21 @@ object TXAPreferences {
             _rememberPlaybackPosition.value = value
             prefs.edit().putBoolean(KEY_REMEMBER_PLAYBACK_POSITION, value).apply()
         }
+
+    // ============== FLOATING LYRICS POSITION ==============
+    private const val KEY_FLOATING_LYRICS_POS_X = "floating_lyrics_pos_x"
+    private const val KEY_FLOATING_LYRICS_POS_Y = "floating_lyrics_pos_y"
+
+    fun getFloatingLyricsPosition(): Pair<Int, Int> {
+        val x = prefs.getInt(KEY_FLOATING_LYRICS_POS_X, -1)
+        val y = prefs.getInt(KEY_FLOATING_LYRICS_POS_Y, -1)
+        return Pair(x, y)
+    }
+
+    fun setFloatingLyricsPosition(x: Int, y: Int) {
+        prefs.edit()
+            .putInt(KEY_FLOATING_LYRICS_POS_X, x)
+            .putInt(KEY_FLOATING_LYRICS_POS_Y, y)
+            .apply()
+    }
 }

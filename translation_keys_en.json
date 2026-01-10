@@ -507,5 +507,9 @@
   "txamusic_refresh_never": "Never",
   "txamusic_refresh_hourly": "Every Hour",
   "txamusic_refresh_daily": "Daily",
-  "txamusic_refresh_weekly": "Weekly"
+  "txamusic_refresh_weekly": "Weekly",
+  "txamusic_floating_lyrics_tap_hint": "Tap bubble to show lyrics",
+  "txamusic_floating_lyrics_stop": "Stop",
+  "txamusic_floating_lyrics_title": "Floating Lyrics",
+  "txamusic_floating_lyrics_waiting": "Waiting for music..."
 }

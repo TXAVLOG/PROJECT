@@ -12,12 +12,12 @@ import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
 import android.view.Gravity
-import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import android.widget.FrameLayout
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,55 +27,51 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.txapp.musicplayer.R
-import com.txapp.musicplayer.util.TXALogger
-import com.txapp.musicplayer.util.TXAPreferences
-import com.txapp.musicplayer.util.LyricsUtil
-import com.txapp.musicplayer.ui.component.LyricLine
-import com.txapp.musicplayer.util.TXAFormat
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.setViewTreeViewModelStoreOwner
-import androidx.compose.ui.res.painterResource
-import androidx.compose.foundation.Image
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.text.SpanStyle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import com.txapp.musicplayer.R
+import com.txapp.musicplayer.ui.component.LyricLine
+import com.txapp.musicplayer.util.TXAFormat
+import com.txapp.musicplayer.util.TXALogger
+import com.txapp.musicplayer.util.TXAPreferences
+import com.txapp.musicplayer.util.txa
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
@@ -86,12 +82,19 @@ import kotlin.math.roundToInt
  * - Tap to expand/collapse lyrics panel
  * - Drag to dismiss zone to close
  * - Works on Android 9+ and emulators
+ * - Auto-saves position
+ * - Localized strings
  */
 class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner, ViewModelStoreOwner {
 
     companion object {
         private const val CHANNEL_ID = "floating_lyrics_channel"
         private const val NOTIFICATION_ID = 2024
+
+        // Static action to trigger music controls from UI
+        var onPlayPause: () -> Unit = {}
+        var onNext: () -> Unit = {}
+        var onPrev: () -> Unit = {}
 
         private val _currentLyric = MutableStateFlow("")
         val currentLyric = _currentLyric.asStateFlow()
@@ -111,12 +114,21 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         private val _currentLyricsList = MutableStateFlow<List<LyricLine>>(emptyList())
         val currentLyricsList = _currentLyricsList.asStateFlow()
 
+        private val _isPlaying = MutableStateFlow(false)
+        val isPlaying = _isPlaying.asStateFlow()
+
         fun updateLyric(lyric: String) {
             _currentLyric.value = lyric
         }
 
         fun updateLyricsList(lyrics: List<LyricLine>) {
             _currentLyricsList.value = lyrics
+            // Reset current lyric when song changes/list updates
+            _currentLyric.value = "" 
+        }
+
+        fun updatePlaybackState(isPlaying: Boolean) {
+            _isPlaying.value = isPlaying
         }
 
         fun updatePosition(position: Long) {
@@ -124,7 +136,7 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
             // Update active lyric based on position
             val lyrics = _currentLyricsList.value
             if (lyrics.isNotEmpty()) {
-                val activeIndex = lyrics.indexOfLast { it.timestamp <= position + 500 }.coerceAtLeast(0)
+                val activeIndex = lyrics.indexOfLast { it.timestamp <= position + 200 }.coerceAtLeast(0)
                 if (activeIndex >= 0 && activeIndex < lyrics.size) {
                     val newLyric = lyrics[activeIndex].text
                     if (_currentLyric.value != newLyric) {
@@ -138,19 +150,25 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
             if (_songTitle.value != title || _albumArtUri.value != artUri) {
                 _songTitle.value = title
                 _albumArtUri.value = artUri
+                // Reset lyrics on new song
+                _currentLyric.value = ""
+                _currentLyricsList.value = emptyList()
                 TXALogger.floatingI("FloatingLyricsService", "Song info updated: $title, Art: $artUri")
             }
         }
 
         fun startService(context: Context) {
             if (!Settings.canDrawOverlays(context)) {
-                TXALogger.floatingE("FloatingLyricsService", "Cannot start service: overlay permission not granted. Requesting via intent.")
-                // Should ideally show the system permission screen
+                TXALogger.floatingE("FloatingLyricsService", "Cannot start service: overlay permission not granted.")
                 return
             }
             TXALogger.floatingI("FloatingLyricsService", "Starting service via startForegroundService")
             val intent = Intent(context, FloatingLyricsService::class.java)
-            context.startForegroundService(intent)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
         }
 
         fun stopService(context: Context) {
@@ -180,25 +198,28 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
     private var posX = 0
     private var posY = 0
     
+    // State to track expanded mode to adjust layout params
+    private var isExpandedMode = false
+
     private fun updateBubblePosition(deltaX: Float, deltaY: Float) {
-        posX = (posX + deltaX.roundToInt()).coerceIn(0, screenWidth - 150)
-        posY = (posY + deltaY.roundToInt()).coerceIn(0, screenHeight - 200)
+        posX = (posX + deltaX.roundToInt()).coerceIn(0, screenWidth - 100)
+        posY = (posY + deltaY.roundToInt()).coerceIn(0, screenHeight - 150)
         
         // Show trash if not visible
         if (!isTrashVisible) showTrash()
         
         // Check overlap with trash (assuming trash is at bottom center)
         val trashCenterX = screenWidth / 2
-        val trashCenterY = screenHeight - 150 // Approx y position including margin
-        val bubbleCenterX = posX + 75 // Assuming bubble size ~56dp + margin ~ 150/2
-        val bubbleCenterY = posY + 75
+        val trashCenterY = screenHeight - 150 
+        val bubbleCenterX = posX + 30 // Approx center offset
+        val bubbleCenterY = posY + 30
         
         val distance = kotlin.math.sqrt(
             ((trashCenterX - bubbleCenterX) * (trashCenterX - bubbleCenterX) + 
              (trashCenterY - bubbleCenterY) * (trashCenterY - bubbleCenterY)).toFloat()
         )
         
-        isTrashHighlighted.value = distance < 300 // Detection radius
+        isTrashHighlighted.value = distance < 200 // Detection radius
         
         layoutParams?.apply {
             x = posX
@@ -212,14 +233,72 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
     }
     
     private fun snapBubbleToEdge() {
-        val snapToRight = posX > screenWidth / 2
-        posX = if (snapToRight) screenWidth - 170 else 20
+        if (isExpandedMode) return // Don't snap if expanded
+
+        // Saving last valid position
+        TXAPreferences.setFloatingLyricsPosition(posX, posY)
+
+        val snapToRight = posX > screenWidth / 2 - 30
+        posX = if (snapToRight) screenWidth - 140 else 20
+        
         layoutParams?.x = posX
+        
+        // Animate snap could be done here with a value animator, but simpler for now:
         try {
             floatingView?.let { windowManager.updateViewLayout(it, layoutParams) }
-            TXALogger.floatingI("FloatingLyricsService", "Snapped to edge: x=$posX")
         } catch (e: Exception) {
-            TXALogger.floatingE("FloatingLyricsService", "Failed to snap layout at x=$posX", e)
+            TXALogger.floatingE("FloatingLyricsService", "Failed to snap layout", e)
+        }
+    }
+
+    private fun setExpandedState(expanded: Boolean) {
+        if (isExpandedMode == expanded) return
+        isExpandedMode = expanded
+
+        try {
+            if (expanded) {
+                // When expanded, we center the view on screen or make it match specific size
+                // To keep it simple and safe from clipping, we Center it.
+                // NOTE: We save the old bubble pos to restore later
+                val savedPos = TXAPreferences.getFloatingLyricsPosition()
+                if (savedPos.first != -1) {
+                    posX = savedPos.first
+                    posY = savedPos.second
+                }
+                
+                layoutParams?.apply {
+                    width = WindowManager.LayoutParams.WRAP_CONTENT
+                    height = WindowManager.LayoutParams.WRAP_CONTENT
+                    // Center on screen
+                    gravity = Gravity.CENTER
+                    x = 0
+                    y = 0
+                }
+            } else {
+                // Restore to bubble mode
+                val savedPos = TXAPreferences.getFloatingLyricsPosition()
+                // If we have saved pos, use it, else default
+                var restoreX = if (savedPos.first != -1) savedPos.first else (screenWidth - 140)
+                var restoreY = if (savedPos.second != -1) savedPos.second else (screenHeight / 3)
+                
+                // Ensure valid bounds
+                restoreX = restoreX.coerceIn(0, screenWidth - 100)
+                restoreY = restoreY.coerceIn(0, screenHeight - 150)
+
+                posX = restoreX
+                posY = restoreY
+
+                layoutParams?.apply {
+                    width = WindowManager.LayoutParams.WRAP_CONTENT
+                    height = WindowManager.LayoutParams.WRAP_CONTENT
+                    gravity = Gravity.TOP or Gravity.START
+                    x = posX
+                    y = posY
+                }
+            }
+            floatingView?.let { windowManager.updateViewLayout(it, layoutParams) }
+        } catch (e: Exception) {
+            TXALogger.floatingE("FloatingLyricsService", "Failed to update layout for expansion", e)
         }
     }
 
@@ -238,37 +317,55 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         lifecycleRegistry.currentState = Lifecycle.State.CREATED
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         
-        // Get screen dimensions
         val displayMetrics = resources.displayMetrics
         screenWidth = displayMetrics.widthPixels
         screenHeight = displayMetrics.heightPixels
         
-        
         createNotificationChannel()
         setupTrashView()
+        
         _isServiceRunning.value = true
+        
+        // Listen to preference changes to auto-stop
+        serviceScope.launch {
+            TXAPreferences.showLyricsInPlayer.collect { show ->
+                if (!show) {
+                    TXALogger.floatingI("FloatingLyricsService", "Preference disabled, stopping service")
+                    stopSelf()
+                }
+            }
+        }
+        
         TXALogger.floatingI("FloatingLyricsService", "Service onCreate")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Handle stop action from notification
         if (intent?.action == "STOP") {
             stopSelf()
             return START_NOT_STICKY
         }
         
         if (!Settings.canDrawOverlays(this)) {
-            TXALogger.floatingE("FloatingLyricsService", "Overlay permission not granted in onStartCommand, stopping")
             stopSelf()
             return START_NOT_STICKY
         }
-
-        TXALogger.floatingI("FloatingLyricsService", "onStartCommand: Starting foreground and showing view")
 
         startForeground(NOTIFICATION_ID, createNotification())
         lifecycleRegistry.currentState = Lifecycle.State.STARTED
         showFloatingView()
         lifecycleRegistry.currentState = Lifecycle.State.RESUMED
+
+        // Connect controls
+        onPlayPause = {
+            val action = MusicService.ACTION_TOGGLE_PLAYBACK
+            sendBroadcast(Intent(action).setPackage(packageName))
+        }
+        onNext = {
+            sendBroadcast(Intent(MusicService.ACTION_NEXT).setPackage(packageName))
+        }
+        onPrev = {
+            sendBroadcast(Intent(MusicService.ACTION_PREVIOUS).setPackage(packageName))
+        }
 
         return START_STICKY
     }
@@ -276,27 +373,34 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        // Save final position before verify kill
+        if (!isExpandedMode) {
+            TXAPreferences.setFloatingLyricsPosition(posX, posY)
+        }
+        
         lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
         removeFloatingView()
         removeTrashView()
         serviceScope.cancel()
         viewModelStore.clear()
         _isServiceRunning.value = false
-        TXALogger.floatingI("FloatingLyricsService", "Service onDestroy - Floating view and ViewModelStore cleaned up")
+        TXALogger.floatingI("FloatingLyricsService", "Service onDestroy")
         super.onDestroy()
     }
 
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Floating Lyrics",
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = "Shows floating lyrics overlay"
-            setShowBadge(false)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "txamusic_floating_lyrics_title".txa(),
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "txamusic_show_lyrics_overlay_desc".txa()
+                setShowBadge(false)
+            }
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
         }
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(channel)
     }
 
     private fun createNotification(): Notification {
@@ -309,12 +413,12 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Floating Lyrics")
-            .setContentText("Tap bubble to show lyrics")
+            .setContentTitle("txamusic_floating_lyrics_title".txa())
+            .setContentText("txamusic_floating_lyrics_tap_hint".txa())
             .setSmallIcon(R.drawable.ic_audiotrack)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
-            .addAction(R.drawable.ic_close, "Stop", stopPendingIntent)
+            .addAction(R.drawable.ic_close, "txamusic_floating_lyrics_stop".txa(), stopPendingIntent)
             .build()
     }
 
@@ -322,7 +426,11 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         if (floatingView != null) return
 
         layoutParams = WindowManager.LayoutParams().apply {
-            type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            else
+                @Suppress("DEPRECATION")
+                WindowManager.LayoutParams.TYPE_PHONE
             
             flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
@@ -333,9 +441,16 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
             gravity = Gravity.TOP or Gravity.START
         }
         
-        // Initialize position
-        posX = screenWidth - 200
-        posY = screenHeight / 3
+        // Initialize position from prefs
+        val savedPos = TXAPreferences.getFloatingLyricsPosition()
+        if (savedPos.first != -1 && savedPos.second != -1) {
+            posX = savedPos.first
+            posY = savedPos.second
+        } else {
+            posX = screenWidth - 140
+            posY = screenHeight / 4
+        }
+        
         layoutParams?.x = posX
         layoutParams?.y = posY
 
@@ -348,7 +463,7 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
                 FloatingLyricsBubble(
                     onClose = { stopSelf() },
                     onDrag = { deltaX, deltaY ->
-                        updateBubblePosition(deltaX, deltaY)
+                        if (!isExpandedMode) updateBubblePosition(deltaX, deltaY)
                     },
                     onDragEnd = { 
                         if (isTrashHighlighted.value) {
@@ -358,20 +473,21 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
                              snapBubbleToEdge()
                         }
                     },
+                    onExpandStateChange = { expanded ->
+                        setExpandedState(expanded)
+                    },
                     screenWidth = screenWidth
                 )
             }
         }
 
         try {
-            TXALogger.floatingI("FloatingLyricsService", "Attempting to add view to WindowManager...")
             if (floatingView?.parent != null) {
                 windowManager.removeView(floatingView)
             }
             windowManager.addView(floatingView, layoutParams)
-            TXALogger.floatingI("FloatingLyricsService", "SUCCESS: Floating bubble added. Visible at $posX, $posY")
         } catch (e: Exception) {
-            TXALogger.floatingE("FloatingLyricsService", "CRITICAL: Failed to add floating view to WindowManager", e)
+            TXALogger.floatingE("FloatingLyricsService", "CRITICAL: Failed to add floating view", e)
         }
     }
 
@@ -379,7 +495,6 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         floatingView?.let {
             try {
                 windowManager.removeView(it)
-                TXALogger.i("FloatingLyricsService", "Floating view removed")
             } catch (e: Exception) {
                 TXALogger.e("FloatingLyricsService", "Failed to remove floating view", e)
             }
@@ -392,6 +507,7 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
             type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) 
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY 
             else 
+                @Suppress("DEPRECATION")
                 WindowManager.LayoutParams.TYPE_PHONE
             
             flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -408,7 +524,7 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         trashView = ComposeView(this).apply {
             setViewTreeLifecycleOwner(this@FloatingLyricsService)
             setViewTreeSavedStateRegistryOwner(this@FloatingLyricsService)
-            // No ViewModel needed for static trash
+            
             setContent {
                 val highlighted by isTrashHighlighted.collectAsState()
                 TrashIcon(highlighted)
@@ -421,9 +537,7 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
             try {
                 windowManager.addView(trashView, trashLayoutParams)
                 isTrashVisible = true
-            } catch(e: Exception) { 
-                TXALogger.floatingE("FloatingLyricsService", "Error showing trash", e) 
-            }
+            } catch(e: Exception) { }
         }
     }
 
@@ -433,9 +547,7 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
                 windowManager.removeView(trashView)
                 isTrashVisible = false
                 isTrashHighlighted.value = false
-            } catch(e: Exception) { 
-                TXALogger.floatingE("FloatingLyricsService", "Error hiding trash", e) 
-            }
+            } catch(e: Exception) { }
         }
     }
     
@@ -454,6 +566,7 @@ private fun FloatingLyricsBubble(
     onClose: () -> Unit,
     onDrag: (Float, Float) -> Unit,
     onDragEnd: () -> Unit,
+    onExpandStateChange: (Boolean) -> Unit,
     screenWidth: Int
 ) {
     var isExpanded by remember { mutableStateOf(false) }
@@ -464,17 +577,10 @@ private fun FloatingLyricsBubble(
     val albumArtUri by FloatingLyricsService.albumArtUri.collectAsState()
     val lyricsList by FloatingLyricsService.currentLyricsList.collectAsState()
     val position by FloatingLyricsService.currentPosition.collectAsState()
-    
-    // Animate bubble size
-    val bubbleSize by animateDpAsState(
-        targetValue = if (isExpanded) 0.dp else 60.dp,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "bubbleSize"
-    )
+    val isPlaying by FloatingLyricsService.isPlaying.collectAsState()
 
-    // Logging state changes
     LaunchedEffect(isExpanded) {
-        TXALogger.floatingI("FloatingLyricsBubble", "State changed: isExpanded=$isExpanded")
+        onExpandStateChange(isExpanded)
     }
 
     Box(
@@ -517,12 +623,13 @@ private fun FloatingLyricsBubble(
                     albumArtUri = albumArtUri,
                     lyricsList = lyricsList,
                     currentPosition = position,
+                    isPlaying = isPlaying,
                     onCollapse = { isExpanded = false },
                     onClose = onClose
                 )
             } else {
                 CollapsedBubble(
-                    hasLyrics = currentLyric.isNotBlank(),
+                    hasLyrics = lyricsList.isNotEmpty(),
                     currentPosition = position,
                     onClick = { if (!isDragging) isExpanded = true },
                     // Pass empty lambdas for drag as they are handled by parent Box
@@ -610,12 +717,13 @@ private fun ExpandedLyricsPanel(
     albumArtUri: String,
     lyricsList: List<LyricLine>,
     currentPosition: Long,
+    isPlaying: Boolean,
     onCollapse: () -> Unit,
     onClose: () -> Unit
 ) {
     Surface(
         modifier = Modifier
-            .width(300.dp)
+            .width(320.dp)
             .wrapContentHeight(),
         shape = RoundedCornerShape(24.dp),
         color = Color(0xFF161616).copy(alpha = 0.95f),
@@ -626,13 +734,13 @@ private fun ExpandedLyricsPanel(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header with Album Art, Title, Close/Collapse
+            // Header with Song Info, Quick Controls, Close
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                 // Song info
+                 // Album Art & Title
                  Row(
                      verticalAlignment = Alignment.CenterVertically,
                      modifier = Modifier.weight(1f)
@@ -645,7 +753,7 @@ private fun ExpandedLyricsPanel(
                          contentDescription = null,
                          contentScale = ContentScale.Crop,
                          modifier = Modifier
-                             .size(40.dp)
+                             .size(44.dp)
                              .clip(CircleShape)
                              .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
                          error = painterResource(id = R.drawable.ic_launcher)
@@ -655,7 +763,7 @@ private fun ExpandedLyricsPanel(
                      
                      Column {
                          Text(
-                             text = songTitle,
+                             text = songTitle.ifBlank { "txamusic_floating_lyrics_waiting".txa() },
                              color = Color.White,
                              fontSize = 14.sp,
                              fontWeight = FontWeight.Bold,
@@ -670,29 +778,42 @@ private fun ExpandedLyricsPanel(
                      }
                  }
                  
-                 Row {
-                    IconButton(onClick = onCollapse, modifier = Modifier.size(32.dp)) {
+                 // Controls
+                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { FloatingLyricsService.onPrev() }, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.SkipPrevious, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
+                    IconButton(onClick = { FloatingLyricsService.onPlayPause() }, modifier = Modifier.size(32.dp)) {
                         Icon(
-                            Icons.Default.Remove, 
+                            if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, 
                             null, 
-                            tint = Color.White.copy(0.7f),
+                            tint = Color.White, 
                             modifier = Modifier.size(20.dp)
                         )
                     }
-                    IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            Icons.Default.Close, 
-                            null, 
-                            tint = Color.White.copy(0.7f),
-                            modifier = Modifier.size(20.dp)
-                        )
+                    IconButton(onClick = { FloatingLyricsService.onNext() }, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.SkipNext, null, tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                  }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            // Second Row: Close/Collapse (top right corner logic is usually better but here we stack)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(onClick = onCollapse, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Default.Remove, null, tint = Color.White.copy(0.7f), modifier = Modifier.size(18.dp))
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(onClick = onClose, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Default.Close, null, tint = Color.White.copy(0.7f), modifier = Modifier.size(18.dp))
+                }
+            }
             
-            // Lyrics content - Karaoke Style
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Lyrics content
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -701,19 +822,17 @@ private fun ExpandedLyricsPanel(
             ) {
                 if (lyricsList.isEmpty()) {
                     Text(
-                        text = lyric.ifBlank { "♪ ..." },
+                        text = "♪",
                         color = Color.White.copy(alpha = 0.6f),
-                        fontSize = 16.sp,
+                        fontSize = 24.sp,
                         textAlign = TextAlign.Center
                     )
                 } else {
-                    // Find active line with a slightly larger lookahead for smoother transition
                     val activeIndex = lyricsList.indexOfLast { it.timestamp <= currentPosition + 200 }.coerceAtLeast(0)
                     val activeLine = lyricsList.getOrNull(activeIndex)
                     val nextLine = lyricsList.getOrNull(activeIndex + 1)
                     
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                         // Active Line with Karaoke effect
                          if (activeLine != null) {
                              val lineDuration = (activeLine.endTimestamp - activeLine.timestamp).coerceAtLeast(1)
                              val elapsed = (currentPosition - activeLine.timestamp).coerceAtLeast(0)
@@ -729,7 +848,6 @@ private fun ExpandedLyricsPanel(
                              )
                          }
                          
-                         // Next Line (faded)
                          if (nextLine != null) {
                              Spacer(modifier = Modifier.height(8.dp))
                              Text(
@@ -748,7 +866,6 @@ private fun ExpandedLyricsPanel(
     }
 }
 
-// Helper for karaoke text
 fun buildKaraokeText(text: String, progress: Float): AnnotatedString {
     return buildAnnotatedString {
         val pivot = (text.length * progress).toInt()
@@ -772,6 +889,7 @@ fun TrashIcon(highlighted: Boolean) {
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
+                translationY = if (highlighted) -20f else 0f
             }
             .clip(CircleShape)
             .background(Color.Black.copy(alpha = 0.5f)),
