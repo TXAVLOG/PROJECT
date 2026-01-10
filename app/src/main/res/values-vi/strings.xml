@@ -122,4 +122,41 @@
     <string name="txamusic_btn_cancel">Hủy</string>
     <string name="txamusic_settings_aod_brightness">Tự động độ sáng AOD</string>
     <string name="txamusic_settings_aod_brightness_desc">Tự động giảm độ sáng màn hình xuống mức tối thiểu khi bật AOD để tiết kiệm pin.</string>
+    
+    <!-- AOD Opacity -->
+    <string name="txamusic_aod_opacity">Độ trong suốt</string>
+    <string name="txamusic_aod_opacity_desc">Điều chỉnh độ sáng/mờ của màn hình AOD</string>
+    
+    <!-- Multi-select -->
+    <string name="txamusic_multi_select">Chọn nhiều</string>
+    <string name="txamusic_multi_select_count">Đã chọn %d</string>
+    <string name="txamusic_batch_actions">Hành động hàng loạt</string>
+    <string name="txamusic_action_add_all_to_playlist">Thêm tất cả vào Playlist</string>
+    <string name="txamusic_action_delete_all">Xóa tất cả</string>
+    <string name="txamusic_action_play_selected">Phát các bài đã chọn</string>
+    <string name="txamusic_confirm_delete_multiple_title">Xóa %d bài hát?</string>
+    <string name="txamusic_confirm_delete_multiple_desc">Bạn có chắc muốn xóa %d bài hát này khỏi thư viện không?</string>
+    
+    <!-- Lyrics Overlay -->
+    <string name="txamusic_show_lyrics_overlay">Lời bài hát nổi</string>
+    <string name="txamusic_show_lyrics_overlay_desc">Hiển thị lời bài hát lên trên các ứng dụng khác</string>
+    <string name="txamusic_overlay_permission_title">Cần cấp quyền Overlay</string>
+    <string name="txamusic_overlay_permission_desc">Để hiển thị lời bài hát nổi trên các ứng dụng khác, vui lòng cấp quyền \"Hiển thị trên các ứng dụng khác\".</string>
+    
+    <!-- Lyrics Style -->
+    <string name="txamusic_lyrics_style">Kiểu lời bài hát</string>
+    <string name="txamusic_lyrics_style_desc">Tùy chỉnh cách hiển thị lời bài hát</string>
+    <string name="txamusic_lyrics_font_size">Cỡ chữ</string>
+    <string name="txamusic_lyrics_text_align">Căn lề chữ</string>
+    <string name="txamusic_lyrics_align_left">Trái</string>
+    <string name="txamusic_lyrics_align_center">Giữa</string>
+    <string name="txamusic_lyrics_align_right">Phải</string>
+    
+    <!-- Refresh Playlist Interval -->
+    <string name="txamusic_refresh_interval">Tần suất làm mới</string>
+    <string name="txamusic_refresh_interval_desc">Tự động làm mới danh sách phát sau khoảng thời gian này</string>
+    <string name="txamusic_refresh_never">Không tự động</string>
+    <string name="txamusic_refresh_hourly">Mỗi giờ</string>
+    <string name="txamusic_refresh_daily">Hàng ngày</string>
+    <string name="txamusic_refresh_weekly">Hàng tuần</string>
 </resources>

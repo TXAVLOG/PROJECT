@@ -43,8 +43,16 @@ interface SongDao {
     suspend fun getAllMetadata(): List<SongMetadata>
     
     /**
+     * Normalize path for comparison (handles case-insensitivity on Windows)
+     */
+    private fun normalizePath(path: String): String {
+        return path.trim().lowercase().replace("\\", "/")
+    }
+    
+    /**
      * Upsert songs while preserving user data (favorite, playCount, lastPlayed)
-     * Matches by ID first, then by Path.
+     * Matches by ID first, then by normalized Path.
+     * Prevents duplicates by deleting ALL old records with same path before insert.
      */
     @androidx.room.Transaction
     suspend fun upsertSongsPreservingUserData(songs: List<Song>) {
@@ -53,39 +61,44 @@ interface SongDao {
         // Match by both ID and Paths for robustness
         val allMetadata = getAllMetadata()
         val metadataById = allMetadata.associateBy { it.id }
-        val metadataByPath = allMetadata.associateBy { it.data }
+        // Group by NORMALIZED path to handle case variations and duplicates
+        val metadataByNormalizedPath = allMetadata.groupBy { normalizePath(it.data) }
         
-        val idsToRemoveIfColliding = mutableListOf<Long>()
+        val idsToRemoveIfColliding = mutableSetOf<Long>()
         
         // Merge: preserve user data from existing records
         val mergedSongs = songs.map { song ->
-            // Try to find existing record by ID or Path
-            val existingById = metadataById[song.id]
-            val existingByPath = metadataByPath[song.data]
+            val normalizedPath = normalizePath(song.data)
             
-            val existing = existingById ?: existingByPath
+            // Try to find existing record by ID
+            val existingById = metadataById[song.id]
+            // Find ALL records with same normalized path
+            val existingsByPath = metadataByNormalizedPath[normalizedPath] ?: emptyList()
+            
+            // Pick the best existing record to preserve user data from
+            val existing = existingById ?: existingsByPath.firstOrNull()
+            
+            // Mark ALL records with same path (but different ID) for deletion to prevent duplicates
+            existingsByPath.filter { it.id != song.id }.forEach { dup ->
+                idsToRemoveIfColliding.add(dup.id)
+            }
             
             if (existing != null) {
-                // If we found it by path but IDs differ, we need to remove the old ID record
-                // to prevent duplicates for the same file path.
-                if (existingByPath != null && existingByPath.id != song.id) {
-                     idsToRemoveIfColliding.add(existingByPath.id)
-                }
-                
                 song.copy(
                     isFavorite = existing.isFavorite,
                     playCount = existing.playCount,
                     lastPlayed = existing.lastPlayed,
-                    // Preserve manual status if it was manual
-                    isManual = (existingById?.id?.let { metadataById[it]?.isManual } ?: existingByPath?.id?.let { metadataById[it]?.isManual } ?: song.isManual)
+                    // Preserve manual status if any existing record was manual
+                    isManual = existingById?.isManual ?: existingsByPath.any { it.isManual }
                 )
             } else {
                 song
             }
         }
         
+        // Delete ALL duplicate records BEFORE inserting to guarantee uniqueness
         if (idsToRemoveIfColliding.isNotEmpty()) {
-            deleteSongsByIds(idsToRemoveIfColliding.distinct())
+            deleteSongsByIds(idsToRemoveIfColliding.toList())
         }
         
         insertSongs(mergedSongs)

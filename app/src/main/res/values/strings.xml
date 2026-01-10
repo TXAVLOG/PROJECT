@@ -103,4 +103,41 @@
     <string name="txamusic_ringtone_permission_title">Allow Write Settings</string>
     <string name="txamusic_ringtone_permission_desc">To set a ringtone, the app needs permission to change system settings.</string>
     <string name="txamusic_btn_grant">Grant</string>
+    
+    <!-- AOD Opacity -->
+    <string name="txamusic_aod_opacity">Display Opacity</string>
+    <string name="txamusic_aod_opacity_desc">Adjust the brightness/opacity of the AOD display</string>
+    
+    <!-- Multi-select -->
+    <string name="txamusic_multi_select">Select Multiple</string>
+    <string name="txamusic_multi_select_count">%d selected</string>
+    <string name="txamusic_batch_actions">Batch Actions</string>
+    <string name="txamusic_action_add_all_to_playlist">Add All to Playlist</string>
+    <string name="txamusic_action_delete_all">Delete All</string>
+    <string name="txamusic_action_play_selected">Play Selected</string>
+    <string name="txamusic_confirm_delete_multiple_title">Delete %d Songs?</string>
+    <string name="txamusic_confirm_delete_multiple_desc">Are you sure you want to remove these %d songs from the library?</string>
+    
+    <!-- Lyrics Overlay -->
+    <string name="txamusic_show_lyrics_overlay">Floating Lyrics</string>
+    <string name="txamusic_show_lyrics_overlay_desc">Show lyrics overlay on top of other apps</string>
+    <string name="txamusic_overlay_permission_title">Overlay Permission Required</string>
+    <string name="txamusic_overlay_permission_desc">To display floating lyrics on top of other apps, please grant the \"Display over other apps\" permission.</string>
+    
+    <!-- Lyrics Style -->
+    <string name="txamusic_lyrics_style">Lyrics Style</string>
+    <string name="txamusic_lyrics_style_desc">Customize how lyrics are displayed</string>
+    <string name="txamusic_lyrics_font_size">Font Size</string>
+    <string name="txamusic_lyrics_text_align">Text Alignment</string>
+    <string name="txamusic_lyrics_align_left">Left</string>
+    <string name="txamusic_lyrics_align_center">Center</string>
+    <string name="txamusic_lyrics_align_right">Right</string>
+    
+    <!-- Refresh Playlist Interval -->
+    <string name="txamusic_refresh_interval">Auto Refresh Interval</string>
+    <string name="txamusic_refresh_interval_desc">Automatically refresh playlists after this duration</string>
+    <string name="txamusic_refresh_never">Never</string>
+    <string name="txamusic_refresh_hourly">Every Hour</string>
+    <string name="txamusic_refresh_daily">Daily</string>
+    <string name="txamusic_refresh_weekly">Weekly</string>
 </resources>

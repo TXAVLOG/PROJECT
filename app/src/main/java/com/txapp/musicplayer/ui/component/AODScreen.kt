@@ -78,8 +78,10 @@ fun AODScreen(
     val showBattery by com.txapp.musicplayer.util.TXAAODSettings.showBattery.collectAsState()
     val clockColor = com.txapp.musicplayer.util.TXAAODSettings.getClockColorCompose()
     val isNightMode by com.txapp.musicplayer.util.TXAAODSettings.nightMode.collectAsState()
-    val dimmedClockColor = remember(clockColor, isNightMode) {
-        if (isNightMode) clockColor.copy(alpha = 0.6f) else clockColor
+    val aodOpacity by com.txapp.musicplayer.util.TXAAODSettings.opacity.collectAsState()
+    val dimmedClockColor = remember(clockColor, isNightMode, aodOpacity) {
+        val baseAlpha = if (isNightMode) 0.6f else 1f
+        clockColor.copy(alpha = baseAlpha * aodOpacity)
     }
     
     val breathingAnimation by com.txapp.musicplayer.util.TXAAODSettings.breathingAnimation.collectAsState()
@@ -122,8 +124,8 @@ fun AODScreen(
     // Breathing animation - Giảm độ sáng cho ban đêm
     val infiniteTransition = rememberInfiniteTransition(label = "breathing")
     val breathingAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.25f, // Giảm từ 0.4f xuống 0.25f
-        targetValue = 0.45f,  // Giảm từ 0.7f xuống 0.45f
+        initialValue = 0.25f * aodOpacity, // Apply opacity to breathing
+        targetValue = 0.45f * aodOpacity,
         animationSpec = infiniteRepeatable(
             animation = tween(4000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
@@ -131,7 +133,7 @@ fun AODScreen(
         label = "alpha"
     )
     
-    val currentAlpha = if (breathingAnimation) breathingAlpha else 1f
+    val currentAlpha = if (breathingAnimation) breathingAlpha else aodOpacity
 
     Surface(
         modifier = modifier
@@ -486,8 +488,7 @@ private fun ClockDisplay(
         LaunchedEffect(Unit) {
              while(true) {
                  remainingTime = com.txapp.musicplayer.ui.component.TXASleepTimerManager.getRemainingTime(context)
-                 val delayMs = if (remainingTime > 60000) 30000L else 1000L
-                 delay(delayMs)
+                 delay(1000L) // Always update every second for real-time display
              }
         }
         

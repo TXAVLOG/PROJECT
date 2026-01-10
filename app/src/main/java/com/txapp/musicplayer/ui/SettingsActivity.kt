@@ -1134,6 +1134,115 @@ fun NowPlayingSettings() {
                 onCheckedChange = { TXAPreferences.isExtraControls = it }
             )
         }
+        
+        // Floating Lyrics Overlay Toggle with Permission Check
+        item {
+            var showOverlayPermissionDialog by remember { mutableStateOf(false) }
+            val showLyricsInPlayer by TXAPreferences.showLyricsInPlayer.collectAsState()
+            val hasOverlayPermission = remember(LocalLifecycleOwner.current) {
+                mutableStateOf(Settings.canDrawOverlays(context))
+            }
+            
+            // Refresh permission status on resume
+            DisposableEffect(LocalLifecycleOwner.current) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        hasOverlayPermission.value = Settings.canDrawOverlays(context)
+                    }
+                }
+                val lifecycle = (context as? ComponentActivity)?.lifecycle
+                lifecycle?.addObserver(observer)
+                onDispose { lifecycle?.removeObserver(observer) }
+            }
+            
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable {
+                        if (hasOverlayPermission.value) {
+                            TXAPreferences.setShowLyricsInPlayer(!showLyricsInPlayer)
+                        } else {
+                            showOverlayPermissionDialog = true
+                        }
+                    },
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Subtitles,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "txamusic_show_lyrics_overlay".txa(),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "txamusic_show_lyrics_overlay_desc".txa(),
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    
+                    if (!hasOverlayPermission.value) {
+                        // Show grant button if no permission
+                        OutlinedButton(
+                            onClick = { showOverlayPermissionDialog = true },
+                            modifier = Modifier.padding(start = 8.dp)
+                        ) {
+                            Text("txamusic_btn_grant".txa(), fontSize = 12.sp)
+                        }
+                    } else {
+                        Switch(
+                            checked = showLyricsInPlayer,
+                            onCheckedChange = { TXAPreferences.setShowLyricsInPlayer(it) }
+                        )
+                    }
+                }
+            }
+            
+            // Overlay Permission Dialog
+            if (showOverlayPermissionDialog) {
+                AlertDialog(
+                    onDismissRequest = { showOverlayPermissionDialog = false },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Layers,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    title = { Text("txamusic_overlay_permission_title".txa()) },
+                    text = { Text("txamusic_overlay_permission_desc".txa()) },
+                    confirmButton = {
+                        Button(onClick = {
+                            showOverlayPermissionDialog = false
+                            val intent = Intent(
+                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:${context.packageName}")
+                            )
+                            context.startActivity(intent)
+                        }) {
+                            Text("txamusic_btn_grant".txa())
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showOverlayPermissionDialog = false }) {
+                            Text("txamusic_btn_cancel".txa())
+                        }
+                    }
+                )
+            }
+        }
     }
 
     if (showSpeedDialog) {

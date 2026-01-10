@@ -197,6 +197,13 @@ fun ScreenSaverSettingsScreen(
                 selectedColor = clockColor,
                 onColorSelected = { com.txapp.musicplayer.util.TXAAODSettings.setClockColor(context, it) }
             )
+            
+            // AOD Opacity Slider
+            val opacity by com.txapp.musicplayer.util.TXAAODSettings.opacity.collectAsState()
+            AODOpacitySlider(
+                opacity = opacity,
+                onOpacityChange = { com.txapp.musicplayer.util.TXAAODSettings.setOpacity(context, it) }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -826,6 +833,59 @@ private fun InfoCard() {
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                 lineHeight = 18.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun AODOpacitySlider(
+    opacity: Float,
+    onOpacityChange: (Float) -> Unit
+) {
+    Column(modifier = Modifier.padding(horizontal = 4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.txamusic_aod_opacity),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "${(opacity * 100).toInt()}%",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Slider(
+            value = opacity,
+            onValueChange = onOpacityChange,
+            valueRange = 0.1f..1.0f,
+            steps = 17, // 5% increments
+            modifier = Modifier.fillMaxWidth()
+        )
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "10%",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
+            Text(
+                text = "100%",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )
         }
     }

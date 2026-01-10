@@ -568,9 +568,6 @@ object TXATranslation {
         "txamusic_add_selected" to "Add (%d)",
         "txamusic_empty_folder" to "Empty Folder",
         "txamusic_manual_add_result" to "Added %d songs. Skipped %d existing songs.",
-        "txamusic_picker_system" to "System Picker",
-        "txamusic_picker_manual" to "Manual (TXA Explorer)",
-        "txamusic_picker_system_error" to "System Picker not available",
         "txamusic_storage_root" to "Root Storage",
         "txamusic_internal_storage" to "Internal Storage",
 
@@ -583,6 +580,37 @@ object TXATranslation {
         
         // UI Hints
         "txamusic_tap_to_close" to "Tap anywhere to close",
+        
+        // Multi-select
+        "txamusic_multi_select" to "Select Multiple",
+        "txamusic_multi_select_count" to "%d selected",
+        "txamusic_batch_actions" to "Batch Actions",
+        "txamusic_action_add_all_to_playlist" to "Add All to Playlist",
+        "txamusic_action_delete_all" to "Delete All",
+        "txamusic_action_play_selected" to "Play Selected",
+        "txamusic_confirm_delete_multiple_title" to "Delete %d Songs?",
+        "txamusic_confirm_delete_multiple_desc" to "Are you sure you want to remove these %d songs from the library?",
+        
+        // Lyrics Overlay
+        "txamusic_show_lyrics_overlay" to "Floating Lyrics",
+        "txamusic_show_lyrics_overlay_desc" to "Show lyrics overlay on top of other apps",
+        "txamusic_overlay_permission_title" to "Overlay Permission Required",
+        "txamusic_overlay_permission_desc" to "To display floating lyrics on top of other apps, please grant the \"Display over other apps\" permission.",
+        "txamusic_lyrics_style" to "Lyrics Style",
+        "txamusic_lyrics_style_desc" to "Customize how lyrics are displayed",
+        "txamusic_lyrics_font_size" to "Font Size",
+        "txamusic_lyrics_text_align" to "Text Alignment",
+        "txamusic_lyrics_align_left" to "Left",
+        "txamusic_lyrics_align_center" to "Center",
+        "txamusic_lyrics_align_right" to "Right",
+        
+        // Refresh Interval
+        "txamusic_refresh_interval" to "Auto Refresh Interval",
+        "txamusic_refresh_interval_desc" to "Automatically refresh playlists after this duration",
+        "txamusic_refresh_never" to "Never",
+        "txamusic_refresh_hourly" to "Every Hour",
+        "txamusic_refresh_daily" to "Daily",
+        "txamusic_refresh_weekly" to "Weekly",
 
     )
 
@@ -1112,9 +1140,6 @@ object TXATranslation {
         "txamusic_add_selected" to "Thêm (%d)",
         "txamusic_empty_folder" to "Thư mục trống",
         "txamusic_manual_add_result" to "Đã thêm %d bài. Bỏ qua %d bài đã có.",
-        "txamusic_picker_system" to "Trình chọn hệ thống",
-        "txamusic_picker_manual" to "Thủ công (TXA Explorer)",
-        "txamusic_picker_system_error" to "Không mở được trình chọn hệ thống",
         "txamusic_storage_root" to "Bộ nhớ gốc (Root)",
         "txamusic_internal_storage" to "Bộ nhớ trong",
 
@@ -1138,7 +1163,38 @@ object TXATranslation {
         "txamusic_lyrics_search_success" to "Đã tìm thấy lời bài hát!",
         "txamusic_lyrics_search_failed" to "Không tìm thấy lời cho bài hát này",
         "txamusic_share_backup_text" to "Đây là file sao lưu của tôi cho trình phát nhạc TXA Music Player.",
-        "txamusic_share_backup_title" to "Chia sẻ bản sao lưu"
+        "txamusic_share_backup_title" to "Chia sẻ bản sao lưu",
+        
+        // Multi-select
+        "txamusic_multi_select" to "Chọn nhiều",
+        "txamusic_multi_select_count" to "Đã chọn %d",
+        "txamusic_batch_actions" to "Hành động hàng loạt",
+        "txamusic_action_add_all_to_playlist" to "Thêm tất cả vào Playlist",
+        "txamusic_action_delete_all" to "Xóa tất cả",
+        "txamusic_action_play_selected" to "Phát các bài đã chọn",
+        "txamusic_confirm_delete_multiple_title" to "Xóa %d bài hát?",
+        "txamusic_confirm_delete_multiple_desc" to "Bạn có chắc muốn xóa %d bài hát này khỏi thư viện không?",
+        
+        // Lyrics Overlay
+        "txamusic_show_lyrics_overlay" to "Lời bài hát nổi",
+        "txamusic_show_lyrics_overlay_desc" to "Hiển thị lời bài hát lên trên các ứng dụng khác",
+        "txamusic_overlay_permission_title" to "Cần cấp quyền Overlay",
+        "txamusic_overlay_permission_desc" to "Để hiển thị lời bài hát nổi trên các ứng dụng khác, vui lòng cấp quyền \"Hiển thị trên các ứng dụng khác\".",
+        "txamusic_lyrics_style" to "Kiểu lời bài hát",
+        "txamusic_lyrics_style_desc" to "Tùy chỉnh cách hiển thị lời bài hát",
+        "txamusic_lyrics_font_size" to "Cỡ chữ",
+        "txamusic_lyrics_text_align" to "Căn lề chữ",
+        "txamusic_lyrics_align_left" to "Trái",
+        "txamusic_lyrics_align_center" to "Giữa",
+        "txamusic_lyrics_align_right" to "Phải",
+        
+        // Refresh Interval
+        "txamusic_refresh_interval" to "Tần suất làm mới",
+        "txamusic_refresh_interval_desc" to "Tự động làm mới danh sách phát sau khoảng thời gian này",
+        "txamusic_refresh_never" to "Không tự động",
+        "txamusic_refresh_hourly" to "Mỗi giờ",
+        "txamusic_refresh_daily" to "Hàng ngày",
+        "txamusic_refresh_weekly" to "Hàng tuần"
     )
 
     suspend fun init(context: Context) = withContext(Dispatchers.IO) {

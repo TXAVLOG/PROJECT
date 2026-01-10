@@ -45,6 +45,7 @@ import com.txapp.musicplayer.R
 import com.txapp.musicplayer.data.MusicRepository
 import com.txapp.musicplayer.model.Song
 import com.txapp.musicplayer.ui.component.TXAFilePickerModal
+import com.txapp.musicplayer.ui.component.TXAIcons
 import com.txapp.musicplayer.ui.component.TXATagEditorSheet
 import com.txapp.musicplayer.ui.component.TagEditData
 import com.txapp.musicplayer.util.*
@@ -189,10 +190,18 @@ fun SongsScreen(
     onSaveTags: suspend (Song, TagEditData) -> Boolean = { _, _ -> true },
     onSetAsRingtone: (Song) -> Unit = {},
     onAddManualSongs: (List<android.net.Uri>) -> Unit = {},
-    onDeleteFromApp: (Song) -> Unit = {}
+    onDeleteFromApp: (Song) -> Unit = {},
+    onDeleteMultiple: (List<Song>) -> Unit = {},
+    onPlayMultiple: (List<Song>) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
+    
+    // Multi-select state
+    var isMultiSelectMode by remember { mutableStateOf(false) }
+    var selectedSongs by remember { mutableStateOf(setOf<Long>()) }
+    var showBatchMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
     val filteredSongs = remember(songs, searchQuery) {
         if (searchQuery.isBlank()) songs
@@ -236,6 +245,44 @@ fun SongsScreen(
             }
         )
     }
+    
+    // Delete confirmation dialog for multiple songs
+    if (showDeleteConfirmDialog && selectedSongs.isNotEmpty()) {
+        val count = selectedSongs.size
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = { Text("txamusic_confirm_delete_multiple_title".txa(count)) },
+            text = { Text("txamusic_confirm_delete_multiple_desc".txa(count)) },
+            confirmButton = {
+                androidx.compose.material3.Button(
+                    onClick = {
+                        val songsToDelete = songs.filter { selectedSongs.contains(it.id) }
+                        onDeleteMultiple(songsToDelete)
+                        selectedSongs = emptySet()
+                        isMultiSelectMode = false
+                        showDeleteConfirmDialog = false
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("txamusic_action_delete".txa())
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("txamusic_btn_cancel".txa())
+                }
+            }
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         OutlinedTextField(
@@ -262,40 +309,103 @@ fun SongsScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "txamusic_media_songs".txa(),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
+            // Title or selection count
+            if (isMultiSelectMode) {
+                Text(
+                    text = "txamusic_multi_select_count".txa(selectedSongs.size),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                Text(
+                    text = "txamusic_media_songs".txa(),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
             
-            Box {
-                IconButton(onClick = { showAddMenu = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Songs")
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                // Multi-select toggle button
+                IconButton(onClick = {
+                    isMultiSelectMode = !isMultiSelectMode
+                    if (!isMultiSelectMode) selectedSongs = emptySet()
+                }) {
+                    Icon(
+                        imageVector = if (isMultiSelectMode) Icons.Default.Close else Icons.Default.Checklist,
+                        contentDescription = "txamusic_multi_select".txa(),
+                        tint = if (isMultiSelectMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    )
                 }
-                DropdownMenu(
-                    expanded = showAddMenu,
-                    onDismissRequest = { showAddMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("txamusic_picker_system".txa()) },
-                        onClick = { 
-                            showAddMenu = false
-                            try {
-                                systemPicker.launch(arrayOf("audio/*"))
-                            } catch (e: Exception) {
-                                TXAToast.error(context, "txamusic_picker_system_error".txa())
+                
+                // Batch actions button (only enabled when items selected)
+                Box {
+                    IconButton(
+                        onClick = { if (selectedSongs.isNotEmpty()) showBatchMenu = true },
+                        enabled = selectedSongs.isNotEmpty()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreHoriz,
+                            contentDescription = "txamusic_batch_actions".txa(),
+                            tint = if (selectedSongs.isNotEmpty()) 
+                                MaterialTheme.colorScheme.primary 
+                            else 
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                        )
+                    }
+                    
+                    DropdownMenu(
+                        expanded = showBatchMenu,
+                        onDismissRequest = { showBatchMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("txamusic_action_play_selected".txa()) },
+                            onClick = {
+                                showBatchMenu = false
+                                val songsToPlay = songs.filter { selectedSongs.contains(it.id) }
+                                onPlayMultiple(songsToPlay)
+                                selectedSongs = emptySet()
+                                isMultiSelectMode = false
+                            },
+                            leadingIcon = { Icon(Icons.Default.PlayArrow, contentDescription = null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("txamusic_action_add_all_to_playlist".txa()) },
+                            onClick = {
+                                showBatchMenu = false
+                                TXAToast.info(context, "txamusic_feature_coming_soon".txa())
+                            },
+                            leadingIcon = { Icon(TXAIcons.PlaylistAdd, contentDescription = null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("txamusic_action_delete_all".txa()) },
+                            onClick = {
+                                showBatchMenu = false
+                                showDeleteConfirmDialog = true
+                            },
+                            leadingIcon = { 
+                                Icon(
+                                    Icons.Default.Delete, 
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                ) 
                             }
-                        },
-                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.InsertDriveFile, contentDescription = null) }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("txamusic_picker_manual".txa()) },
-                        onClick = { 
-                             showAddMenu = false
-                             showTXAPicker = true 
-                        },
-                        leadingIcon = { Icon(Icons.Default.Folder, contentDescription = null) }
-                    )
+                        )
+                    }
+                }
+                
+                // Add button
+                IconButton(onClick = {
+                    try {
+                        android.util.Log.i("TXAFilePicker", "Attempting to open System File Picker...")
+                        systemPicker.launch(arrayOf("audio/*"))
+                        android.util.Log.i("TXAFilePicker", "System File Picker launched successfully")
+                    } catch (e: Exception) {
+                        android.util.Log.w("TXAFilePicker", "System File Picker failed: ${e.message}, switching to TXA File Picker")
+                        showTXAPicker = true
+                    }
+                }) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Songs")
                 }
             }
         }
@@ -316,12 +426,24 @@ fun SongsScreen(
                 items(filteredSongs) { song ->
                     SongListItem(
                         song = song,
-                        onClick = onSongClick,
+                        onClick = { clickedSong ->
+                            if (isMultiSelectMode) {
+                                selectedSongs = if (selectedSongs.contains(clickedSong.id)) {
+                                    selectedSongs - clickedSong.id
+                                } else {
+                                    selectedSongs + clickedSong.id
+                                }
+                            } else {
+                                onSongClick(clickedSong)
+                            }
+                        },
                         isPlaying = song.id == currentlyPlayingId,
                         searchQuery = searchQuery,
                         onEditClick = { selectedSongForEdit = it },
                         onSetAsRingtone = onSetAsRingtone,
-                        onDeleteFromApp = onDeleteFromApp
+                        onDeleteFromApp = onDeleteFromApp,
+                        isMultiSelectMode = isMultiSelectMode,
+                        isSelected = selectedSongs.contains(song.id)
                     )
                 }
             }
@@ -338,18 +460,34 @@ fun SongListItem(
     searchQuery: String = "",
     onEditClick: (Song) -> Unit = {},
     onSetAsRingtone: (Song) -> Unit = {},
-    onDeleteFromApp: (Song) -> Unit = {}
+    onDeleteFromApp: (Song) -> Unit = {},
+    isMultiSelectMode: Boolean = false,
+    isSelected: Boolean = false
 ) {
     val textColor = if (isPlaying) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+    val backgroundColor = when {
+        isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        isPlaying -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+        else -> Color.Transparent
+    }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick(song) }
-            .background(if (isPlaying) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f) else Color.Transparent)
+            .background(backgroundColor)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Show checkbox in multi-select mode
+        if (isMultiSelectMode) {
+            androidx.compose.material3.Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onClick(song) },
+                modifier = Modifier.padding(end = 8.dp)
+            )
+        }
+        
         SubcomposeAsyncImage(
             model = MusicUtil.getAlbumArtUri(song.albumId),
             contentDescription = null,
@@ -406,7 +544,7 @@ fun SongListItem(
                 overflow = TextOverflow.Ellipsis
             )
         }
-        if (isPlaying) {
+        if (isPlaying && !isMultiSelectMode) {
             Icon(
                 painter = painterResource(R.drawable.ic_music_note),
                 contentDescription = "Playing",
@@ -415,43 +553,46 @@ fun SongListItem(
             )
         }
 
-        var showMenu by remember { mutableStateOf(false) }
-        Box {
-            IconButton(onClick = { showMenu = true }) {
-                Icon(
-                    Icons.Default.MoreVert,
-                    contentDescription = "More",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            DropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = { showMenu = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("txamusic_edit_tag".txa()) },
-                    onClick = {
-                        showMenu = false
-                        onEditClick(song)
-                    },
-                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                )
-                DropdownMenuItem(
-                    text = { Text("txamusic_set_as_ringtone".txa()) },
-                    onClick = {
-                        showMenu = false
-                        onSetAsRingtone(song)
-                    },
-                    leadingIcon = { Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                )
-                DropdownMenuItem(
-                    text = { Text("txamusic_delete_from_app".txa()) },
-                    onClick = {
-                        showMenu = false
-                        onDeleteFromApp(song)
-                    },
-                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
-                )
+        // Only show menu in normal mode, not in multi-select
+        if (!isMultiSelectMode) {
+            var showMenu by remember { mutableStateOf(false) }
+            Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = "More",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("txamusic_edit_tag".txa()) },
+                        onClick = {
+                            showMenu = false
+                            onEditClick(song)
+                        },
+                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("txamusic_set_as_ringtone".txa()) },
+                        onClick = {
+                            showMenu = false
+                            onSetAsRingtone(song)
+                        },
+                        leadingIcon = { Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("txamusic_delete_from_app".txa()) },
+                        onClick = {
+                            showMenu = false
+                            onDeleteFromApp(song)
+                        },
+                        leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
+                    )
+                }
             }
         }
 
