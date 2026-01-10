@@ -1,3 +1,4 @@
+@file:OptIn(androidx.media3.common.util.UnstableApi::class, com.txapp.musicplayer.media.ExperimentalApi::class)
 package com.txapp.musicplayer.service
 
 import android.app.NotificationChannel
@@ -31,7 +32,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.*
-import androidx.annotation.OptIn
+import kotlin.OptIn
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.LibraryResult.RESULT_ERROR_BAD_VALUE
 import androidx.media3.session.LibraryResult.RESULT_ERROR_UNKNOWN
@@ -182,7 +183,6 @@ class MusicService : MediaLibraryService() {
         }
     }
 
-    @OptIn(androidx.media3.common.util.UnstableApi::class, com.txapp.musicplayer.media.ExperimentalApi::class)
     override fun onCreate() {
         super.onCreate()
 

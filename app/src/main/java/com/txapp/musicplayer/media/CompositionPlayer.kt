@@ -2,7 +2,7 @@ package com.txapp.musicplayer.media
 
 import android.content.Context
 import android.os.Looper
-import androidx.annotation.OptIn
+import kotlin.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.Player
