@@ -57,6 +57,8 @@
     <string name="txamusic_aod_settings_title">Display Options</string>
     <string name="txamusic_aod_show_controls">Show Music Controls</string>
     <string name="txamusic_aod_show_controls_desc">Display play/pause and skip buttons on screen saver</string>
+    <string name="txamusic_aod_show_music">Show music info</string>
+    <string name="txamusic_aod_show_music_desc">Show song title, artist and artwork on AOD</string>
     <string name="txamusic_aod_show_date">Show Date</string>
     <string name="txamusic_aod_date_format">Date Format</string>
     <string name="txamusic_aod_show_battery">Show Battery Percentage</string>

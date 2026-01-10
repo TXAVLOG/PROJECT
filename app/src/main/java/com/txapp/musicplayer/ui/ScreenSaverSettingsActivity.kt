@@ -78,6 +78,7 @@ class ScreenSaverSettingsActivity : ComponentActivity() {
 fun ScreenSaverSettingsScreen(
     onBack: () -> Unit
 ) {
+    val showMusic by com.txapp.musicplayer.util.TXAAODSettings.showMusic.collectAsState()
     val showControls by com.txapp.musicplayer.util.TXAAODSettings.showControls.collectAsState()
     val nightMode by com.txapp.musicplayer.util.TXAAODSettings.nightMode.collectAsState()
     val showDate by com.txapp.musicplayer.util.TXAAODSettings.showDate.collectAsState()
@@ -121,6 +122,7 @@ fun ScreenSaverSettingsScreen(
         ) {
             // Preview Card
             ScreenSaverPreviewCard(
+                showMusic = showMusic,
                 showControls = showControls,
                 nightMode = nightMode,
                 showDate = showDate,
@@ -141,14 +143,25 @@ fun ScreenSaverSettingsScreen(
                 modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
             )
 
-            // Show Controls Toggle
+            // Show Music Toggle
             SettingsSwitchCard(
-                icon = Icons.Outlined.TouchApp,
-                title = stringResource(R.string.txamusic_aod_show_controls),
-                subtitle = stringResource(R.string.txamusic_aod_show_controls_desc),
-                checked = showControls,
-                onCheckedChange = { com.txapp.musicplayer.util.TXAAODSettings.setShowControls(context, it) }
+                icon = Icons.Outlined.MusicNote,
+                title = stringResource(R.string.txamusic_aod_show_music),
+                subtitle = stringResource(R.string.txamusic_aod_show_music_desc),
+                checked = showMusic,
+                onCheckedChange = { com.txapp.musicplayer.util.TXAAODSettings.setShowMusic(context, it) }
             )
+
+            // Show Controls Toggle - Only visible if Show Music is ON
+            if (showMusic) {
+                SettingsSwitchCard(
+                    icon = Icons.Outlined.TouchApp,
+                    title = stringResource(R.string.txamusic_aod_show_controls),
+                    subtitle = stringResource(R.string.txamusic_aod_show_controls_desc),
+                    checked = showControls,
+                    onCheckedChange = { com.txapp.musicplayer.util.TXAAODSettings.setShowControls(context, it) }
+                )
+            }
 
             // Night Mode Toggle
             SettingsSwitchCard(
@@ -241,6 +254,7 @@ private fun startDreamPreview(context: Context) {
 
 @Composable
 private fun ScreenSaverPreviewCard(
+    showMusic: Boolean,
     showControls: Boolean,
     nightMode: Boolean,
     showDate: Boolean,
@@ -368,85 +382,87 @@ private fun ScreenSaverPreviewCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                if (showMusic) {
+                    Spacer(modifier = Modifier.height(32.dp))
 
-                // Music info preview - Artwork
-                Box(
-                    modifier = Modifier
-                        .size(100.dp) // Slightly bigger artwork for preview
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color.DarkGray)
-                ) {
-                    DefaultAlbumArt(vibrantColor = Color.Gray)
-                }
+                    // Music info preview - Artwork
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp) // Slightly bigger artwork for preview
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.DarkGray)
+                    ) {
+                        DefaultAlbumArt(vibrantColor = Color.Gray)
+                    }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(R.string.txamusic_aod_preview_song),
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-
-                Text(
-                    text = stringResource(R.string.txamusic_aod_preview_artist),
-                    color = Color.White.copy(alpha = 0.6f),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Light,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Mock Progress Bar
-                LinearProgressIndicator(
-                    progress = { 0.4f },
-                    modifier = Modifier
-                        .width(120.dp)
-                        .height(2.dp)
-                        .clip(RoundedCornerShape(1.dp)),
-                    color = Color.White.copy(alpha = 0.6f),
-                    trackColor = Color.White.copy(alpha = 0.1f)
-                )
-
-                if (showControls) {
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Controls preview
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(24.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.SkipPrevious,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.7f),
-                            modifier = Modifier.size(24.dp)
-                        )
-                        
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(50))
-                                .background(Color.White.copy(alpha = 0.1f)),
-                            contentAlignment = Alignment.Center
+                    Text(
+                        text = stringResource(R.string.txamusic_aod_preview_song),
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Text(
+                        text = stringResource(R.string.txamusic_aod_preview_artist),
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Light,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Mock Progress Bar
+                    LinearProgressIndicator(
+                        progress = { 0.4f },
+                        modifier = Modifier
+                            .width(120.dp)
+                            .height(2.dp)
+                            .clip(RoundedCornerShape(1.dp)),
+                        color = Color.White.copy(alpha = 0.6f),
+                        trackColor = Color.White.copy(alpha = 0.1f)
+                    )
+
+                    if (showControls) {
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Controls preview
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(24.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.Pause,
+                                imageVector = Icons.Filled.SkipPrevious,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(24.dp)
+                            )
+                            
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(Color.White.copy(alpha = 0.1f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Pause,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            
+                            Icon(
+                                imageVector = Icons.Filled.SkipNext,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = 0.7f),
                                 modifier = Modifier.size(24.dp)
                             )
                         }
-                        
-                        Icon(
-                            imageVector = Icons.Filled.SkipNext,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.7f),
-                            modifier = Modifier.size(24.dp)
-                        )
                     }
                 }
             }

@@ -86,6 +86,8 @@
     <string name="txamusic_aod_settings_title">Tùy chọn hiển thị</string>
     <string name="txamusic_aod_show_controls">Hiển thị điều khiển nhạc</string>
     <string name="txamusic_aod_show_controls_desc">Hiển thị nút phát/tạm dừng và bỏ qua trên màn hình chờ</string>
+    <string name="txamusic_aod_show_music">Hiển thị bài nhạc</string>
+    <string name="txamusic_aod_show_music_desc">Hiển thị tên bài hát, nghệ sĩ và hình nền trên màn hình chờ</string>
     <string name="txamusic_aod_show_date">Hiển thị ngày tháng</string>
     <string name="txamusic_aod_date_format">Định dạng ngày</string>
     <string name="txamusic_aod_show_battery">Hiển thị pin</string>

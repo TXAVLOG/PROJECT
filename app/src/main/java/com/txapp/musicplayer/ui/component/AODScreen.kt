@@ -178,10 +178,11 @@ fun AODScreen(
                 digitalFont = digitalFont
             )
         
-        // Media Controls - Chỉ hiển thị khi đang phát nhạc và cài đặt cho phép
+        // Media Infomation & Controls - Chỉ hiển thị khi đang phát nhạc và cài đặt cho phép
+        val showMusic by com.txapp.musicplayer.util.TXAAODSettings.showMusic.collectAsState()
         val showControls by com.txapp.musicplayer.util.TXAAODSettings.showControls.collectAsState()
         
-        if (isPlayingMusic && nowPlayingTitle.isNotEmpty() && showControls) {
+        if (isPlayingMusic && nowPlayingTitle.isNotEmpty() && showMusic) {
             AODMediaControls(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -195,6 +196,7 @@ fun AODScreen(
                 duration = duration,
                 isPlaying = isPlayingMusic,
                 accentColor = dimmedClockColor,
+                showControls = showControls,
                 onPlayPause = onPlayPause,
                 onNext = onNext,
                 onPrevious = onPrevious
@@ -229,6 +231,7 @@ private fun AODMediaControls(
     duration: Long,
     isPlaying: Boolean,
     accentColor: Color,
+    showControls: Boolean,
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
     onPrevious: () -> Unit
@@ -343,51 +346,53 @@ private fun AODMediaControls(
             )
         }
         
-        Spacer(modifier = Modifier.height(8.dp))
-        
         // Controls - Màu tối
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(24.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(
-                onClick = onPrevious,
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.SkipPrevious,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.4f),
-                    modifier = Modifier.size(28.dp)
-                )
-            }
+        if (showControls) {
+            Spacer(modifier = Modifier.height(8.dp))
             
-            Surface(
-                onClick = onPlayPause,
-                modifier = Modifier.size(48.dp),
-                shape = CircleShape,
-                color = accentColor.copy(alpha = 0.3f) // Tối hoá nút play
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                IconButton(
+                    onClick = onPrevious,
+                    modifier = Modifier.size(40.dp)
+                ) {
                     Icon(
-                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        imageVector = Icons.Default.SkipPrevious,
                         contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.6f),
+                        tint = Color.White.copy(alpha = 0.4f),
                         modifier = Modifier.size(28.dp)
                     )
                 }
-            }
-            
-            IconButton(
-                onClick = onNext,
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.SkipNext,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.4f),
-                    modifier = Modifier.size(28.dp)
-                )
+                
+                Surface(
+                    onClick = onPlayPause,
+                    modifier = Modifier.size(48.dp),
+                    shape = CircleShape,
+                    color = accentColor.copy(alpha = 0.3f) // Tối hoá nút play
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.6f),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
+                
+                IconButton(
+                    onClick = onNext,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SkipNext,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.4f),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
         }
     }

@@ -335,6 +335,7 @@ class MusicDreamService : DreamService(), LifecycleOwner, SavedStateRegistryOwne
         var sleepTimerRemaining by remember { mutableLongStateOf(0L) }
         
         // Read AOD settings - Using TXAAODSettings for all visual consistency
+        val showMusic by com.txapp.musicplayer.util.TXAAODSettings.showMusic.collectAsState()
         val showControls by com.txapp.musicplayer.util.TXAAODSettings.showControls.collectAsState()
         val nightMode by com.txapp.musicplayer.util.TXAAODSettings.nightMode.collectAsState()
         val showDate by com.txapp.musicplayer.util.TXAAODSettings.showDate.collectAsState()
@@ -442,7 +443,7 @@ class MusicDreamService : DreamService(), LifecycleOwner, SavedStateRegistryOwne
 
                     // Music info and controls
                     val mediaItem = currentMediaItem
-                    if (mediaItem != null) {
+                    if (mediaItem != null && showMusic) {
                         MusicInfoCard(
                             mediaItem = mediaItem,
                             isPlaying = isPlaying,

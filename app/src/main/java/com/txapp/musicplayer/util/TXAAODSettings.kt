@@ -55,6 +55,10 @@ object TXAAODSettings {
     private val _showControls = MutableStateFlow(true)
     val showControls: StateFlow<Boolean> = _showControls.asStateFlow()
     
+    // Show music info in AOD
+    private val _showMusic = MutableStateFlow(true)
+    val showMusic: StateFlow<Boolean> = _showMusic.asStateFlow()
+    
     // AOD Opacity/Brightness (0.0 to 1.0)
     private val _opacity = MutableStateFlow(0.7f)
     val opacity: StateFlow<Float> = _opacity.asStateFlow()
@@ -74,6 +78,7 @@ object TXAAODSettings {
         _breathingAnimation.value = prefs.getBoolean("breathing_animation", true)
         _nightMode.value = prefs.getBoolean("night_mode", false)
         _showControls.value = prefs.getBoolean("show_controls", true)
+        _showMusic.value = prefs.getBoolean("show_music", true)
         _opacity.value = prefs.getFloat("opacity", 0.7f)
         
         TXALogger.appI("TXAAODSettings", "AOD Settings initialized")
@@ -95,6 +100,7 @@ object TXAAODSettings {
             putBoolean("breathing_animation", _breathingAnimation.value)
             putBoolean("night_mode", _nightMode.value)
             putBoolean("show_controls", _showControls.value)
+            putBoolean("show_music", _showMusic.value)
             putFloat("opacity", _opacity.value)
             apply()
         }
@@ -158,6 +164,11 @@ object TXAAODSettings {
 
     fun setShowControls(context: Context, enabled: Boolean) {
         _showControls.value = enabled
+        save(context)
+    }
+
+    fun setShowMusic(context: Context, enabled: Boolean) {
+        _showMusic.value = enabled
         save(context)
     }
     
