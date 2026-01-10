@@ -148,6 +148,22 @@ class SongsFragment : Fragment() {
                                     TXAToast.warning(context, "txamusic_error_file_not_found".txa(song.title))
                                 }
                             }
+                        },
+                        onDeleteMultiple = { songs ->
+                            com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                                .setTitle("txamusic_confirm_delete_multiple_title".txa(songs.size))
+                                .setMessage("txamusic_confirm_delete_multiple_desc".txa(songs.size))
+                                .setPositiveButton("txamusic_btn_delete".txa()) { _, _ ->
+                                    viewLifecycleOwner.lifecycleScope.launch {
+                                        songs.forEach { repository.deleteSongFromApp(it.id) }
+                                        TXAToast.success(context, "txamusic_song_deleted".txa())
+                                    }
+                                }
+                                .setNegativeButton("txamusic_btn_cancel".txa(), null)
+                                .show()
+                        },
+                        onPlayMultiple = { songs ->
+                            (activity as? MainActivity)?.playSelectedBatch(songs)
                         }
                     )
                 }

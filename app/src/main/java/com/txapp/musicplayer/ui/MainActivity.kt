@@ -1417,6 +1417,30 @@ class MainActivity : AppCompatActivity() {
         controller.play()
     }
 
+    fun playSelectedBatch(songs: List<com.txapp.musicplayer.model.Song>) {
+        if (songs.isEmpty()) return
+        val firstSong = songs[0]
+        val path = firstSong.data
+        val savedPos = com.txapp.musicplayer.util.TXAPlaybackHistory.getPosition(path)
+
+        if (com.txapp.musicplayer.util.TXAPreferences.isRememberPlaybackPositionEnabled && savedPos > 0) {
+            val formattedTime = com.txapp.musicplayer.util.TXAFormat.formatDuration(savedPos)
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("txamusic_resume_playback_title".txa())
+                .setMessage("txamusic_resume_playback_msg".txa(firstSong.title, formattedTime))
+                .setPositiveButton("txamusic_action_resume".txa()) { _, _ ->
+                    playSongs(songs, 0, startPositionMs = savedPos)
+                }
+                .setNegativeButton("txamusic_action_start_over".txa()) { _, _ ->
+                    com.txapp.musicplayer.util.TXAPlaybackHistory.clearPosition(path)
+                    playSongs(songs, 0, startPositionMs = 0)
+                }
+                .show()
+        } else {
+            playSongs(songs, 0)
+        }
+    }
+
     fun addSongsToQueue(songs: List<com.txapp.musicplayer.model.Song>) {
         val controller = mediaController ?: return
         val mediaItems = songs.map { song ->
