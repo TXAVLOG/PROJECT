@@ -84,6 +84,7 @@ fun ScreenSaverSettingsScreen(
     val dateFormat by com.txapp.musicplayer.util.TXAAODSettings.dateFormat.collectAsState()
     val showBattery by com.txapp.musicplayer.util.TXAAODSettings.showBattery.collectAsState()
     val clockColor by com.txapp.musicplayer.util.TXAAODSettings.clockColor.collectAsState()
+    val opacity by com.txapp.musicplayer.util.TXAAODSettings.opacity.collectAsState()
     val context = LocalContext.current
 
     Scaffold(
@@ -125,7 +126,8 @@ fun ScreenSaverSettingsScreen(
                 showDate = showDate,
                 dateFormat = dateFormat,
                 showBattery = showBattery,
-                clockColorString = clockColor
+                clockColorString = clockColor,
+                opacity = opacity
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -199,7 +201,6 @@ fun ScreenSaverSettingsScreen(
             )
             
             // AOD Opacity Slider
-            val opacity by com.txapp.musicplayer.util.TXAAODSettings.opacity.collectAsState()
             AODOpacitySlider(
                 opacity = opacity,
                 onOpacityChange = { com.txapp.musicplayer.util.TXAAODSettings.setOpacity(context, it) }
@@ -245,7 +246,8 @@ private fun ScreenSaverPreviewCard(
     showDate: Boolean,
     dateFormat: Int,
     showBattery: Boolean,
-    clockColorString: String
+    clockColorString: String,
+    opacity: Float
 ) {
     // Real-time clock state
     var currentTime by remember { mutableStateOf(getCurrentTimeHHmm()) }
@@ -287,7 +289,7 @@ private fun ScreenSaverPreviewCard(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .alpha(baseAlpha),
+                .alpha(baseAlpha * opacity),
             contentAlignment = Alignment.Center
         ) {
             Column(

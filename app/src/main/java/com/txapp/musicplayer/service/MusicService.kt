@@ -142,18 +142,13 @@ class MusicService : MediaLibraryService() {
         
         // Check Bluetooth using modern API
         var isBluetoothConnected = false
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val devices = audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS)
-            for (device in devices) {
-                if (device.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || 
-                    device.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
-                    isBluetoothConnected = true
-                    break
-                }
+        val devices = audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS)
+        for (device in devices) {
+            if (device.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || 
+                device.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
+                isBluetoothConnected = true
+                break
             }
-        } else {
-             @Suppress("DEPRECATION")
-             isBluetoothConnected = audioManager.isBluetoothA2dpOn || audioManager.isBluetoothScoOn
         }
 
         if (isBluetoothConnected) {
@@ -1129,19 +1124,17 @@ class MusicService : MediaLibraryService() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "txamusic_noti_channel_name".txa(),
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "txamusic_noti_channel_desc".txa()
-                setShowBadge(false)
-                setBypassDnd(false)
-            }
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "txamusic_noti_channel_name".txa(),
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "txamusic_noti_channel_desc".txa()
+            setShowBadge(false)
+            setBypassDnd(false)
         }
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.createNotificationChannel(channel)
     }
 
     companion object {

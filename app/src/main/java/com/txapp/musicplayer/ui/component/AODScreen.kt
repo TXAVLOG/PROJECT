@@ -79,9 +79,9 @@ fun AODScreen(
     val clockColor = com.txapp.musicplayer.util.TXAAODSettings.getClockColorCompose()
     val isNightMode by com.txapp.musicplayer.util.TXAAODSettings.nightMode.collectAsState()
     val aodOpacity by com.txapp.musicplayer.util.TXAAODSettings.opacity.collectAsState()
-    val dimmedClockColor = remember(clockColor, isNightMode, aodOpacity) {
+    val dimmedClockColor = remember(clockColor, isNightMode) {
         val baseAlpha = if (isNightMode) 0.6f else 1f
-        clockColor.copy(alpha = baseAlpha * aodOpacity)
+        clockColor.copy(alpha = baseAlpha)
     }
     
     val breathingAnimation by com.txapp.musicplayer.util.TXAAODSettings.breathingAnimation.collectAsState()
@@ -124,8 +124,8 @@ fun AODScreen(
     // Breathing animation - Giảm độ sáng cho ban đêm
     val infiniteTransition = rememberInfiniteTransition(label = "breathing")
     val breathingAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.25f * aodOpacity, // Apply opacity to breathing
-        targetValue = 0.45f * aodOpacity,
+        initialValue = 0.35f,
+        targetValue = 0.65f,
         animationSpec = infiniteRepeatable(
             animation = tween(4000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
@@ -133,7 +133,7 @@ fun AODScreen(
         label = "alpha"
     )
     
-    val currentAlpha = if (breathingAnimation) breathingAlpha else aodOpacity
+    val currentAlpha = if (breathingAnimation) breathingAlpha * aodOpacity else aodOpacity
 
     Surface(
         modifier = modifier

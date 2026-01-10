@@ -98,11 +98,7 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
                 return
             }
             val intent = Intent(context, FloatingLyricsService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            context.startForegroundService(intent)
         }
 
         fun stopService(context: Context) {
@@ -205,18 +201,16 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Floating Lyrics",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Shows floating lyrics overlay"
-                setShowBadge(false)
-            }
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Floating Lyrics",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Shows floating lyrics overlay"
+            setShowBadge(false)
         }
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
     }
 
     private fun createNotification(): Notification {
@@ -242,12 +236,7 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         if (floatingView != null) return
 
         layoutParams = WindowManager.LayoutParams().apply {
-            // Use TYPE_APPLICATION_OVERLAY for Android O+, TYPE_PHONE for older
-            type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            else
-                @Suppress("DEPRECATION")
-                WindowManager.LayoutParams.TYPE_PHONE
+            type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             
             flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS

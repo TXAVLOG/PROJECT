@@ -35,12 +35,7 @@ object TXADeviceInfo {
     fun getVersionCode(): Long {
         return try {
             val pInfo = appContext.packageManager.getPackageInfo(appContext.packageName, 0)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                pInfo.longVersionCode
-            } else {
-                @Suppress("DEPRECATION")
-                pInfo.versionCode.toLong()
-            }
+            pInfo.longVersionCode
         } catch (e: Exception) {
             0L
         }
@@ -262,14 +257,12 @@ object TXADeviceInfo {
     
     private fun clearCodeCache() {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                val codeCacheDir = appContext.codeCacheDir
-                if (codeCacheDir.exists()) {
-                    codeCacheDir.listFiles()?.forEach { file ->
-                        // Only delete .dex files and outdated caches
-                        if (file.name.endsWith(".dex") || file.name.contains("profile")) {
-                            file.delete()
-                        }
+            val codeCacheDir = appContext.codeCacheDir
+            if (codeCacheDir.exists()) {
+                codeCacheDir.listFiles()?.forEach { file ->
+                    // Only delete .dex files and outdated caches
+                    if (file.name.endsWith(".dex") || file.name.contains("profile")) {
+                        file.delete()
                     }
                 }
             }

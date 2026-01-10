@@ -343,9 +343,11 @@ class MusicDreamService : DreamService(), LifecycleOwner, SavedStateRegistryOwne
         val clockColor = com.txapp.musicplayer.util.TXAAODSettings.getClockColorCompose()
         val breathingAnimation by com.txapp.musicplayer.util.TXAAODSettings.breathingAnimation.collectAsState()
         val pixelShiftInterval by com.txapp.musicplayer.util.TXAAODSettings.pixelShiftInterval.collectAsState()
+        val aodOpacity by com.txapp.musicplayer.util.TXAAODSettings.opacity.collectAsState()
         
         // Night mode reduces overall brightness significantly
         val nightModeAlpha = if (nightMode) 0.3f else 1f
+        val finalAlpha = nightModeAlpha * aodOpacity
 
         // Breathing alpha animation
         val infiniteTransition = rememberInfiniteTransition(label = "breathing")
@@ -385,7 +387,7 @@ class MusicDreamService : DreamService(), LifecycleOwner, SavedStateRegistryOwne
             modifier = Modifier
                 .fillMaxSize()
                 .background(androidx.compose.ui.graphics.Color.Black)
-                .alpha(nightModeAlpha)
+                .alpha(finalAlpha)
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }

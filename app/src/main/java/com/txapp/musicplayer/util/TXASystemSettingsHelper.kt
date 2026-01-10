@@ -17,24 +17,18 @@ object TXASystemSettingsHelper {
      * Check if we have permission to write system settings
      */
     fun canWriteSettings(context: Context): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Settings.System.canWrite(context)
-        } else {
-            true // Prior to M, permission was granted at install time
-        }
+        return Settings.System.canWrite(context)
     }
 
     /**
      * Request the WRITE_SETTINGS permission from the user
      */
     fun requestWriteSettingsPermission(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
-                data = Uri.parse("package:${context.packageName}")
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(intent)
+        val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
+            data = Uri.parse("package:${context.packageName}")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
+        context.startActivity(intent)
     }
 
 

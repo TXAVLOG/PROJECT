@@ -73,18 +73,14 @@ object TXAPermissionHelper {
      * Kiểm tra quyền cài app từ nguồn lạ
      */
     fun canInstallPackages(context: Context): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.packageManager.canRequestPackageInstalls()
-        } else true
+        return context.packageManager.canRequestPackageInstalls()
     }
 
     fun requestInstallPackagesPermission(activity: Activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                data = Uri.parse("package:${activity.packageName}")
-            }
-            activity.startActivity(intent)
+        val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+            data = Uri.parse("package:${activity.packageName}")
         }
+        activity.startActivity(intent)
     }
 
     /**
@@ -113,32 +109,26 @@ object TXAPermissionHelper {
      * Kiểm tra quyền thay đổi cài đặt hệ thống (WRITE_SETTINGS)
      */
     fun hasWriteSettingsPermission(context: Context): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Settings.System.canWrite(context)
-        } else {
-            true // Không cần quyền đặc biệt cho Android < M
-        }
+        return Settings.System.canWrite(context)
     }
 
     /**
      * Mở màn hình xin quyền thay đổi cài đặt hệ thống
      */
     fun requestWriteSettingsPermission(activity: Activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        try {
+            val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS)
+            intent.data = Uri.parse("package:${activity.packageName}")
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            activity.startActivity(intent)
+        } catch (e: Exception) {
+            // Fallback to general settings
             try {
-                val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS)
-                intent.data = Uri.parse("package:${activity.packageName}")
+                val intent = Intent(Settings.ACTION_SETTINGS)
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 activity.startActivity(intent)
-            } catch (e: Exception) {
-                // Fallback to general settings
-                try {
-                    val intent = Intent(Settings.ACTION_SETTINGS)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    activity.startActivity(intent)
-                } catch (e2: Exception) {
-                    // Silently fail if settings cannot be opened
-                }
+            } catch (e2: Exception) {
+                // Silently fail if settings cannot be opened
             }
         }
     }
@@ -147,27 +137,21 @@ object TXAPermissionHelper {
      * Kiểm tra quyền Hiển thị trên ứng dụng khác (Overlay/System Alert Window)
      */
     fun hasSystemAlertWindowPermission(context: Context): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Settings.canDrawOverlays(context)
-        } else {
-            true
-        }
+        return Settings.canDrawOverlays(context)
     }
 
     /**
      * Mở màn hình xin quyền Hiển thị trên ứng dụng khác
      */
     fun requestSystemAlertWindowPermission(activity: Activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            try {
-                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                    data = Uri.parse("package:${activity.packageName}")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                activity.startActivity(intent)
-            } catch (e: Exception) {
-                TXALogger.appE("TXAPermissionHelper", "Failed to open overlay settings", e)
+        try {
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                data = Uri.parse("package:${activity.packageName}")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
+            activity.startActivity(intent)
+        } catch (e: Exception) {
+            TXALogger.appE("TXAPermissionHelper", "Failed to open overlay settings", e)
         }
     }
 
