@@ -447,20 +447,20 @@ class MusicService : MediaLibraryService() {
         }
 
         // Periodic save for crash protection (every 1s for floating lyrics sync)
+        // Periodic save for crash protection (every 1s for floating lyrics sync)
         serviceScope.launch {
-            var saveCounter = 0
+            var lastSaveTime = System.currentTimeMillis()
             while (isActive) {
-                delay(1000)
                 if (player.isPlaying) {
-                     // Update Floating Lyrics position every second
                      FloatingLyricsService.updatePosition(player.currentPosition)
-                     
-                     saveCounter++
-                     if (saveCounter >= 5) { // Save state every 5 seconds
-                        savePlaybackState()
-                        saveCurrentSongProgress()
-                        saveCounter = 0
-                     }
+                     delay(50)
+                } else {
+                     delay(1000)
+                }
+
+                if (System.currentTimeMillis() - lastSaveTime > 5000) {
+                     saveCurrentSongProgress()
+                     lastSaveTime = System.currentTimeMillis()
                 }
             }
         }
@@ -719,7 +719,12 @@ class MusicService : MediaLibraryService() {
         val mediaUri = currentItem.localConfiguration?.uri?.toString() ?: ""
         val path = try { android.net.Uri.parse(mediaUri).path ?: "" } catch (e: Exception) { "" }
 
-        FloatingLyricsService.updateSongInfo(title)
+        val albumId = metadata.extras?.getLong("album_id") ?: -1L
+        val albumArtUri = if (albumId >= 0) "content://media/external/audio/albumart/$albumId" else ""
+
+        TXALogger.floatingI("MusicService", "Updating Song Info: Title='$title', URI='$mediaUri'")
+        
+        FloatingLyricsService.updateSongInfo(title, albumArtUri)
         
         serviceScope.launch(Dispatchers.IO) {
             val raw = LyricsUtil.getRawLyrics(path, title, artist)
@@ -1042,7 +1047,7 @@ class MusicService : MediaLibraryService() {
     }
 
     private fun playExternalUri(uri: Uri) {
-        val fileName = uri.lastPathSegment ?: uri.toString()
+        val fileName = getFileNameFromUri(uri)
         val mediaItem = MediaItem.Builder()
             .setUri(uri)
             .setMediaMetadata(
@@ -1057,7 +1062,7 @@ class MusicService : MediaLibraryService() {
     }
 
     private fun enqueueExternalUri(uri: Uri) {
-        val fileName = uri.lastPathSegment ?: uri.toString()
+        val fileName = getFileNameFromUri(uri)
         val mediaItem = MediaItem.Builder()
             .setUri(uri)
             .setMediaMetadata(
@@ -1071,6 +1076,29 @@ class MusicService : MediaLibraryService() {
             player.prepare()
             player.play()
         }
+    }
+
+    private fun getFileNameFromUri(uri: Uri): String {
+        var result: String? = null
+        if (uri.scheme == "content") {
+            try {
+                contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (index >= 0) {
+                            result = cursor.getString(index)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                TXALogger.appE("MusicService", "Error resolving filename for $uri", e)
+            }
+        }
+        if (result == null) {
+            result = uri.lastPathSegment
+        }
+        // Fallback or cleanup
+        return result ?: uri.toString()
     }
     
     private var lastUpdateLayoutTime = 0L

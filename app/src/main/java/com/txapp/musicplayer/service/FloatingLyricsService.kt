@@ -58,11 +58,20 @@ import com.txapp.musicplayer.util.TXALogger
 import com.txapp.musicplayer.util.TXAPreferences
 import com.txapp.musicplayer.util.LyricsUtil
 import com.txapp.musicplayer.ui.component.LyricLine
+import com.txapp.musicplayer.util.TXAFormat
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.SpanStyle
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -90,11 +99,17 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         private val _songTitle = MutableStateFlow("")
         val songTitle = _songTitle.asStateFlow()
 
+        private val _albumArtUri = MutableStateFlow("")
+        val albumArtUri = _albumArtUri.asStateFlow()
+
         private val _isServiceRunning = MutableStateFlow(false)
         val isServiceRunning = _isServiceRunning.asStateFlow()
 
         private val _currentPosition = MutableStateFlow(0L)
+        val currentPosition = _currentPosition.asStateFlow()
+        
         private val _currentLyricsList = MutableStateFlow<List<LyricLine>>(emptyList())
+        val currentLyricsList = _currentLyricsList.asStateFlow()
 
         fun updateLyric(lyric: String) {
             _currentLyric.value = lyric
@@ -119,10 +134,11 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
             }
         }
 
-        fun updateSongInfo(title: String) {
-            if (_songTitle.value != title) {
+        fun updateSongInfo(title: String, artUri: String = "") {
+            if (_songTitle.value != title || _albumArtUri.value != artUri) {
                 _songTitle.value = title
-                TXALogger.floatingI("FloatingLyricsService", "Song info updated: $title")
+                _albumArtUri.value = artUri
+                TXALogger.floatingI("FloatingLyricsService", "Song info updated: $title, Art: $artUri")
             }
         }
 
@@ -442,12 +458,16 @@ private fun FloatingLyricsBubble(
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     var isDragging by remember { mutableStateOf(false) }
+    
     val currentLyric by FloatingLyricsService.currentLyric.collectAsState()
     val songTitle by FloatingLyricsService.songTitle.collectAsState()
+    val albumArtUri by FloatingLyricsService.albumArtUri.collectAsState()
+    val lyricsList by FloatingLyricsService.currentLyricsList.collectAsState()
+    val position by FloatingLyricsService.currentPosition.collectAsState()
     
     // Animate bubble size
     val bubbleSize by animateDpAsState(
-        targetValue = if (isExpanded) 0.dp else 56.dp,
+        targetValue = if (isExpanded) 0.dp else 60.dp,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "bubbleSize"
     )
@@ -455,12 +475,6 @@ private fun FloatingLyricsBubble(
     // Logging state changes
     LaunchedEffect(isExpanded) {
         TXALogger.floatingI("FloatingLyricsBubble", "State changed: isExpanded=$isExpanded")
-    }
-
-    LaunchedEffect(currentLyric) {
-        if (currentLyric.isNotBlank()) {
-            TXALogger.floatingI("FloatingLyricsBubble", "Lyrics updated: ${currentLyric.take(30)}...")
-        }
     }
 
     Box(
@@ -481,16 +495,14 @@ private fun FloatingLyricsBubble(
                 )
             }
     ) {
-        AnimatedContent(
+        androidx.compose.animation.AnimatedContent(
             targetState = isExpanded,
             transitionSpec = {
                 if (targetState) {
-                    // Expanding
                     (fadeIn(animationSpec = tween(200)) + 
                      scaleIn(initialScale = 0.8f, animationSpec = tween(200)))
                         .togetherWith(fadeOut(animationSpec = tween(150)))
                 } else {
-                    // Collapsing
                     (fadeIn(animationSpec = tween(150)) + 
                      scaleIn(initialScale = 0.8f, animationSpec = tween(150)))
                         .togetherWith(fadeOut(animationSpec = tween(100)))
@@ -499,18 +511,24 @@ private fun FloatingLyricsBubble(
             label = "expandCollapse"
         ) { expanded ->
             if (expanded) {
-                // Expanded lyrics panel
                 ExpandedLyricsPanel(
                     lyric = currentLyric,
                     songTitle = songTitle,
+                    albumArtUri = albumArtUri,
+                    lyricsList = lyricsList,
+                    currentPosition = position,
                     onCollapse = { isExpanded = false },
                     onClose = onClose
                 )
             } else {
-                // Collapsed bubble
                 CollapsedBubble(
                     hasLyrics = currentLyric.isNotBlank(),
-                    onClick = { if (!isDragging) isExpanded = true }
+                    currentPosition = position,
+                    onClick = { if (!isDragging) isExpanded = true },
+                    // Pass empty lambdas for drag as they are handled by parent Box
+                    onDragStart = {},
+                    onDragEnd = {},
+                    onDrag = {_,_ ->}
                 )
             }
         }
@@ -518,34 +536,32 @@ private fun FloatingLyricsBubble(
 }
 
 @Composable
-private fun CollapsedBubble(
+fun CollapsedBubble(
     hasLyrics: Boolean,
-    onClick: () -> Unit
+    currentPosition: Long,
+    onClick: () -> Unit,
+    onDragStart: () -> Unit,
+    onDragEnd: () -> Unit,
+    onDrag: (Float, Float) -> Unit
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.6f,
+        initialValue = 0.8f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
+            animation = tween(1000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulseAlpha"
     )
-    
+
     Box(
         modifier = Modifier
-            .size(56.dp)
+            .size(60.dp)
             .shadow(8.dp, CircleShape)
             .clip(CircleShape)
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF6366F1), // Indigo
-                        Color(0xFF8B5CF6)  // Purple
-                    )
-                )
-            )
+            .background(Color(0xFF1F1F1F))
+            .border(2.dp, Color.White.copy(alpha = 0.3f), CircleShape)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -556,16 +572,31 @@ private fun CollapsedBubble(
             alpha = if (hasLyrics) pulseAlpha else 1f
         )
         
+        // Timer overlay with formatted duration
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .offset(y = (-8).dp)
+                .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
+                .padding(horizontal = 4.dp, vertical = 1.dp)
+        ) {
+            Text(
+                text = TXAFormat.formatDuration(currentPosition),
+                color = Color.White,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        
         // Indicator dot when has lyrics
         if (hasLyrics) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = 0.dp, y = 0.dp)
-                    .size(14.dp)
-                    .shadow(2.dp, CircleShape)
+                    .offset(x = (-8).dp, y = (8).dp)
+                    .size(10.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF22C55E)) // Green
+                    .background(Color(0xFF22C55E))
                     .border(1.dp, Color.White, CircleShape)
             )
         }
@@ -576,129 +607,160 @@ private fun CollapsedBubble(
 private fun ExpandedLyricsPanel(
     lyric: String,
     songTitle: String,
+    albumArtUri: String,
+    lyricsList: List<LyricLine>,
+    currentPosition: Long,
     onCollapse: () -> Unit,
     onClose: () -> Unit
 ) {
     Surface(
         modifier = Modifier
-            .width(280.dp)
+            .width(300.dp)
             .wrapContentHeight(),
-        shape = RoundedCornerShape(20.dp),
-        color = Color(0xFF1F1F1F),
+        shape = RoundedCornerShape(24.dp),
+        color = Color(0xFF161616).copy(alpha = 0.95f),
         shadowElevation = 16.dp,
         tonalElevation = 8.dp
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header
+            // Header with Album Art, Title, Close/Collapse
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(Color(0xFF6366F1), Color(0xFF8B5CF6))
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
+                 // Song info
+                 Row(
+                     verticalAlignment = Alignment.CenterVertically,
+                     modifier = Modifier.weight(1f)
+                 ) {
+                     AsyncImage(
+                         model = ImageRequest.Builder(LocalContext.current)
+                             .data(albumArtUri)
+                             .crossfade(true)
+                             .build(),
+                         contentDescription = null,
+                         contentScale = ContentScale.Crop,
+                         modifier = Modifier
+                             .size(40.dp)
+                             .clip(CircleShape)
+                             .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
+                         error = painterResource(id = R.drawable.ic_launcher)
+                     )
+                     
+                     Spacer(modifier = Modifier.width(10.dp))
+                     
+                     Column {
+                         Text(
+                             text = songTitle,
+                             color = Color.White,
+                             fontSize = 14.sp,
+                             fontWeight = FontWeight.Bold,
+                             maxLines = 1,
+                             overflow = TextOverflow.Ellipsis
+                         )
+                         Text(
+                            text = TXAFormat.formatDuration(currentPosition),
+                            color = Color.White.copy(alpha = 0.6f),
+                            fontSize = 11.sp
+                         )
+                     }
+                 }
+                 
+                 Row {
+                    IconButton(onClick = onCollapse, modifier = Modifier.size(32.dp)) {
                         Icon(
-                            imageVector = Icons.Outlined.MusicNote,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
+                            Icons.Default.Remove, 
+                            null, 
+                            tint = Color.White.copy(0.7f),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            text = "Lyrics",
-                            color = Color.White,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        if (songTitle.isNotBlank()) {
-                            Text(
-                                text = songTitle,
-                                color = Color.Gray,
-                                fontSize = 11.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-                
-                Row {
-                    // Collapse button
-                    IconButton(
-                        onClick = onCollapse,
-                        modifier = Modifier.size(28.dp)
-                    ) {
+                    IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
                         Icon(
-                            imageVector = Icons.Default.Remove,
-                            contentDescription = "Collapse",
-                            tint = Color.White.copy(alpha = 0.7f),
-                            modifier = Modifier.size(18.dp)
+                            Icons.Default.Close, 
+                            null, 
+                            tint = Color.White.copy(0.7f),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
-                    // Close button
-                    IconButton(
-                        onClick = onClose,
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = Color.White.copy(alpha = 0.7f),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
+                 }
             }
             
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
-            // Divider
+            // Lyrics content - Karaoke Style
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(1.dp)
-                    .background(Color.White.copy(alpha = 0.1f))
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // Lyrics content
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 60.dp, max = 150.dp),
+                    .heightIn(min = 60.dp, max = 200.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = lyric.ifBlank { "♪ Waiting for lyrics... ♪" },
-                    color = if (lyric.isBlank()) Color.Gray else Color.White,
-                    fontSize = 15.sp,
-                    fontWeight = if (lyric.isBlank()) FontWeight.Normal else FontWeight.Medium,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 22.sp,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (lyricsList.isEmpty()) {
+                    Text(
+                        text = lyric.ifBlank { "♪ ..." },
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center
+                    )
+                } else {
+                    // Find active line with a slightly larger lookahead for smoother transition
+                    val activeIndex = lyricsList.indexOfLast { it.timestamp <= currentPosition + 200 }.coerceAtLeast(0)
+                    val activeLine = lyricsList.getOrNull(activeIndex)
+                    val nextLine = lyricsList.getOrNull(activeIndex + 1)
+                    
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                         // Active Line with Karaoke effect
+                         if (activeLine != null) {
+                             val lineDuration = (activeLine.endTimestamp - activeLine.timestamp).coerceAtLeast(1)
+                             val elapsed = (currentPosition - activeLine.timestamp).coerceAtLeast(0)
+                             val progress = (elapsed.toFloat() / lineDuration.toFloat()).coerceIn(0f, 1f)
+                             
+                             Text(
+                                 text = buildKaraokeText(activeLine.text, progress),
+                                 fontSize = 18.sp,
+                                 fontWeight = FontWeight.Bold,
+                                 textAlign = TextAlign.Center,
+                                 lineHeight = 26.sp,
+                                 modifier = Modifier.fillMaxWidth()
+                             )
+                         }
+                         
+                         // Next Line (faded)
+                         if (nextLine != null) {
+                             Spacer(modifier = Modifier.height(8.dp))
+                             Text(
+                                 text = nextLine.text,
+                                 fontSize = 14.sp,
+                                 color = Color.White.copy(alpha = 0.4f),
+                                 textAlign = TextAlign.Center,
+                                 maxLines = 1,
+                                 overflow = TextOverflow.Ellipsis
+                             )
+                         }
+                    }
+                }
             }
         }
     }
 }
+
+// Helper for karaoke text
+fun buildKaraokeText(text: String, progress: Float): AnnotatedString {
+    return buildAnnotatedString {
+        val pivot = (text.length * progress).toInt()
+        withStyle(SpanStyle(color = Color.Green, fontWeight = FontWeight.Bold)) {
+            append(text.substring(0, pivot.coerceAtMost(text.length)))
+        }
+        withStyle(SpanStyle(color = Color.White, fontWeight = FontWeight.Normal)) {
+            append(text.substring(pivot.coerceAtMost(text.length)))
+        }
+    }
+}
+
 @Composable
 fun TrashIcon(highlighted: Boolean) {
     val scale by animateFloatAsState(if (highlighted) 1.5f else 1.0f, label = "trashScale")
@@ -711,7 +773,8 @@ fun TrashIcon(highlighted: Boolean) {
                 scaleX = scale
                 scaleY = scale
             }
-            .background(Color.Black.copy(alpha = 0.5f), CircleShape),
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.5f)),
         contentAlignment = Alignment.Center
     ) {
         Icon(
