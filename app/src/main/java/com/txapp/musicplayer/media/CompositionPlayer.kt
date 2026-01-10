@@ -1,3 +1,4 @@
+@file:Suppress("UnstableApi")
 package com.txapp.musicplayer.media
 
 import android.content.Context
@@ -9,7 +10,6 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 
-@UnstableApi
 @RequiresOptIn(level = RequiresOptIn.Level.WARNING)
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
@@ -20,7 +20,6 @@ annotation class ExperimentalApi
  * 
  * Inspired by androidx.media3.transformer.CompositionPlayer.
  */
-@OptIn(UnstableApi::class)
 @ExperimentalApi
 class CompositionPlayer private constructor(player: Player) : ForwardingPlayer(player) {
 

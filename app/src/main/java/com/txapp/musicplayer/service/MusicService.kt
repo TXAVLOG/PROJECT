@@ -1,4 +1,5 @@
-@file:OptIn(androidx.media3.common.util.UnstableApi::class, com.txapp.musicplayer.media.ExperimentalApi::class)
+@file:OptIn(com.txapp.musicplayer.media.ExperimentalApi::class)
+@file:Suppress("UnstableApi")
 package com.txapp.musicplayer.service
 
 import android.app.NotificationChannel
@@ -270,15 +271,15 @@ class MusicService : MediaLibraryService() {
                         val savedPos = com.txapp.musicplayer.util.TXAPlaybackHistory.getPosition(path)
                         if (savedPos > 0) {
                              if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
-                                 // Pause and ask via Broadcast
+                                 // Pause and ask via Manager
                                  player.pause()
-                                 val promptIntent = Intent("com.txapp.musicplayer.action.PROMPT_RESUME")
-                                 promptIntent.putExtra("song_id", mediaItem.mediaId)
-                                 promptIntent.putExtra("song_title", mediaItem.mediaMetadata.title ?: "Unknown")
-                                 promptIntent.putExtra("position", savedPos)
-                                 promptIntent.putExtra("path", path)
-                                 sendBroadcast(promptIntent)
-                                 TXALogger.playbackI("MusicService", "Pausing for resume prompt: ${mediaItem.mediaMetadata.title}")
+                                 com.txapp.musicplayer.util.TXAPlaybackManager.requestResumePrompt(
+                                     songId = mediaItem.mediaId,
+                                     title = mediaItem.mediaMetadata.title?.toString() ?: "Unknown",
+                                     position = savedPos,
+                                     path = path
+                                 )
+                                 TXALogger.playbackI("MusicService", "Requested resume prompt via Manager for: ${mediaItem.mediaMetadata.title}")
                              } else {
                                  // For non-auto (manual clicks handled by UI usually, but as fallback...)
                                  // Let's not auto-seek here if we want the prompt to be the only way.
@@ -1151,7 +1152,7 @@ class MusicService : MediaLibraryService() {
     }
     private inner class MediaLibrarySessionCallback : MediaLibraryService.MediaLibrarySession.Callback {
         
-        @OptIn(UnstableApi::class)
+        @Suppress("UnstableApi")
         override fun onConnect(
             session: MediaSession,
             controller: MediaSession.ControllerInfo

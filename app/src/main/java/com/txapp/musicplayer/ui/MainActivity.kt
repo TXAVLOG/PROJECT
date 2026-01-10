@@ -245,6 +245,34 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        
+        // Observe Resume Prompt Signal
+        lifecycleScope.launch {
+            com.txapp.musicplayer.util.TXAPlaybackManager.resumePromptRequest.collect { request ->
+                request?.let {
+                    val formattedTime = com.txapp.musicplayer.util.TXAFormat.formatDuration(it.position)
+                    com.google.android.material.dialog.MaterialAlertDialogBuilder(this@MainActivity)
+                        .setTitle("txamusic_resume_playback_title".txa())
+                        .setMessage("txamusic_resume_playback_msg".txa(it.title, formattedTime))
+                        .setPositiveButton("txamusic_action_resume".txa()) { _, _ ->
+                            mediaController?.seekTo(it.position)
+                            mediaController?.play()
+                            com.txapp.musicplayer.util.TXAPlaybackManager.clearResumePrompt()
+                        }
+                        .setNegativeButton("txamusic_action_start_over".txa()) { _, _ ->
+                            if (it.path.isNotEmpty()) {
+                                com.txapp.musicplayer.util.TXAPlaybackHistory.clearPosition(it.path)
+                            }
+                            mediaController?.play() 
+                            com.txapp.musicplayer.util.TXAPlaybackManager.clearResumePrompt()
+                        }
+                        .setOnCancelListener { com.txapp.musicplayer.util.TXAPlaybackManager.clearResumePrompt() }
+                        .setCancelable(false)
+                        .show()
+                }
+            }
+        }
+
         try {
             com.txapp.musicplayer.util.TXAAODSettings.init(this)
             binding = SlidingMusicPanelLayoutBinding.inflate(layoutInflater)
@@ -1471,30 +1499,6 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
-                "com.txapp.musicplayer.action.PROMPT_RESUME" -> {
-                    val songTitle = intent.getStringExtra("song_title") ?: "Unknown"
-                    val pos = intent.getLongExtra("position", 0L)
-                    val path = intent.getStringExtra("path") ?: ""
-                    
-                    if (pos > 0) {
-                        val formattedTime = com.txapp.musicplayer.util.TXAFormat.formatDuration(pos)
-                        com.google.android.material.dialog.MaterialAlertDialogBuilder(this@MainActivity)
-                            .setTitle("txamusic_resume_playback_title".txa())
-                            .setMessage("txamusic_resume_playback_msg".txa(songTitle, formattedTime))
-                            .setPositiveButton("txamusic_action_resume".txa()) { _, _ ->
-                                mediaController?.seekTo(pos)
-                                mediaController?.play()
-                            }
-                            .setNegativeButton("txamusic_action_start_over".txa()) { _, _ ->
-                                if (path.isNotEmpty()) {
-                                    com.txapp.musicplayer.util.TXAPlaybackHistory.clearPosition(path)
-                                }
-                                mediaController?.play() // Starts from 0 after pause
-                            }
-                            .setCancelable(false)
-                            .show()
-                    }
-                }
             }
         }
     }
@@ -1508,7 +1512,6 @@ class MainActivity : AppCompatActivity() {
             addAction("com.txapp.musicplayer.action.REPEAT_MODE_CHANGED")
             addAction("com.txapp.musicplayer.action.TRIGGER_RESCAN")
             addAction("com.txapp.musicplayer.action.RESTORE_COMPLETED")
-            addAction("com.txapp.musicplayer.action.PROMPT_RESUME")
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(globalBroadcastReceiver, filter, RECEIVER_NOT_EXPORTED)
