@@ -1316,12 +1316,49 @@ class MainActivity : AppCompatActivity() {
 
     fun checkAndPlayOptions(songs: List<com.txapp.musicplayer.model.Song>, startIndex: Int) {
         val controller = mediaController
+        
+        // Helper to handle final play action
+        fun proceedToPlay() {
+            // Check for history if playing a single song (or starting from a specific one)
+            // If startIndex is valid, that's the song we are playing first.
+            if (com.txapp.musicplayer.util.TXAPreferences.isRememberPlaybackPositionEnabled && startIndex in songs.indices) {
+                val songsToPlay = if (songs.size == 1) songs else songs // If playlist, we still start at startIndex
+                val targetSong = songs[startIndex]
+                
+                // We need the path. Song model has 'data'.
+                val path = targetSong.data
+                val savedPos = com.txapp.musicplayer.util.TXAPlaybackHistory.getPosition(path)
+                
+                if (savedPos > 0) {
+                     // Check if savedPos is valid (not finished) - logic is in saveProgress usually, but good to check.
+                     // Show Resume Dialog
+                     val formattedTime = com.txapp.musicplayer.util.TXAFormat.formatDuration(savedPos)
+                     
+                     com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                        .setTitle("txamusic_resume_playback_title".txa())
+                        .setMessage("txamusic_resume_playback_msg".txa(targetSong.title, formattedTime))
+                        .setPositiveButton("txamusic_action_resume".txa()) { _, _ ->
+                            playSongs(songs, startIndex, startPositionMs = savedPos)
+                        }
+                        .setNegativeButton("txamusic_action_start_over".txa()) { _, _ ->
+                            com.txapp.musicplayer.util.TXAPlaybackHistory.clearPosition(path)
+                            playSongs(songs, startIndex, startPositionMs = 0)
+                        }
+                        .show()
+                     return
+                }
+            }
+            
+            // Default play
+            playSongs(songs, startIndex)
+        }
+
         if (controller != null && controller.isPlaying) {
              com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
                 .setTitle("txamusic_play_options_title".txa())
                 .setMessage("txamusic_play_options_desc".txa())
                 .setPositiveButton("txamusic_play_now".txa()) { _, _ ->
-                    playSongs(songs, startIndex)
+                    proceedToPlay()
                 }
                 .setNegativeButton("txamusic_add_to_queue".txa()) { _, _ ->
                     if (startIndex in songs.indices) {
@@ -1332,11 +1369,11 @@ class MainActivity : AppCompatActivity() {
                 .setNeutralButton("txamusic_btn_cancel".txa(), null)
                 .show()
         } else {
-            playSongs(songs, startIndex)
+            proceedToPlay()
         }
     }
 
-    fun playSongs(songs: List<com.txapp.musicplayer.model.Song>, startIndex: Int = 0, shuffle: Boolean = false) {
+    fun playSongs(songs: List<com.txapp.musicplayer.model.Song>, startIndex: Int = 0, shuffle: Boolean = false, startPositionMs: Long = 0) {
         val controller = mediaController ?: return
         val mediaItems = songs.map { song ->
             androidx.media3.common.MediaItem.Builder()
@@ -1355,7 +1392,7 @@ class MainActivity : AppCompatActivity() {
                 )
                 .build()
         }
-        controller.setMediaItems(mediaItems, if (shuffle) (0 until mediaItems.size).random() else startIndex, 0)
+        controller.setMediaItems(mediaItems, if (shuffle) (0 until mediaItems.size).random() else startIndex, startPositionMs)
         controller.shuffleModeEnabled = shuffle
         controller.prepare()
         controller.play()
@@ -1434,6 +1471,30 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+                "com.txapp.musicplayer.action.PROMPT_RESUME" -> {
+                    val songTitle = intent.getStringExtra("song_title") ?: "Unknown"
+                    val pos = intent.getLongExtra("position", 0L)
+                    val path = intent.getStringExtra("path") ?: ""
+                    
+                    if (pos > 0) {
+                        val formattedTime = com.txapp.musicplayer.util.TXAFormat.formatDuration(pos)
+                        com.google.android.material.dialog.MaterialAlertDialogBuilder(this@MainActivity)
+                            .setTitle("txamusic_resume_playback_title".txa())
+                            .setMessage("txamusic_resume_playback_msg".txa(songTitle, formattedTime))
+                            .setPositiveButton("txamusic_action_resume".txa()) { _, _ ->
+                                mediaController?.seekTo(pos)
+                                mediaController?.play()
+                            }
+                            .setNegativeButton("txamusic_action_start_over".txa()) { _, _ ->
+                                if (path.isNotEmpty()) {
+                                    com.txapp.musicplayer.util.TXAPlaybackHistory.clearPosition(path)
+                                }
+                                mediaController?.play() // Starts from 0 after pause
+                            }
+                            .setCancelable(false)
+                            .show()
+                    }
+                }
             }
         }
     }
@@ -1447,6 +1508,7 @@ class MainActivity : AppCompatActivity() {
             addAction("com.txapp.musicplayer.action.REPEAT_MODE_CHANGED")
             addAction("com.txapp.musicplayer.action.TRIGGER_RESCAN")
             addAction("com.txapp.musicplayer.action.RESTORE_COMPLETED")
+            addAction("com.txapp.musicplayer.action.PROMPT_RESUME")
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(globalBroadcastReceiver, filter, RECEIVER_NOT_EXPORTED)

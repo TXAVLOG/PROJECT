@@ -18,6 +18,7 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import androidx.media3.session.CommandButton
+import com.txapp.musicplayer.media.ExperimentalApi
 import androidx.media3.common.util.UnstableApi
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
@@ -181,7 +182,7 @@ class MusicService : MediaLibraryService() {
         }
     }
 
-    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class, com.txapp.musicplayer.media.ExperimentalApi::class)
+    @OptIn(androidx.media3.common.util.UnstableApi::class, com.txapp.musicplayer.media.ExperimentalApi::class)
     override fun onCreate() {
         super.onCreate()
 
@@ -262,16 +263,25 @@ class MusicService : MediaLibraryService() {
                 updateMediaSessionLayout()
                 savePlaybackState() // Save immediately on change
                 
-                // Restore Playback Position for the new item
+                // Prompt Playback Position for the new item if it's an auto transition
                 if (mediaItem != null && com.txapp.musicplayer.util.TXAPreferences.isRememberPlaybackPositionEnabled) {
                     val path = mediaItem.localConfiguration?.uri?.path
                     if (path != null) {
                         val savedPos = com.txapp.musicplayer.util.TXAPlaybackHistory.getPosition(path)
                         if (savedPos > 0) {
-                             // Only seek if we are starting fresh (position near 0)
-                             if (player.currentPosition < 2000) {
-                                 player.seekTo(savedPos)
-                                 TXALogger.playbackI("MusicService", "Resumed song execution at ${savedPos}ms")
+                             if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+                                 // Pause and ask via Broadcast
+                                 player.pause()
+                                 val promptIntent = Intent("com.txapp.musicplayer.action.PROMPT_RESUME")
+                                 promptIntent.putExtra("song_id", mediaItem.mediaId)
+                                 promptIntent.putExtra("song_title", mediaItem.mediaMetadata.title ?: "Unknown")
+                                 promptIntent.putExtra("position", savedPos)
+                                 promptIntent.putExtra("path", path)
+                                 sendBroadcast(promptIntent)
+                                 TXALogger.playbackI("MusicService", "Pausing for resume prompt: ${mediaItem.mediaMetadata.title}")
+                             } else {
+                                 // For non-auto (manual clicks handled by UI usually, but as fallback...)
+                                 // Let's not auto-seek here if we want the prompt to be the only way.
                              }
                         }
                     }
@@ -427,10 +437,8 @@ class MusicService : MediaLibraryService() {
             while (isActive) {
                 delay(5000)
                 if (player.isPlaying) {
-                    savePlaybackState()
-                    saveCurrentSongProgress()
-                }
-                    saveCurrentSongProgress()
+                     savePlaybackState()
+                     saveCurrentSongProgress()
                 }
             }
         }

@@ -480,5 +480,9 @@
   "txamusic_history_deleted": "Playback history cleared",
   "txamusic_clear_history_confirm": "Are you sure you want to clear saved playback positions for all songs?",
   "txamusic_settings_remember_pos_desc": "Resume songs from where you left off.",
-  "txamusic_history_dialog_title": "Playback History"
+  "txamusic_history_dialog_title": "Playback History",
+  "txamusic_resume_playback_title": "Resume Playback?",
+  "txamusic_resume_playback_msg": "Do you want to resume '%s' from %s?",
+  "txamusic_action_resume": "Resume",
+  "txamusic_action_start_over": "Start Over"
 }
