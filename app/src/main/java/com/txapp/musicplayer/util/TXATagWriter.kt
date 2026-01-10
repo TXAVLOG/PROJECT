@@ -297,17 +297,30 @@ object TXATagWriter {
      * Copy file using root as a fallback
      */
     private fun copyFileWithRoot(source: File, destination: File): Boolean {
-        val src = source.absolutePath.replace("'", "'\\''")
-        val dest = destination.absolutePath.replace("'", "'\\''")
+        // Safe escaping for shell: ' -> '\''
+        fun escape(path: String) = path.replace("'", "'\\''")
+
+        val src = escape(source.absolutePath)
+        val dest = escape(destination.absolutePath)
         
-        // 1. Try 'cat' redirect (fastest and handles some protocol errors)
+        // 1. Try 'cat' redirect directly
         if (TXASuHelper.runAsRoot("cat '$src' > '$dest' && (chmod 664 '$dest' || true)")) {
             return true
         }
         
-        // 2. If 'cat' fails, try to chmod the parent folder and try again
-        TXALogger.appW(TAG, "Cat failed, trying to chmod parent folder: ${destination.parent}")
-        val parentPath = destination.parent?.replace("'", "'\\''")
+        // 2. If 'cat' fails, it might be the complex filename causing issues in shell.
+        // Try copying to a simple temp path first, then move it.
+        val safeTmp = "/data/local/tmp/txa_tfr_${System.currentTimeMillis()}.tmp"
+        TXALogger.appW(TAG, "Cat failed, trying safe path fallback: $safeTmp")
+        
+        if (TXASuHelper.runAsRoot("cat '$src' > $safeTmp && mv $safeTmp '$dest' && (chmod 664 '$dest' || true)")) {
+            TXALogger.appI(TAG, "Write success via safe path move")
+            return true
+        }
+        
+        // 3. Last fallback: chmod parent folder
+        TXALogger.appW(TAG, "Safe path also failed, trying to chmod parent folder: ${destination.parent}")
+        val parentPath = destination.parent?.let { escape(it) }
         if (parentPath != null) {
             TXASuHelper.runAsRoot("chmod 777 '$parentPath'")
             
