@@ -115,26 +115,23 @@
 </style>
 
 <div class="container">
-    <h1>📱 Cập nhật phiên bản 2.5.2_txa <span class="badge">Mới</span></h1>
+    <h1>📱 Cập nhật phiên bản 2.5.3_txa <span class="badge">Mới</span></h1>
 
     <h2>✨ Có gì mới?</h2>
     <ul>
-        <li><span class="highlight">Đổi Logo Nghệ sĩ:</span> Cho phép thay đổi ảnh đại diện nghệ sĩ trực tiếp trong màn
-            hình chi tiết. Ảnh được tự động cắt vuông và tối ưu kích thước 1000x1000.</li>
-        <li><span class="highlight">Cập nhật Ảnh bìa Album:</span> Bổ sung chức năng thay đổi ảnh bìa ngay trong trình
-            chỉnh sửa Tag (Tag Editor) bằng cách nhấn vào ảnh.</li>
-        <li><span class="highlight">Mini Player Android 15+:</span> Tối ưu hóa trình phát thu nhỏ chuyên dụng cho
-            Android 15 với hiệu ứng kính mờ (Liquid Glass) và bo góc mềm mại.</li>
-        <li><span class="highlight">Hệ thống Tag Nâng cao:</span> Nhúng ảnh bìa trực tiếp vào file nhạc và đồng bộ
-            MediaStore tức thì.</li>
+        <li><span class="highlight">Resume Playback Thông minh:</span> Tự động ghi nhớ vị trí đang nghe và hiển thị
+            thông báo hỏi tiếp tục khi khởi động lại bài hát, hỗ trợ cả chuyển bài tự động và chọn thủ công.</li>
+        <li><span class="highlight">Tối ưu hóa Hệ thống:</span> Hiệu chỉnh logic tìm kiếm lịch sử phát nhạc dựa trên
+            đường dẫn tệp đã chuẩn hóa, đảm bảo tính chính xác tuyệt đối.</li>
+        <li><span class="highlight">Dọn dẹp Warning:</span> Giải quyết triệt để các cảnh báo Compiler liên quan đến
+            UnstableApi của Media3, giúp quá trình build "sạch" và nhanh hơn.</li>
     </ul>
 
     <h2>🛠️ Cải tiến & Sửa lỗi</h2>
     <ul>
-        <li>Đồng bộ hóa cài đặt giữa Mini Player mặc định và Mini Player Android 15.</li>
-        <li>Sửa lỗi không cập nhật ảnh bài hát ngay lập tức sau khi chỉnh sửa tag.</li>
-        <li>Tối ưu hóa bộ xử lý hình ảnh để tránh treo máy khi chọn ảnh dung lượng lớn.</li>
-        <li>Cải thiện độ ổn định của dịch vụ phát nhạc trên các phiên bản Android mới nhất.</li>
+        <li>Nâng cấp cơ chế gửi tín hiệu giữa MusicService và Activity thông qua Singleton Manager bền bỉ.</li>
+        <li>Sửa lỗi nhạc tự phát về 0 khi quay lại ứng dụng từ màn hình Cài đặt.</li>
+        <li>Bổ sung hệ thống Log tập trung để theo dõi hiệu năng và lỗi phát nhạc thời gian thực.</li>
     </ul>
 
     <h2>⚡ Hiệu suất</h2>
