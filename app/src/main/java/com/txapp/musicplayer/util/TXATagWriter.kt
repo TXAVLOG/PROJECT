@@ -352,6 +352,13 @@ object TXATagWriter {
      * This is CRITICAL for lists/playlists to show the new artwork.
      */
     private fun updateAlbumArtCache(context: Context, albumId: Long, artwork: Bitmap) {
+        // On Android 10+, MediaStore albumart writes are blocked by Scoped Storage.
+        // The embedded art in the file itself is sufficient; MediaScanner will pick it up on rescan.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            TXALogger.appI(TAG, "Android 10+: Skipping direct MediaStore albumart write (relying on rescan)")
+            return
+        }
+        
         try {
             // 1. Create temp file for artwork
             val artDir = File(context.cacheDir, "albumthumbs")
@@ -369,7 +376,11 @@ object TXATagWriter {
             
             // 2. Delete old art from MediaStore
             val artworkUri = "content://media/external/audio/albumart".toUri()
-            context.contentResolver.delete(ContentUris.withAppendedId(artworkUri, albumId), null, null)
+            try {
+                context.contentResolver.delete(ContentUris.withAppendedId(artworkUri, albumId), null, null)
+            } catch (se: SecurityException) {
+                TXALogger.appW(TAG, "Cannot delete old album art from MediaStore, ignoring: ${se.message}")
+            }
             
             // 3. Insert new art into MediaStore
             val values = ContentValues().apply {
