@@ -338,6 +338,11 @@ class MusicRepository(
 
     suspend fun createPlaylist(name: String): Long = withContext(Dispatchers.IO) {
         try {
+            // Check for existing playlist with same name to avoid duplicates
+            val existing = database.playlistDao().getPlaylistByNameSync(name)
+            if (existing != null) {
+                return@withContext existing.id
+            }
             val playlistEntity = PlaylistEntity(name = name)
             database.playlistDao().insertPlaylist(playlistEntity)
         } catch (e: Exception) {
@@ -637,49 +642,53 @@ class MusicRepository(
     }
 
     /**
-     * Update artwork for all songs of an artist
+     * Update artist artwork by updating the first album found correctly.
      */
     suspend fun updateArtistArtwork(
         context: Context,
         artistName: String,
-        artwork: android.graphics.Bitmap
+        bitmap: android.graphics.Bitmap
     ): com.txapp.musicplayer.util.TXATagWriter.WriteResult = withContext(Dispatchers.IO) {
         try {
-            // 1. Get all songs by this artist
-            val songs = database.songDao().getSongsByArtist(artistName)
-            if (songs.isEmpty()) return@withContext com.txapp.musicplayer.util.TXATagWriter.WriteResult.Failure
+            // Find all songs for this artist to find their album IDs
+            val artistSongs = database.songDao().getSongsByArtist(artistName)
+            if (artistSongs.isEmpty()) return@withContext com.txapp.musicplayer.util.TXATagWriter.WriteResult.Failure
 
-            var finalResult: com.txapp.musicplayer.util.TXATagWriter.WriteResult = com.txapp.musicplayer.util.TXATagWriter.WriteResult.Success
+            // Get unique album IDs
+            val albumIds = artistSongs.map { it.albumId }.distinct()
+            
+            var lastResult: com.txapp.musicplayer.util.TXATagWriter.WriteResult = com.txapp.musicplayer.util.TXATagWriter.WriteResult.Success
 
-            // 2. Update each song
-            for (i in songs.indices) {
-                val song = songs[i]
-                val res = updateSongMetadata(
-                    context = context,
-                    songId = song.id,
-                    title = song.title,
-                    artist = song.artist,
-                    album = song.album,
-                    albumArtist = song.albumArtist,
-                    composer = song.composer,
-                    year = song.year,
-                    trackNumber = song.trackNumber,
-                    artwork = artwork
-                )
-
-                if (res is com.txapp.musicplayer.util.TXATagWriter.WriteResult.PermissionRequired) {
-                    return@withContext res // Need permission to continue
-                }
-                
-                if (res is com.txapp.musicplayer.util.TXATagWriter.WriteResult.Failure) {
-                    finalResult = res
+            // Update the first song of EACH album of this artist to update ALL albums of this artist
+            for (albumId in albumIds) {
+                val songsInAlbum = artistSongs.filter { it.albumId == albumId }
+                if (songsInAlbum.isNotEmpty()) {
+                    val firstSong = songsInAlbum[0]
+                    
+                    val result = com.txapp.musicplayer.util.TXATagWriter.writeTags(
+                        context,
+                        com.txapp.musicplayer.model.SongTagInfo(
+                            songId = firstSong.id,
+                            filePaths = listOf(firstSong.data),
+                            title = firstSong.title,
+                            artist = firstSong.artist,
+                            album = firstSong.album,
+                            artwork = bitmap,
+                            albumId = albumId
+                        )
+                    )
+                    
+                    if (result is com.txapp.musicplayer.util.TXATagWriter.WriteResult.PermissionRequired) {
+                        return@withContext result // Return early to request permission
+                    }
+                    lastResult = result
                 }
             }
-
-            finalResult
+            return@withContext lastResult
         } catch (e: Exception) {
             TXALogger.appE("MusicRepository", "Failed to update artist artwork", e)
             com.txapp.musicplayer.util.TXATagWriter.WriteResult.Failure
         }
     }
+
 }

@@ -53,6 +53,9 @@ interface PlaylistDao {
     // Get playlist by id
     @Query("SELECT * FROM playlists WHERE id = :playlistId")
     suspend fun getPlaylistById(playlistId: Long): PlaylistEntity?
+    
+    @Query("SELECT * FROM playlists WHERE name = :name LIMIT 1")
+    suspend fun getPlaylistByNameSync(name: String): PlaylistEntity?
 
     // Create playlist
     @Insert(onConflict = OnConflictStrategy.REPLACE)

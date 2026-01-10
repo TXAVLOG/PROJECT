@@ -36,10 +36,10 @@ interface SongDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSong(song: Song)
     
-    @Query("SELECT id, data, isFavorite, playCount, lastPlayed FROM songs WHERE id IN (:ids)")
+    @Query("SELECT id, data, isFavorite, playCount, lastPlayed, isManual FROM songs WHERE id IN (:ids)")
     suspend fun getExistingMetadataByIds(ids: List<Long>): List<SongMetadata>
     
-    @Query("SELECT id, data, isFavorite, playCount, lastPlayed FROM songs")
+    @Query("SELECT id, data, isFavorite, playCount, lastPlayed, isManual FROM songs")
     suspend fun getAllMetadata(): List<SongMetadata>
     
     /**
@@ -55,18 +55,37 @@ interface SongDao {
         val metadataById = allMetadata.associateBy { it.id }
         val metadataByPath = allMetadata.associateBy { it.data }
         
+        val idsToRemoveIfColliding = mutableListOf<Long>()
+        
         // Merge: preserve user data from existing records
         val mergedSongs = songs.map { song ->
-            val existing = metadataById[song.id] ?: metadataByPath[song.data]
+            // Try to find existing record by ID or Path
+            val existingById = metadataById[song.id]
+            val existingByPath = metadataByPath[song.data]
+            
+            val existing = existingById ?: existingByPath
+            
             if (existing != null) {
+                // If we found it by path but IDs differ, we need to remove the old ID record
+                // to prevent duplicates for the same file path.
+                if (existingByPath != null && existingByPath.id != song.id) {
+                     idsToRemoveIfColliding.add(existingByPath.id)
+                }
+                
                 song.copy(
                     isFavorite = existing.isFavorite,
                     playCount = existing.playCount,
-                    lastPlayed = existing.lastPlayed
+                    lastPlayed = existing.lastPlayed,
+                    // Preserve manual status if it was manual
+                    isManual = (existingById?.id?.let { metadataById[it]?.isManual } ?: existingByPath?.id?.let { metadataById[it]?.isManual } ?: song.isManual)
                 )
             } else {
                 song
             }
+        }
+        
+        if (idsToRemoveIfColliding.isNotEmpty()) {
+            deleteSongsByIds(idsToRemoveIfColliding.distinct())
         }
         
         insertSongs(mergedSongs)

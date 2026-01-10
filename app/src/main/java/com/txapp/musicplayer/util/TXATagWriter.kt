@@ -141,21 +141,26 @@ object TXATagWriter {
                     try { tag.setField(FieldKey.YEAR, it) } catch (e: Exception) {}
                 }
 
-                // EMBED ARTWORK
-                if (tagInfo.deleteArtwork) {
-                    tag.deleteArtworkField()
-                } else if (tagInfo.artwork != null) {
+                // 2b. Write Artwork if provided
+                tagInfo.artwork?.let { bitmap ->
                     try {
-                        val artFile = File(context.cacheDir, "temp_art_${System.currentTimeMillis()}.jpg")
-                        artFile.outputStream().use { out ->
-                            tagInfo.artwork.compress(Bitmap.CompressFormat.JPEG, 95, out)
-                        }
-                        val androidArtwork = AndroidArtwork.createArtworkFromFile(artFile)
+                        val stream = java.io.ByteArrayOutputStream()
+                        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, stream)
+                        val imageData = stream.toByteArray()
+                        
+                        val artwork = AndroidArtwork()
+                        artwork.binaryData = imageData
+                        artwork.mimeType = "image/jpeg"
+                        artwork.description = ""
+                        artwork.pictureType = 3 // Front Cover
+                        
                         tag.deleteArtworkField()
-                        tag.setField(androidArtwork)
-                        artFile.delete() // Cleanup
+                        tag.setField(artwork)
+                        
+                        // Also update MediaStore cache for immediate refresh
+                        updateAlbumArtCache(context, tagInfo.albumId, bitmap)
                     } catch (e: Exception) {
-                        TXALogger.appE(TAG, "Failed to embed artwork", e)
+                        TXALogger.appE(TAG, "Failed to write artwork to tag", e)
                     }
                 }
 
@@ -204,23 +209,6 @@ object TXATagWriter {
             }
         }
 
-        // If artwork was provided, also update the MediaStore album art cache
-        // We resolve the REAL MediaStore albumId because our internal one might be a custom hash
-        val firstPath = tagInfo.filePaths.firstOrNull()
-        val msAlbumId = if (firstPath != null) {
-            val resolvedId = getMediaStoreAlbumId(context, firstPath)
-            TXALogger.appI(TAG, "Resolved MediaStore albumId for $firstPath: $resolvedId (Internal ID was ${tagInfo.albumId})")
-            resolvedId ?: tagInfo.albumId
-        } else tagInfo.albumId
-        
-        TXALogger.appI(TAG, "Artwork status: ${if (tagInfo.artwork != null) "Provided" else "Null"}, DeleteArt: ${tagInfo.deleteArtwork}, msAlbumId: $msAlbumId")
-
-        if (tagInfo.artwork != null && msAlbumId > 0) {
-            updateAlbumArtCache(context, msAlbumId, tagInfo.artwork)
-        } else if (tagInfo.deleteArtwork && msAlbumId > 0) {
-            deleteAlbumArt(context, msAlbumId)
-        }
-        
         scanFiles(context, tagInfo.filePaths)
         return@withContext WriteResult.Success
     }

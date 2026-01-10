@@ -1,7 +1,5 @@
 package com.txapp.musicplayer.model
 
-import android.graphics.Bitmap
-
 /**
  * Data class representing song tags to be updated
  */
@@ -15,7 +13,6 @@ data class SongTagInfo(
     val composer: String? = null,
     val year: String? = null,
     val trackNumber: String? = null,
-    val artwork: Bitmap? = null,
-    val deleteArtwork: Boolean = false,
+    val artwork: android.graphics.Bitmap? = null,
     val albumId: Long = 0
 )

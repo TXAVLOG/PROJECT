@@ -9,5 +9,6 @@ data class SongMetadata(
     val data: String,
     val isFavorite: Boolean,
     val playCount: Int,
-    val lastPlayed: Long
+    val lastPlayed: Long,
+    val isManual: Boolean = false
 )

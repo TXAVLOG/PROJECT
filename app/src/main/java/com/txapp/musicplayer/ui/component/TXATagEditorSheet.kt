@@ -67,30 +67,14 @@ fun TXATagEditorSheet(
     var year by remember { mutableStateOf(if (song.year > 0) song.year.toString() else "") }
     var isSaving by remember { mutableStateOf(false) }
     
-    // Check if data changed
-    var newlyPickedArtwork by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     
-    // Image picker launcher
-    val pickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.GetContent()
-    ) { uri: android.net.Uri? ->
-        uri?.let {
-            val processedFile = com.txapp.musicplayer.util.TXAImageUtils.processImage(context, it)
-            if (processedFile != null) {
-                newlyPickedArtwork = android.graphics.BitmapFactory.decodeFile(processedFile.absolutePath)
-                processedFile.delete()
-            }
-        }
-    }
-
-    val hasChanges = remember(title, artist, album, albumArtist, composer, year, newlyPickedArtwork) {
+    val hasChanges = remember(title, artist, album, albumArtist, composer, year) {
         title != song.title ||
         artist != song.artist ||
         album != song.album ||
         albumArtist != (song.albumArtist ?: "") ||
         composer != (song.composer ?: "") ||
-        year != (if (song.year > 0) song.year.toString() else "") ||
-        newlyPickedArtwork != null
+        year != (if (song.year > 0) song.year.toString() else "")
     }
     
     val albumArtUri = remember(song.albumId) {
@@ -140,8 +124,7 @@ fun TXATagEditorSheet(
                                 album = album,
                                 albumArtist = albumArtist,
                                 composer = composer,
-                                year = year,
-                                artworkBitmap = newlyPickedArtwork
+                                year = year
                             ))
                             if (success) {
                                 onDismiss()
@@ -180,19 +163,11 @@ fun TXATagEditorSheet(
                 // Album Art
                 Card(
                     modifier = Modifier
-                        .size(80.dp)
-                        .clickable { pickerLauncher.launch("image/*") },
+                        .size(80.dp),
                     shape = RoundedCornerShape(12.dp),
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {
-                    if (newlyPickedArtwork != null) {
-                        coil.compose.AsyncImage(
-                            model = newlyPickedArtwork,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else if (albumArtUri != null) {
+                    if (albumArtUri != null) {
                         coil.compose.AsyncImage(
                             model = ImageRequest.Builder(context)
                                 .data(albumArtUri)
