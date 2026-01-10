@@ -10,7 +10,7 @@ Nếu bạn có thắc mắc hoặc gặp lỗi, vui lòng:
 
 ### Thông tin File
 - **Phiên bản**: v2.5.3
-- **Kích thước**: ~183 MB
+- **Kích thước**: 180.7 MB
 
 
 Chào mừng bạn đến với **TXA Music Player** - ứng dụng nghe nhạc hiện đại, giao diện đẹp mắt và nhiều tính năng tùy biến mạnh mẽ dành cho Android.
@@ -37,7 +37,7 @@ TXAPP Music Player được xây dựng dựa trên kiến trúc hiện đại, 
 | **File Name** | `TXAMUSIC_v2.5.3_txa.apk` |
 | **Version** | v2.5.3_txa |
 | **Build Date** | 10/01/2026 |
-| **Size** | ~183 MB |
+| **Size** | 180.7 MB |
 | **Status** | Stable / Signed |
 
 **SHA-256 Checksum:**
