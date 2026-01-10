@@ -73,7 +73,8 @@ data class NowPlayingState(
     val queueItems: List<AlbumCoverItem> = emptyList(),
     val currentQueueIndex: Int = 0,
     val sleepTimerRemainingMs: Long? = null, // Remaining sleep timer time
-    val lyrics: String? = null // Lyrics content
+    val lyrics: String? = null, // Lyrics content
+    val dateModified: Long = 0 // For image cache invalidation
 )
 
 /**
@@ -1206,6 +1207,8 @@ fun NowPlayingBlurStyle(
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data(albumUri)
+                .memoryCacheKey("${albumUri}_${state.dateModified}")
+                .diskCacheKey("${albumUri}_${state.dateModified}")
                 .size(400) // Lower res for background
                 .crossfade(true)
                 .build(),
@@ -1275,6 +1278,8 @@ fun NowPlayingBlurStyle(
                 ) {
                     SubcomposeAsyncImage(
                         model = ImageRequest.Builder(context).data(albumUri)
+                            .memoryCacheKey("${albumUri}_${state.dateModified}")
+                            .diskCacheKey("${albumUri}_${state.dateModified}")
                             .size(300)
                             .crossfade(true).build(),
                         contentDescription = null,

@@ -614,12 +614,19 @@ class MusicRepository(
                     albumArtist = albumArtist,
                     composer = composer,
                     year = year,
-                    trackNumber = trackNumber
+                    trackNumber = trackNumber,
+                    dateModified = System.currentTimeMillis()
                 )
                 TXALogger.appI("MusicRepository", "Successfully updated metadata for song: $title")
                 
                 // 4. Notify MediaStore about the change so it refreshes its cache
                 android.media.MediaScannerConnection.scanFile(context, arrayOf(filePath), null, null)
+                
+                // 5. Send local broadcast for UI and Service update
+                val updateIntent = android.content.Intent("com.txapp.musicplayer.action.METADATA_UPDATED").apply {
+                    putExtra("song_id", songId)
+                }
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).sendBroadcast(updateIntent)
             }
 
             return@withContext result

@@ -258,6 +258,12 @@ class MusicService : MediaLibraryService() {
 
         // Custom notification provider with Favorite and Shuffle buttons
         setMediaNotificationProvider(TXAMediaNotificationProvider(this))
+        
+        // Register Metadata Updated receiver
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).registerReceiver(
+            metadataUpdateReceiver,
+            android.content.IntentFilter("com.txapp.musicplayer.action.METADATA_UPDATED")
+        )
 
         player.addListener(object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -698,6 +704,9 @@ class MusicService : MediaLibraryService() {
         } catch (e: Exception) {
             TXALogger.appE("MusicService", "Error unregistering receiver", e)
         }
+        try {
+            androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).unregisterReceiver(metadataUpdateReceiver)
+        } catch (e: Exception) {}
         savePlaybackState()
         savePlaybackState()
         saveCurrentSongProgress(blocking = true)
@@ -1398,5 +1407,26 @@ class MusicService : MediaLibraryService() {
             
             return super.onCustomCommand(session, controller, customCommand, args)
         }
+    }
+
+    private val metadataUpdateReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context, intent: android.content.Intent) {
+            val songId = intent.getLongExtra("song_id", -1L)
+            if (songId == -1L) return
+            
+            serviceScope.launch {
+                val song = musicRepository.getSongById(songId) ?: return@launch
+                
+                // If this song is currently playing, update the player's metadata
+                withContext(Dispatchers.Main) {
+                    val currentItem = player.currentMediaItem
+                    if (currentItem?.mediaId == songId.toString()) {
+                        val newMediaItem = createMediaItem(song)
+                        player.replaceMediaItem(player.currentMediaItemIndex, newMediaItem)
+                        TXALogger.appI("MusicService", "Updated metadata for currently playing song: ${song.title}")
+                }
+            }
+        }
+    }
     }
 }

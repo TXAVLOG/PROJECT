@@ -37,11 +37,7 @@ class ArtistAdapter(
         holder.text?.text = "${artist.albumCount} Albums"
         
         val song = artist.safeGetFirstAlbum().safeGetFirstSong()
-        Glide.with(activity)
-            .load(song.data)
-            .placeholder(R.drawable.ic_music_note)
-            .transition(DrawableTransitionOptions.withCrossFade())
-            .into(holder.image)
+        com.txapp.musicplayer.glide.TXAGlideExtension.loadAlbumArt(holder.image, song)
     }
 
     override fun getItemCount() = dataSet.size

@@ -646,6 +646,7 @@ class NowPlayingActivity : ComponentActivity(), OnAudioVolumeChangedListener {
                     uiState.value = uiState.value.copy(
                         title = data.title,
                         artist = data.artist,
+                        dateModified = System.currentTimeMillis()
                     )
                     updateState()
                 }

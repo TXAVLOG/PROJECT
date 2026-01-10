@@ -289,8 +289,14 @@ object TXATagWriter {
         try {
             // 1. Create temp file for artwork
             val artDir = File(context.cacheDir, "albumthumbs")
-            if (!artDir.exists()) artDir.mkdirs()
-            val artFile = File(artDir, "${System.currentTimeMillis()}.jpg")
+            if (!artDir.exists()) {
+                artDir.mkdirs()
+                try {
+                    File(artDir, ".nomedia").createNewFile()
+                } catch (e: Exception) {}
+            }
+            // Use path that includes albumId for some level of uniqueness/clash prevention
+            val artFile = File(artDir, "album_${albumId}_${System.currentTimeMillis()}.jpg")
             artFile.outputStream().use { out ->
                 artwork.compress(Bitmap.CompressFormat.JPEG, 95, out)
             }

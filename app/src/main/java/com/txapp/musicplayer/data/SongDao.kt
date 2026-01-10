@@ -142,7 +142,8 @@ interface SongDao {
             albumArtist = :albumArtist,
             composer = :composer,
             year = :year,
-            trackNumber = :trackNumber
+            trackNumber = :trackNumber,
+            dateModified = :dateModified
         WHERE id = :songId
     """)
     suspend fun updateSongMetadata(
@@ -153,7 +154,8 @@ interface SongDao {
         albumArtist: String?,
         composer: String?,
         year: Int,
-        trackNumber: Int
+        trackNumber: Int,
+        dateModified: Long
     )
 
     

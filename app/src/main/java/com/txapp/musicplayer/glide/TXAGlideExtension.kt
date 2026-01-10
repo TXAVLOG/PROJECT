@@ -8,6 +8,7 @@ import com.bumptech.glide.RequestBuilder
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.signature.MediaStoreSignature
 import com.txapp.musicplayer.R
 import com.txapp.musicplayer.model.Song
 import com.txapp.musicplayer.network.ArtistImageService
@@ -48,12 +49,13 @@ object TXAGlideExtension {
      * Optimized request options for song covers
      * Uses NONE cache strategy since MediaStore handles caching
      */
-    fun songCoverOptions(): RequestOptions {
+    fun songCoverOptions(song: Song): RequestOptions {
         return RequestOptions()
             .diskCacheStrategy(DISK_CACHE_STRATEGY_ALBUM)
             .placeholder(R.drawable.ic_launcher)
             .error(R.drawable.ic_launcher)
             .centerCrop()
+            .signature(MediaStoreSignature("", song.dateModified, 0))
     }
     
     /**
@@ -78,7 +80,7 @@ object TXAGlideExtension {
         val uri = getAlbumArtUri(song.albumId)
         val request = Glide.with(imageView)
             .load(uri)
-            .apply(songCoverOptions())
+            .apply(songCoverOptions(song))
         
         if (crossfade) {
             request.transition(DrawableTransitionOptions.withCrossFade(CROSSFADE_DURATION))
@@ -98,7 +100,13 @@ object TXAGlideExtension {
         val uri = getAlbumArtUri(albumId)
         val request = Glide.with(imageView)
             .load(uri)
-            .apply(songCoverOptions())
+            .apply(
+                RequestOptions()
+                    .diskCacheStrategy(DISK_CACHE_STRATEGY_ALBUM)
+                    .placeholder(R.drawable.ic_launcher)
+                    .error(R.drawable.ic_launcher)
+                    .centerCrop()
+            )
         
         if (crossfade) {
             request.transition(DrawableTransitionOptions.withCrossFade(CROSSFADE_DURATION))
@@ -125,7 +133,13 @@ object TXAGlideExtension {
         if (fallbackAlbumId != -1L) {
             Glide.with(imageView)
                 .load(getAlbumArtUri(fallbackAlbumId))
-                .apply(songCoverOptions())
+                .apply(
+                    RequestOptions()
+                        .diskCacheStrategy(DISK_CACHE_STRATEGY_ALBUM)
+                        .placeholder(R.drawable.ic_launcher)
+                        .error(R.drawable.ic_launcher)
+                        .centerCrop()
+                )
                 .into(imageView)
         } else {
             Glide.with(imageView)
@@ -166,10 +180,11 @@ object TXAGlideExtension {
     /**
      * Extension function for RequestBuilder to apply song cover options
      */
-    fun <T> RequestBuilder<T>.songCoverOptions(): RequestBuilder<T> {
+    fun <T> RequestBuilder<T>.songCoverOptions(song: Song): RequestBuilder<T> {
         return diskCacheStrategy(DISK_CACHE_STRATEGY_ALBUM)
             .placeholder(R.drawable.ic_launcher)
             .error(R.drawable.ic_launcher)
+            .signature(MediaStoreSignature("", song.dateModified, 0))
     }
     
     /**
