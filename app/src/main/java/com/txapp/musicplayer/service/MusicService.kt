@@ -422,12 +422,14 @@ class MusicService : MediaLibraryService() {
             com.txapp.musicplayer.util.TXAEqualizerManager.init(com.txapp.musicplayer.service.MusicService.audioSessionId)
         }
 
-        // Periodic save for crash protection (every 10s)
+        // Periodic save for crash protection (every 5s)
         serviceScope.launch {
             while (isActive) {
-                delay(10000)
+                delay(5000)
                 if (player.isPlaying) {
                     savePlaybackState()
+                    saveCurrentSongProgress()
+                }
                     saveCurrentSongProgress()
                 }
             }

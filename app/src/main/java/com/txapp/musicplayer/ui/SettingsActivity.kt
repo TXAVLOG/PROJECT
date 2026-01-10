@@ -145,6 +145,9 @@ fun SettingsScreenContent(
     var showArtistGridDialog by remember { mutableStateOf(false) }
     var showSocialDialog by remember { mutableStateOf(false) }
 
+    var showSocialDialog by remember { mutableStateOf(false) }
+    var showClearHistoryDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit, languageVersion) {
         scope.launch {
             availableLanguages = TXATranslation.getAvailableLanguages(context)
@@ -204,7 +207,8 @@ fun SettingsScreenContent(
                 is SettingsRoute.Personalize -> PersonalizeSettings(
                     onGridClick = { showGridDialog = true },
                     onAlbumGridClick = { showAlbumGridDialog = true },
-                    onArtistGridClick = { showArtistGridDialog = true }
+                    onArtistGridClick = { showArtistGridDialog = true },
+                    onClearHistoryClick = { showClearHistoryDialog = true }
                 )
                 is SettingsRoute.Images -> ImageSettings()
                 is SettingsRoute.Other -> OtherSettings()
@@ -659,134 +663,7 @@ fun AudioSettings(
             }
         }
 
-        // 8. Remember Playback Position
-        item {
-            val rememberPosition by TXAPreferences.rememberPlaybackPosition.collectAsState()
-            
-            // Refresh count
-            var savedCount by remember { mutableStateOf(0) }
-            val scope = rememberCoroutineScope()
-            LaunchedEffect(Unit) {
-                withContext(Dispatchers.IO) {
-                    com.txapp.musicplayer.util.TXAPlaybackHistory.load(context)
-                    savedCount = com.txapp.musicplayer.util.TXAPlaybackHistory.getSavedCount()
-                }
-            }
 
-            SettingsSwitchItem(
-                icon = Icons.Outlined.Restore,
-                title = "txamusic_settings_remember_pos".txa(),
-                subtitle = "txamusic_settings_remember_pos_desc".txa(), // Add description
-                checked = rememberPosition,
-                onCheckedChange = { TXAPreferences.isRememberPlaybackPositionEnabled = it }
-            )
-            
-            if (rememberPosition && savedCount > 0) {
-                 SettingsToggleCard(
-                     icon = Icons.Outlined.History, 
-                     title = "txamusic_settings_clear_history".txa(), // Usually "Manage Playback History"
-                     subtitle = "txamusic_settings_history_count".txa(savedCount),
-                     onClick = { showClearHistoryDialog = true }
-                 )
-            }
-        }
-    }
-    
-    // History Management Dialog (View & Clear)
-    if (showClearHistoryDialog) {
-        val scope = rememberCoroutineScope()
-        var historyMap by remember { mutableStateOf<Map<String, Long>>(emptyMap()) }
-        
-        LaunchedEffect(Unit) {
-            historyMap = com.txapp.musicplayer.util.TXAPlaybackHistory.getHistoryMap()
-        }
-
-        AlertDialog(
-            onDismissRequest = { showClearHistoryDialog = false },
-            title = { 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.History, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text("txamusic_history_dialog_title".txa(), style = MaterialTheme.typography.titleLarge)
-                }
-            },
-            text = { 
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        "txamusic_clear_history_confirm".txa(), 
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // List of saved songs
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 300.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                    ) {
-                        if (historyMap.isEmpty()) {
-                            item {
-                                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                                    Text("No history found", style = MaterialTheme.typography.bodySmall)
-                                }
-                            }
-                        } else {
-                            items(historyMap.entries.toList()) { (path, pos) ->
-                                val fileName = File(path).name
-                                val timeString = com.txapp.musicplayer.util.TXAFormat.formatDuration(pos)
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = fileName,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    Text(
-                                        text = timeString,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(start = 8.dp)
-                                    )
-                                }
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        scope.launch {
-                            com.txapp.musicplayer.util.TXAPlaybackHistory.clearAll(context)
-                            TXAToast.success(context, "txamusic_history_deleted".txa())
-                        }
-                        showClearHistoryDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("txamusic_action_delete".txa()) // "Delete All" ideally
-                }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = { showClearHistoryDialog = false }) {
-                    Text("txamusic_btn_close".txa())
-                }
-            }
-        )
-    }
     
     if (showCrossfadeDialog) {
         CrossfadeDialog(
@@ -1195,6 +1072,112 @@ fun NowPlayingSettings() {
             onDismiss = { showEffectDialog = false }
         )
     }
+    if (showEffectDialog) {
+        PlayerEffectTypeDialog(
+            currentEffect = playerEffectType,
+            onSelect = { effect ->
+                TXAPreferences.currentPlayerEffectType = effect
+                showEffectDialog = false
+            },
+            onDismiss = { showEffectDialog = false }
+        )
+    }
+
+    // History Management Dialog (View & Clear)
+    if (showClearHistoryDialog) {
+        val scope = rememberCoroutineScope()
+        var historyMap by remember { mutableStateOf<Map<String, Long>>(emptyMap()) }
+        
+        LaunchedEffect(Unit) {
+            historyMap = com.txapp.musicplayer.util.TXAPlaybackHistory.getHistoryMap()
+        }
+
+        AlertDialog(
+            onDismissRequest = { showClearHistoryDialog = false },
+            title = { 
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.History, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("txamusic_history_dialog_title".txa(), style = MaterialTheme.typography.titleLarge)
+                }
+            },
+            text = { 
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "txamusic_clear_history_confirm".txa(), 
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // List of saved songs
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 300.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                    ) {
+                        if (historyMap.isEmpty()) {
+                            item {
+                                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                    Text("No history found", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        } else {
+                            items(historyMap.entries.toList()) { (path, pos) ->
+                                val fileName = File(path).name
+                                val timeString = com.txapp.musicplayer.util.TXAFormat.formatDuration(pos)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = fileName,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text(
+                                        text = timeString,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    )
+                                }
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        scope.launch {
+                            com.txapp.musicplayer.util.TXAPlaybackHistory.clearAll(context)
+                            TXAToast.success(context, "txamusic_history_deleted".txa())
+                        }
+                        showClearHistoryDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("txamusic_action_delete".txa()) // "Delete All" ideally
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showClearHistoryDialog = false }) {
+                    Text("txamusic_btn_close".txa())
+                }
+            }
+        )
+    }
 }
 
 /**
@@ -1544,7 +1527,8 @@ fun PlaybackSpeedDialog(
 fun PersonalizeSettings(
     onGridClick: () -> Unit,
     onAlbumGridClick: () -> Unit,
-    onArtistGridClick: () -> Unit
+    onArtistGridClick: () -> Unit,
+    onClearHistoryClick: () -> Unit // Callback to open dialog
 ) {
     val gridSize by TXAPreferences.gridSize.collectAsState()
     val rememberLastTab by TXAPreferences.rememberLastTab.collectAsState()
