@@ -19,6 +19,7 @@ object TXAHolidayManager {
 
     private const val PREF_NAME = "txa_holiday_prefs"
     private const val KEY_LAST_SHOWN_DATE = "last_shown_date"
+    private const val KEY_LAST_PLAYED_TET_MUSIC = "last_played_tet_music"
     private const val MIN_API_LEVEL = 35 
 
     enum class HolidayEventType {
@@ -41,15 +42,18 @@ object TXAHolidayManager {
      * Restricted to Android 15+ and once per day.
      */
     fun checkAndShowHoliday(activity: AppCompatActivity) {
-        TXALogger.holidayD("TXAHoliday", "Checking holiday dialog... SDK: ${Build.VERSION.SDK_INT}")
+        TXALogger.holidayD("TXAHoliday", "Checking holiday events... SDK: ${Build.VERSION.SDK_INT}")
         
-        // 1. Enforce Android 15+ (API 35) for dialog
+        // 1. Auto-play Tet Music (Lunar New Year Day 1, 2, 3) - All Versions
+        checkAndPlayTetMusic(activity)
+
+        // 2. Enforce Android 15+ (API 35) for GREETING DIALOG
         if (Build.VERSION.SDK_INT < MIN_API_LEVEL) {
-             TXALogger.holidayD("TXAHoliday", "Skipping dialog: SDK too old (< 35)")
+             TXALogger.holidayD("TXAHoliday", "Skipping Greeting Dialog: SDK tool old (< 35)")
              return
         }
 
-        // 2. Date Check (Once per day)
+        // 3. Date Check (Once per day)
         val calendar = Calendar.getInstance()
         val day = calendar.get(Calendar.DAY_OF_MONTH)
         val month = calendar.get(Calendar.MONTH) + 1
@@ -78,6 +82,62 @@ object TXAHolidayManager {
             } catch (e: Exception) {
                 TXALogger.holidayE("TXAHoliday", "Error showing dialog: ${e.message}", e)
             }
+        }
+    }
+
+    /**
+     * Automatically plays random music from assets/mp3/tet on the first 3 days of Tet.
+     * Only once per day.
+     */
+    private fun checkAndPlayTetMusic(context: Context) {
+        val cal = Calendar.getInstance()
+        val day = cal.get(Calendar.DAY_OF_MONTH)
+        val month = cal.get(Calendar.MONTH) + 1
+        val year = cal.get(Calendar.YEAR)
+        
+        val lunar = LunarCalendar.getStrictTetRangeDate(day, month, year) ?: return
+        
+        // Only First 3 days of Tet (Mùng 1, 2, 3)
+        if (lunar.month != 1 || lunar.day > 3) return
+        
+        val todayKey = "TET_${lunar.year}_${lunar.month}_${lunar.day}"
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val lastPlayed = prefs.getString(KEY_LAST_PLAYED_TET_MUSIC, "")
+        
+        if (lastPlayed == todayKey) {
+            TXALogger.holidayD("TXAHoliday", "Tet music already played today: $todayKey")
+            return
+        }
+
+        try {
+            val assetManager = context.assets
+            val tetFiles = assetManager.list("mp3/tet")?.filter { it.endsWith(".mp3") } ?: emptyList()
+            
+            if (tetFiles.isNotEmpty()) {
+                val selectedFile = tetFiles.random()
+                val assetUri = "asset:///mp3/tet/$selectedFile"
+                
+                TXALogger.holidayI("TXAHoliday", "Auto-playing Tet music: $assetUri")
+                
+                val intent = Intent(context, com.txapp.musicplayer.service.MusicService::class.java).apply {
+                    action = com.txapp.musicplayer.service.MusicService.ACTION_PLAY_EXTERNAL_URI
+                    putExtra(com.txapp.musicplayer.service.MusicService.EXTRA_URI, assetUri)
+                }
+                
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+                
+                // Mark as played
+                prefs.edit().putString(KEY_LAST_PLAYED_TET_MUSIC, todayKey).apply()
+                
+                // Set current layout to "Tết" mode in UX if possible? 
+                // For now just playing is enough per request.
+            }
+        } catch (e: Exception) {
+            TXALogger.holidayE("TXAHoliday", "Failed to play Tet music: ${e.message}")
         }
     }
 
