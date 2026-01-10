@@ -125,7 +125,16 @@ object TXAPlaybackHistory {
      */
     fun getPosition(songPath: String): Long {
         if (!TXAPreferences.isRememberPlaybackPositionEnabled) return 0
-        return historyCache[songPath] ?: 0
+        val pos = historyCache[songPath] ?: 0
+        if (pos > 0) {
+            TXALogger.d(TAG, "History lookup: SUCCESS for $songPath at $pos ms")
+        } else {
+            // Only log if it's a real path to avoid spamming
+            if (songPath.startsWith("/")) {
+                 TXALogger.d(TAG, "History lookup: NO DATA for $songPath")
+            }
+        }
+        return pos
     }
     
     /**

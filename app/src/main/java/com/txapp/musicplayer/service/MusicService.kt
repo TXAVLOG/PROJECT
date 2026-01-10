@@ -264,25 +264,27 @@ class MusicService : MediaLibraryService() {
                 updateMediaSessionLayout()
                 savePlaybackState() // Save immediately on change
                 
-                // Prompt Playback Position for the new item if it's an auto transition
+                // Prompt Playback Position for the new item
                 if (mediaItem != null && com.txapp.musicplayer.util.TXAPreferences.isRememberPlaybackPositionEnabled) {
-                    val path = mediaItem.localConfiguration?.uri?.path
-                    if (path != null) {
+                    val path = getNormalizedPath(mediaItem.localConfiguration?.uri)
+                    if (!path.isNullOrBlank()) {
                         val savedPos = com.txapp.musicplayer.util.TXAPlaybackHistory.getPosition(path)
-                        if (savedPos > 0) {
-                             if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
-                                 // Pause and ask via Manager
+                        TXALogger.playbackI("MusicService", "Transition to: $path (History position: $savedPos ms, Reason: $reason)")
+                        
+                        // We check savedPos. If it's substantial, we prompt.
+                        if (savedPos > 3000) { 
+                             serviceScope.launch {
+                                 // Immediately pause to prevent audio pop
                                  player.pause()
+                                 
+                                 // Update Manager
                                  com.txapp.musicplayer.util.TXAPlaybackManager.requestResumePrompt(
                                      songId = mediaItem.mediaId,
                                      title = mediaItem.mediaMetadata.title?.toString() ?: "Unknown",
                                      position = savedPos,
                                      path = path
                                  )
-                                 TXALogger.playbackI("MusicService", "Requested resume prompt via Manager for: ${mediaItem.mediaMetadata.title}")
-                             } else {
-                                 // For non-auto (manual clicks handled by UI usually, but as fallback...)
-                                 // Let's not auto-seek here if we want the prompt to be the only way.
+                                 TXALogger.playbackI("MusicService", "Signaled Resume Prompt for: $path")
                              }
                         }
                     }
@@ -622,7 +624,7 @@ class MusicService : MediaLibraryService() {
         if (!com.txapp.musicplayer.util.TXAPreferences.isRememberPlaybackPositionEnabled) return
         
         val currentItem = player.currentMediaItem ?: return
-        val path = currentItem.localConfiguration?.uri?.path ?: return
+        val path = getNormalizedPath(currentItem.localConfiguration?.uri) ?: return
         val pos = player.currentPosition
         val duration = player.duration
         
@@ -646,6 +648,15 @@ class MusicService : MediaLibraryService() {
              } else {
                  serviceScope.launch { com.txapp.musicplayer.util.TXAPlaybackHistory.persist(this@MusicService) }
              }
+        }
+    }
+
+    private fun getNormalizedPath(uri: Uri?): String? {
+        if (uri == null) return null
+        return if (uri.scheme == "file") {
+            uri.path // Decoded path for files
+        } else {
+            uri.toString() // Full URI for content:// or others
         }
     }
 
@@ -975,8 +986,14 @@ class MusicService : MediaLibraryService() {
         // For now, let's just use the URI. 
         // If we want fallback, we can use a custom logic in onMediaItemTransition
         
+        val uri = if (song.data.startsWith("content://")) {
+            Uri.parse(song.data)
+        } else {
+            Uri.fromFile(java.io.File(song.data))
+        }
+
         return MediaItem.Builder()
-            .setUri(song.data)
+            .setUri(uri)
             .setMediaId(song.id.toString())
             .setMediaMetadata(defaultMetadataBuilder.build())
             .build()
