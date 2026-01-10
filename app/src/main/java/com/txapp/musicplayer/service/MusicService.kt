@@ -41,6 +41,8 @@ import com.txapp.musicplayer.auto.AutoMediaIDHelper
 import com.txapp.musicplayer.auto.AutoMusicProvider
 import com.txapp.musicplayer.util.txa
 import com.txapp.musicplayer.util.TXALogger
+import com.txapp.musicplayer.util.LyricsUtil
+import com.txapp.musicplayer.service.FloatingLyricsService
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 
@@ -265,6 +267,9 @@ class MusicService : MediaLibraryService() {
                 updateMediaSessionLayout()
                 savePlaybackState() // Save immediately on change
                 
+                // Update Floating Lyrics
+                updateLyricsForFloatingPlayer()
+                
                 // Prompt Playback Position for the new item
                 if (mediaItem != null && com.txapp.musicplayer.util.TXAPreferences.isRememberPlaybackPositionEnabled) {
                     val path = getNormalizedPath(mediaItem.localConfiguration?.uri)
@@ -436,13 +441,21 @@ class MusicService : MediaLibraryService() {
             com.txapp.musicplayer.util.TXAEqualizerManager.init(com.txapp.musicplayer.service.MusicService.audioSessionId)
         }
 
-        // Periodic save for crash protection (every 5s)
+        // Periodic save for crash protection (every 1s for floating lyrics sync)
         serviceScope.launch {
+            var saveCounter = 0
             while (isActive) {
-                delay(5000)
+                delay(1000)
                 if (player.isPlaying) {
-                     savePlaybackState()
-                     saveCurrentSongProgress()
+                     // Update Floating Lyrics position every second
+                     FloatingLyricsService.updatePosition(player.currentPosition)
+                     
+                     saveCounter++
+                     if (saveCounter >= 5) { // Save state every 5 seconds
+                        savePlaybackState()
+                        saveCurrentSongProgress()
+                        saveCounter = 0
+                     }
                 }
             }
         }
@@ -691,6 +704,26 @@ class MusicService : MediaLibraryService() {
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibraryService.MediaLibrarySession {
         return mediaLibrarySession
+    }
+
+    private fun updateLyricsForFloatingPlayer() {
+        val currentItem = player.currentMediaItem ?: return
+        val metadata = currentItem.mediaMetadata
+        val title = (metadata.title ?: "Unknown").toString()
+        val artist = (metadata.artist ?: "Unknown").toString()
+        val mediaUri = currentItem.localConfiguration?.uri?.toString() ?: ""
+        val path = try { android.net.Uri.parse(mediaUri).path ?: "" } catch (e: Exception) { "" }
+
+        FloatingLyricsService.updateSongInfo(title)
+        
+        serviceScope.launch(Dispatchers.IO) {
+            val raw = LyricsUtil.getRawLyrics(path, title, artist)
+            val lyricsList = if (raw != null) LyricsUtil.parseLrc(raw) else emptyList()
+            withContext(Dispatchers.Main) {
+                FloatingLyricsService.updateLyricsList(lyricsList)
+                TXALogger.floatingI("MusicService", "Sent lyrics list to FloatingLyricsService (${lyricsList.size} lines)")
+            }
+        }
     }
 
     override fun onDestroy() {

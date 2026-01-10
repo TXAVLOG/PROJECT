@@ -14,6 +14,7 @@ import java.util.Locale
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import com.txapp.musicplayer.R
+import com.txapp.musicplayer.util.LyricsUtil
 import android.media.AudioManager
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -233,7 +234,7 @@ fun NowPlayingFullStyle(
                                 TXAPreferences.setShowLyricsInPlayer(false) 
                             })
 
-                            val cleanLyrics = LyricsUtil.getCleanLyrics(state.lyrics)
+                            val cleanLyrics = LyricsUtil.getCleanLyrics(state.lyrics ?: "")
                             
                             if (cleanLyrics.isNullOrBlank()) {
                                 // No lyrics found - show empty state with buttons
@@ -321,7 +322,7 @@ fun NowPlayingFullStyle(
                                         )
                                     } else {
                                         // Plain Text Lyrics Display
-                                        val cleanLyrics = LyricsUtil.getCleanLyrics(state.lyrics) ?: ""
+                                        val cleanLyrics = LyricsUtil.getCleanLyrics(state.lyrics ?: "") ?: ""
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxSize()

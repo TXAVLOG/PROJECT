@@ -41,6 +41,7 @@ import coil.request.ImageRequest
 import com.txapp.musicplayer.R
 import com.txapp.musicplayer.util.TXAPreferences
 import com.txapp.musicplayer.util.txa
+import com.txapp.musicplayer.util.LyricsUtil
 
 /**
  * MiniPlayerAndroid15 - Specialized mini player for Android 15+ 

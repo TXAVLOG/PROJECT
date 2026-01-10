@@ -35,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.font.FontWeight
@@ -54,6 +55,11 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.txapp.musicplayer.R
 import com.txapp.musicplayer.util.TXALogger
 import com.txapp.musicplayer.util.TXAPreferences
+import com.txapp.musicplayer.util.LyricsUtil
+import com.txapp.musicplayer.ui.component.LyricLine
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -69,7 +75,7 @@ import kotlin.math.roundToInt
  * - Drag to dismiss zone to close
  * - Works on Android 9+ and emulators
  */
-class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner {
+class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner, ViewModelStoreOwner {
 
     companion object {
         private const val CHANNEL_ID = "floating_lyrics_channel"
@@ -84,17 +90,43 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         private val _isServiceRunning = MutableStateFlow(false)
         val isServiceRunning = _isServiceRunning.asStateFlow()
 
+        private val _currentPosition = MutableStateFlow(0L)
+        private val _currentLyricsList = MutableStateFlow<List<LyricLine>>(emptyList())
+
         fun updateLyric(lyric: String) {
             _currentLyric.value = lyric
         }
 
+        fun updateLyricsList(lyrics: List<LyricLine>) {
+            _currentLyricsList.value = lyrics
+        }
+
+        fun updatePosition(position: Long) {
+            _currentPosition.value = position
+            // Update active lyric based on position
+            val lyrics = _currentLyricsList.value
+            if (lyrics.isNotEmpty()) {
+                val activeIndex = lyrics.indexOfLast { it.timestamp <= position + 500 }.coerceAtLeast(0)
+                if (activeIndex >= 0 && activeIndex < lyrics.size) {
+                    val newLyric = lyrics[activeIndex].text
+                    if (_currentLyric.value != newLyric) {
+                        _currentLyric.value = newLyric
+                    }
+                }
+            }
+        }
+
         fun updateSongInfo(title: String) {
-            _songTitle.value = title
+            if (_songTitle.value != title) {
+                _songTitle.value = title
+                TXALogger.floatingI("FloatingLyricsService", "Song info updated: $title")
+            }
         }
 
         fun startService(context: Context) {
             if (!Settings.canDrawOverlays(context)) {
-                TXALogger.floatingE("FloatingLyricsService", "Cannot start service: overlay permission not granted")
+                TXALogger.floatingE("FloatingLyricsService", "Cannot start service: overlay permission not granted. Requesting via intent.")
+                // Should ideally show the system permission screen
                 return
             }
             TXALogger.floatingI("FloatingLyricsService", "Starting service via startForegroundService")
@@ -110,8 +142,15 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
     private lateinit var windowManager: WindowManager
     private var floatingView: ComposeView? = null
     private var layoutParams: WindowManager.LayoutParams? = null
+    
+    // Trash View
+    private var trashView: ComposeView? = null
+    private var trashLayoutParams: WindowManager.LayoutParams? = null
+    private var isTrashVisible = false
+    private val isTrashHighlighted = MutableStateFlow(false)
     private val lifecycleRegistry = LifecycleRegistry(this)
     private val savedStateRegistryController = SavedStateRegistryController.create(this)
+    private val _viewModelStore = ViewModelStore()
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     
     // Screen dimensions
@@ -125,15 +164,31 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
     private fun updateBubblePosition(deltaX: Float, deltaY: Float) {
         posX = (posX + deltaX.roundToInt()).coerceIn(0, screenWidth - 150)
         posY = (posY + deltaY.roundToInt()).coerceIn(0, screenHeight - 200)
+        
+        // Show trash if not visible
+        if (!isTrashVisible) showTrash()
+        
+        // Check overlap with trash (assuming trash is at bottom center)
+        val trashCenterX = screenWidth / 2
+        val trashCenterY = screenHeight - 150 // Approx y position including margin
+        val bubbleCenterX = posX + 75 // Assuming bubble size ~56dp + margin ~ 150/2
+        val bubbleCenterY = posY + 75
+        
+        val distance = kotlin.math.sqrt(
+            ((trashCenterX - bubbleCenterX) * (trashCenterX - bubbleCenterX) + 
+             (trashCenterY - bubbleCenterY) * (trashCenterY - bubbleCenterY)).toFloat()
+        )
+        
+        isTrashHighlighted.value = distance < 300 // Detection radius
+        
         layoutParams?.apply {
             x = posX
             y = posY
         }
         try {
             floatingView?.let { windowManager.updateViewLayout(it, layoutParams) }
-            TXALogger.floatingI("FloatingLyricsService", "Position updated: x=$posX, y=$posY")
         } catch (e: Exception) {
-            TXALogger.floatingE("FloatingLyricsService", "Failed to update layout at x=$posX, y=$posY", e)
+            TXALogger.floatingE("FloatingLyricsService", "Failed to update layout", e)
         }
     }
     
@@ -155,6 +210,9 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
     override val savedStateRegistry: SavedStateRegistry
         get() = savedStateRegistryController.savedStateRegistry
 
+    override val viewModelStore: ViewModelStore
+        get() = _viewModelStore
+
     override fun onCreate() {
         super.onCreate()
         savedStateRegistryController.performRestore(null)
@@ -166,7 +224,9 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         screenWidth = displayMetrics.widthPixels
         screenHeight = displayMetrics.heightPixels
         
+        
         createNotificationChannel()
+        setupTrashView()
         _isServiceRunning.value = true
         TXALogger.floatingI("FloatingLyricsService", "Service onCreate")
     }
@@ -199,9 +259,11 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
     override fun onDestroy() {
         lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
         removeFloatingView()
+        removeTrashView()
         serviceScope.cancel()
+        viewModelStore.clear()
         _isServiceRunning.value = false
-        TXALogger.floatingI("FloatingLyricsService", "Service onDestroy - Floating view cleaned up")
+        TXALogger.floatingI("FloatingLyricsService", "Service onDestroy - Floating view and ViewModelStore cleaned up")
         super.onDestroy()
     }
 
@@ -261,6 +323,7 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         floatingView = ComposeView(this).apply {
             setViewTreeLifecycleOwner(this@FloatingLyricsService)
             setViewTreeSavedStateRegistryOwner(this@FloatingLyricsService)
+            setViewTreeViewModelStoreOwner(this@FloatingLyricsService)
             
             setContent {
                 FloatingLyricsBubble(
@@ -269,7 +332,12 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
                         updateBubblePosition(deltaX, deltaY)
                     },
                     onDragEnd = { 
-                        snapBubbleToEdge()
+                        if (isTrashHighlighted.value) {
+                             stopSelf()
+                        } else {
+                             hideTrash()
+                             snapBubbleToEdge()
+                        }
                     },
                     screenWidth = screenWidth
                 )
@@ -278,9 +346,10 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
 
         try {
             windowManager.addView(floatingView, layoutParams)
-            TXALogger.floatingI("FloatingLyricsService", "Floating bubble added to WindowManager at x=$posX, y=$posY")
+            TXALogger.floatingI("FloatingLyricsService", "Floating bubble successfully added to WindowManager.")
+            TXALogger.floatingI("FloatingLyricsService", "Initial position: x=$posX, y=$posY, screen: ${screenWidth}x${screenHeight}")
         } catch (e: Exception) {
-            TXALogger.floatingE("FloatingLyricsService", "Failed to add floating view to WindowManager", e)
+            TXALogger.floatingE("FloatingLyricsService", "CRITICAL: Failed to add floating view to WindowManager", e)
         }
     }
 
@@ -294,6 +363,63 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
             }
         }
         floatingView = null
+    }
+
+    private fun setupTrashView() {
+        trashLayoutParams = WindowManager.LayoutParams().apply {
+            type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) 
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY 
+            else 
+                WindowManager.LayoutParams.TYPE_PHONE
+            
+            flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+            
+            format = PixelFormat.TRANSLUCENT
+            width = WindowManager.LayoutParams.WRAP_CONTENT
+            height = WindowManager.LayoutParams.WRAP_CONTENT
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            y = 100 // Margin from bottom
+        }
+
+        trashView = ComposeView(this).apply {
+            setViewTreeLifecycleOwner(this@FloatingLyricsService)
+            setViewTreeSavedStateRegistryOwner(this@FloatingLyricsService)
+            // No ViewModel needed for static trash
+            setContent {
+                val highlighted by isTrashHighlighted.collectAsState()
+                TrashIcon(highlighted)
+            }
+        }
+    }
+
+    private fun showTrash() {
+        if (!isTrashVisible && trashView != null) {
+            try {
+                windowManager.addView(trashView, trashLayoutParams)
+                isTrashVisible = true
+            } catch(e: Exception) { 
+                TXALogger.floatingE("FloatingLyricsService", "Error showing trash", e) 
+            }
+        }
+    }
+
+    private fun hideTrash() {
+        if (isTrashVisible && trashView != null) {
+            try {
+                windowManager.removeView(trashView)
+                isTrashVisible = false
+                isTrashHighlighted.value = false
+            } catch(e: Exception) { 
+                TXALogger.floatingE("FloatingLyricsService", "Error hiding trash", e) 
+            }
+        }
+    }
+    
+    private fun removeTrashView() {
+        hideTrash()
+        trashView = null
     }
 }
 
@@ -564,5 +690,28 @@ private fun ExpandedLyricsPanel(
                 )
             }
         }
+    }
+}
+@Composable
+fun TrashIcon(highlighted: Boolean) {
+    val scale by animateFloatAsState(if (highlighted) 1.5f else 1.0f, label = "trashScale")
+    val color by animateColorAsState(if (highlighted) Color.Red else Color.White.copy(alpha = 0.6f), label = "trashColor")
+    
+    Box(
+        modifier = Modifier
+            .size(60.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .background(Color.Black.copy(alpha = 0.5f), CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Close,
+            contentDescription = "Close",
+            tint = color,
+            modifier = Modifier.size(32.dp)
+        )
     }
 }

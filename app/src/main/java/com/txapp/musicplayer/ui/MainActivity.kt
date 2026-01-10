@@ -86,6 +86,7 @@ import com.txapp.musicplayer.ui.fragment.MiniPlayerFragment
 import com.txapp.musicplayer.util.TXAFormat
 import com.txapp.musicplayer.util.TXAToast
 import com.txapp.musicplayer.util.TXASuHelper
+import com.txapp.musicplayer.util.LyricsUtil
 
 class MainActivity : AppCompatActivity() {
 
@@ -914,7 +915,7 @@ class MainActivity : AppCompatActivity() {
                     var lyricsVersion by remember { mutableIntStateOf(0) }
                     val currentLyrics = remember(nowPlayingState.lyrics, lyricsVersion) {
                         nowPlayingState.lyrics?.let { lrcContent ->
-                            com.txapp.musicplayer.ui.component.LyricsUtil.parseLrc(lrcContent)
+                            LyricsUtil.parseLrc(lrcContent)
                         } ?: emptyList()
                     }
 
@@ -938,7 +939,7 @@ class MainActivity : AppCompatActivity() {
                             updateNowPlayingState() // Refresh lyrics in player
                         },
                         onSearchLyrics = {
-                             val url = com.txapp.musicplayer.ui.component.LyricsUtil.buildSearchUrl(nowPlayingState.title, nowPlayingState.artist)
+                             val url = LyricsUtil.buildSearchUrl(nowPlayingState.title, nowPlayingState.artist)
                              try {
                                  com.txapp.musicplayer.util.TXAToast.info(this@MainActivity, "txamusic_lyrics_searching".txa())
                                  startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
@@ -1003,20 +1004,20 @@ class MainActivity : AppCompatActivity() {
             }
             if (path.isEmpty()) return@launch
 
-            val result = com.txapp.musicplayer.ui.component.LyricsUtil.saveLyrics(this@MainActivity, path, lyrics)
+            val result = LyricsUtil.saveLyrics(this@MainActivity, path, lyrics)
             when (result) {
-                is com.txapp.musicplayer.ui.component.LyricsUtil.SaveResult.Success -> {
+                is LyricsUtil.SaveResult.Success -> {
                     TXAToast.success(this@MainActivity, "txamusic_lyrics_saved".txa())
                     updateNowPlayingState()
                 }
-                is com.txapp.musicplayer.ui.component.LyricsUtil.SaveResult.PermissionRequired -> {
+                is LyricsUtil.SaveResult.PermissionRequired -> {
                     // This could happen if permission was lost or another file needed
                     pendingLyricsUpdate = lyrics
                     writeRequestLauncher.launch(
                         androidx.activity.result.IntentSenderRequest.Builder(result.intent).build()
                     )
                 }
-                is com.txapp.musicplayer.ui.component.LyricsUtil.SaveResult.Failure -> {
+                is LyricsUtil.SaveResult.Failure -> {
                     TXAToast.error(this@MainActivity, "txamusic_lyrics_save_failed".txa())
                 }
             }
@@ -1116,7 +1117,7 @@ class MainActivity : AppCompatActivity() {
                 Player.REPEAT_MODE_ALL -> 2
                 else -> 0
             },
-            lyrics = com.txapp.musicplayer.ui.component.LyricsUtil.getRawLyrics(
+            lyrics = LyricsUtil.getRawLyrics(
                 audioFilePath = try { android.net.Uri.parse(currentItem.localConfiguration?.uri?.toString() ?: "").path ?: "" } catch (e: Exception) { "" },
                 title = currentItem.mediaMetadata.title?.toString() ?: "",
                 artist = currentItem.mediaMetadata.artist?.toString() ?: ""
