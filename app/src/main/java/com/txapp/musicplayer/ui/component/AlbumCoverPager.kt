@@ -177,11 +177,12 @@ fun AlbumCoverWithTransform(
     val albumArtUri = remember(albumId, mediaUri, webArtUrl) {
         when {
             webArtUrl.isNotEmpty() -> webArtUrl
+            // Prioritize actual file/content URI over system ID
+            mediaUri.isNotEmpty() -> Uri.parse(mediaUri)
             albumId != -1L -> ContentUris.withAppendedId(
                 Uri.parse("content://media/external/audio/albumart"),
                 albumId
             )
-            mediaUri.isNotEmpty() -> Uri.parse(mediaUri)
             else -> ""
         }
     }
@@ -238,11 +239,12 @@ fun AlbumCoverWithTransform(
 private fun getAlbumArtUriForItem(item: AlbumCoverItem): Any {
     return when {
         item.webArtUrl.isNotEmpty() -> item.webArtUrl
+        // Prioritize actual file/content URI over system ID to ensure instant updates after tag editing
+        item.mediaUri.isNotEmpty() -> Uri.parse(item.mediaUri)
         item.albumId != -1L -> ContentUris.withAppendedId(
             Uri.parse("content://media/external/audio/albumart"),
             item.albumId
         )
-        item.mediaUri.isNotEmpty() -> Uri.parse(item.mediaUri)
         else -> ""
     }
 }
