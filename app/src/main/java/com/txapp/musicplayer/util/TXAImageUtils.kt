@@ -30,10 +30,33 @@ object TXAImageUtils {
      */
     fun processImage(context: Context, uri: Uri): File? {
         return try {
-            val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
-            val originalBitmap = BitmapFactory.decodeStream(inputStream) ?: return null
+            // 1. First decode with inJustDecodeBounds=true to check dimensions
+            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, options)
+            } ?: return null
+
+            // 2. Calculate inSampleSize directly
+            options.inJustDecodeBounds = false
+            // Calculate ratio to scale image to at least FIXED_SIZE
+            val srcWidth = options.outWidth
+            val srcHeight = options.outHeight
+            var inSampleSize = 1
+            if (srcHeight > FIXED_SIZE || srcWidth > FIXED_SIZE) {
+                val halfHeight: Int = srcHeight / 2
+                val halfWidth: Int = srcWidth / 2
+                while ((halfHeight / inSampleSize) >= FIXED_SIZE && (halfWidth / inSampleSize) >= FIXED_SIZE) {
+                    inSampleSize *= 2
+                }
+            }
+            options.inSampleSize = inSampleSize
+
+            // 3. Decode bitmap with inSampleSize
+            val originalBitmap = context.contentResolver.openInputStream(uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, options)
+            } ?: return null
             
-            // 1. Crop to square (center crop)
+            // 4. Crop to square (center crop)
             val width = originalBitmap.width
             val height = originalBitmap.height
             val newDimension = if (width < height) width else height
@@ -46,24 +69,28 @@ object TXAImageUtils {
                 newDimension
             )
             
-            // 2. Resize to FIXED_SIZE
+            // 5. Resize to FIXED_SIZE
             val scaledBitmap = Bitmap.createScaledBitmap(croppedBitmap, FIXED_SIZE, FIXED_SIZE, true)
             
-            // 3. Save to a temporary file
+            // 6. Save to a temporary file
             val tempFile = File(context.cacheDir, "txa_cropped_art_${System.currentTimeMillis()}.jpg")
             FileOutputStream(tempFile).use { out ->
                 scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
             }
             
             // Cleanup
-            if (originalBitmap != croppedBitmap) originalBitmap.recycle()
-            croppedBitmap.recycle()
-            scaledBitmap.recycle()
+            if (originalBitmap != croppedBitmap && !originalBitmap.isRecycled) originalBitmap.recycle()
+            if (croppedBitmap != scaledBitmap && !croppedBitmap.isRecycled) croppedBitmap.recycle()
+            if (!scaledBitmap.isRecycled) scaledBitmap.recycle()
             
             tempFile
         } catch (e: Exception) {
             TXALogger.appE(TAG, "Error processing image: ${e.message}")
             null
+        } catch (oom: OutOfMemoryError) {
+             TXALogger.appE(TAG, "OOM Error processing image: ${oom.message}")
+             System.gc()
+             null
         }
     }
 
