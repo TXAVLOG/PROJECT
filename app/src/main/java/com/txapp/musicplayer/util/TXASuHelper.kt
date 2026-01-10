@@ -81,8 +81,8 @@ object TXASuHelper {
         return try {
             process = Runtime.getRuntime().exec("su")
             os = DataOutputStream(process.outputStream)
-            os.writeBytes("$command\n")
-            os.writeBytes("exit\n")
+            os.write(command.toByteArray(Charsets.UTF_8))
+            os.write("\nexit\n".toByteArray(Charsets.UTF_8))
             os.flush()
             val exitValue = process.waitFor()
             
