@@ -123,7 +123,40 @@ object LyricsUtil {
                 sorted[i] = sorted[i].copy(endTimestamp = endTime)
             }
         }
-        return sorted
+
+        // --- GAP FILLING LOGIC (3s Rule) ---
+        val processed = mutableListOf<LyricLine>()
+        
+        // 1. Check start gap
+        if (sorted.isNotEmpty()) {
+            val firstStart = sorted[0].timestamp
+            if (firstStart >= 3000) {
+                // Add 3... 2... 1... countdown
+                // 3 at (start - 3000)
+                processed.add(LyricLine(firstStart - 3000, "3...", firstStart - 2000))
+                // 2 at (start - 2000)
+                processed.add(LyricLine(firstStart - 2000, "2...", firstStart - 1000))
+                // 1 at (start - 1000)
+                processed.add(LyricLine(firstStart - 1000, "1...", firstStart))
+            }
+        }
+
+        // 2. Process gaps between lines
+        for (i in sorted.indices) {
+            processed.add(sorted[i])
+            
+            if (i < sorted.size - 1) {
+                val currentEnd = sorted[i].endTimestamp
+                val nextStart = sorted[i+1].timestamp
+                
+                if (nextStart - currentEnd >= 3000) {
+                    // Add "...." filler
+                    processed.add(LyricLine(currentEnd, "....", nextStart))
+                }
+            }
+        }
+
+        return processed
     }
     
     private fun parseMs(msStr: String): Long {

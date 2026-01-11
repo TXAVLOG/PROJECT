@@ -159,7 +159,7 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
                 _albumArtUri.value = artUri
                 // Reset lyrics on new song
                 _currentLyric.value = ""
-                _currentLyricsList.value = emptyList()
+                _currentLyricsList.value = emptyList() // Clear list to ensure fresh update
                 TXALogger.floatingI("FloatingLyricsService", "Song info updated: $title, Art: $artUri")
             }
         }
@@ -362,16 +362,24 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         showFloatingView()
         lifecycleRegistry.currentState = Lifecycle.State.RESUMED
 
-        // Connect controls
+        // Connect controls using startService to ensure reliable delivery
         onPlayPause = {
-            val action = MusicService.ACTION_TOGGLE_PLAYBACK
-            sendBroadcast(Intent(action).setPackage(packageName))
+            val i = Intent(this, MusicService::class.java).apply {
+                action = MusicService.ACTION_TOGGLE_PLAYBACK
+            }
+            startService(i)
         }
         onNext = {
-            sendBroadcast(Intent(MusicService.ACTION_NEXT).setPackage(packageName))
+            val i = Intent(this, MusicService::class.java).apply {
+                action = MusicService.ACTION_NEXT
+            }
+            startService(i)
         }
         onPrev = {
-            sendBroadcast(Intent(MusicService.ACTION_PREVIOUS).setPackage(packageName))
+            val i = Intent(this, MusicService::class.java).apply {
+                action = MusicService.ACTION_PREVIOUS
+            }
+            startService(i)
         }
 
         return START_STICKY
@@ -654,13 +662,21 @@ private fun FloatingLyricsBubble(
 fun CollapsedBubble(
     hasLyrics: Boolean,
     currentPosition: Long,
-    isPlaying: Boolean, // Added argument
+    isPlaying: Boolean,
     onClick: () -> Unit,
     onDragStart: () -> Unit,
     onDragEnd: () -> Unit,
     onDrag: (Float, Float) -> Unit
 ) {
     val duration by FloatingLyricsService.duration.collectAsState()
+    
+    // Status Logic:
+    // Playing -> Green, Pulsing
+    // Paused (Pos > 0) -> Amber, No Pulse
+    // Not Started (Pos == 0) -> Gray/Transparent, No Pulse
+    val isPaused = !isPlaying && currentPosition > 0
+    val isNotStarted = !isPlaying && currentPosition <= 100 // Allow small buffer for 0
+    
     val progress = remember(currentPosition, duration) {
         if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f
     }
@@ -678,7 +694,7 @@ fun CollapsedBubble(
 
     Box(
         modifier = Modifier
-            .size(64.dp) // Increased slightly to accommodate progress
+            .size(64.dp)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -696,15 +712,22 @@ fun CollapsedBubble(
                 painter = painterResource(id = R.drawable.ic_launcher),
                 contentDescription = "App Logo",
                 modifier = Modifier.size(52.dp).clip(CircleShape),
-                alpha = if (isPlaying) pulseAlpha else 1f // Pulse only when playing
+                alpha = if (isPlaying) pulseAlpha else 1f
             )
         }
         
         // Circular Progress Indicator
+        // Color logic for the ring
+        val ringColor = when {
+            isPlaying -> Color(0xFF1DB954) // Green
+            isPaused -> Color(0xFFFFB300) // Amber
+            else -> Color.Gray.copy(alpha = 0.5f) // Gray/Dim
+        }
+
         CircularProgressIndicator(
             progress = progress,
             modifier = Modifier.size(60.dp),
-            color = if (isPlaying) Color(0xFF1DB954) else Color.Gray, // Green if playing, Grey if paused
+            color = ringColor,
             strokeWidth = 3.dp,
             trackColor = Color.Transparent
         )
@@ -725,16 +748,26 @@ fun CollapsedBubble(
             )
         }
         
-        // Playback State Indicator (Replaces Lyrics Dot)
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = (-10).dp, y = (10).dp)
-                .size(12.dp)
-                .clip(CircleShape)
-                .background(if (isPlaying) Color(0xFF22C55E) else Color(0xFFFFB300)) // Green for Playing, Amber for Paused
-                .border(1.dp, Color.White, CircleShape)
-        )
+        // "New Message" Style Badge for Lyrics (Top Right - Outside bubble ring)
+        if (hasLyrics) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 2.dp, y = 2.dp) // Push slightly outside
+                    .size(18.dp)
+                    .clip(CircleShape)
+                    .background(Color.Red)
+                    .border(1.dp, Color.White, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "1",
+                    color = Color.White,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
     }
 }
 
@@ -919,8 +952,8 @@ fun TrashIcon(highlighted: Boolean) {
                 scaleY = scale
                 translationY = if (highlighted) -20f else 0f
             }
-            .clip(CircleShape)
-            .background(Color.Black.copy(alpha = 0.5f)),
+            .clip(CircleShape) // Ensure drag area is circular
+            .background(Color.Black.copy(alpha = 0.5f), CircleShape), // Ensure background is circular
         contentAlignment = Alignment.Center
     ) {
         Icon(
