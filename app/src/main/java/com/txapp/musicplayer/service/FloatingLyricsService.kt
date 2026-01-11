@@ -790,7 +790,7 @@ fun CollapsedBubble(
         }
 
         CircularProgressIndicator(
-            progress = progress,
+            progress = { progress },
             modifier = Modifier.size(60.dp),
             color = ringColor,
             strokeWidth = 3.dp,
