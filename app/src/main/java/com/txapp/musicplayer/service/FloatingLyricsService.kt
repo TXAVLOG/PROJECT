@@ -21,7 +21,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -665,19 +665,48 @@ private fun FloatingLyricsBubble(
     Box(
         modifier = Modifier
             .wrapContentSize()
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { isDragging = true },
-                    onDragEnd = { 
-                        isDragging = false
-                        onDragEnd()
-                    },
-                    onDragCancel = { isDragging = false },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        onDrag(dragAmount.x, dragAmount.y)
+            .pointerInput(isExpanded) {
+                // If expanded, handles gestures differently or not at all (managed by panel)
+                if (isExpanded) return@pointerInput
+                
+                coroutineScope {
+                    awaitEachGesture {
+                        val down = awaitFirstDown()
+                        var totalMovement = androidx.compose.ui.geometry.Offset.Zero
+                        var isActuallyDragging = false
+                        val triggerThreshold = 18f // triggerClickablePerimeterPx simulation
+                        
+                        do {
+                            val event = awaitPointerEvent()
+                            event.changes.forEach { change ->
+                                if (change.pressed) {
+                                    val dragAmount = change.position - change.previousPosition
+                                    totalMovement += dragAmount
+                                    
+                                    // If movement exceeds threshold, start dragging
+                                    if (!isActuallyDragging && totalMovement.getDistance() > triggerThreshold) {
+                                        isActuallyDragging = true
+                                        isDragging = true
+                                    }
+                                    
+                                    if (isActuallyDragging) {
+                                        change.consume()
+                                        onDrag(dragAmount.x, dragAmount.y)
+                                    }
+                                }
+                            }
+                        } while (event.changes.any { it.pressed })
+                        
+                        // Finger up
+                        if (isActuallyDragging) {
+                            isDragging = false
+                            onDragEnd()
+                        } else {
+                            // If we didn't move much, it's a CLICK
+                            isExpanded = true
+                        }
                     }
-                )
+                }
             }
     ) {
         androidx.compose.animation.AnimatedContent(
@@ -759,8 +788,7 @@ fun CollapsedBubble(
 
     Box(
         modifier = Modifier
-            .size(64.dp)
-            .clickable { onClick() },
+            .size(64.dp),
         contentAlignment = Alignment.Center
     ) {
         // Main Bubble Background
