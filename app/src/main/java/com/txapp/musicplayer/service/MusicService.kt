@@ -631,7 +631,10 @@ class MusicService : MediaLibraryService() {
         if (fadeDur > 0) {
             com.txapp.musicplayer.util.TXAAudioFader.startFade(player, true, fadeDur)
         } else {
-            player.volume = 1.0f
+            // Fading disabled - ensure volume is at max but don't force repeatedly if not needed
+            if (player.volume < 1.0f) {
+                player.volume = 1.0f
+            }
         }
     }
 
@@ -645,7 +648,7 @@ class MusicService : MediaLibraryService() {
         if (fadeDur > 0) {
             com.txapp.musicplayer.util.TXAAudioFader.startFade(player, false, fadeDur, onEnd)
         } else {
-            player.volume = 0.0f
+            // Fading disabled - skip volume reduction and execute action immediately
             onEnd()
         }
     }
@@ -797,7 +800,9 @@ class MusicService : MediaLibraryService() {
                         val song = musicRepository.getSongById(songId)
                         if (song != null) {
                             isManualSkip = true
-                            player.volume = 0f
+                            if (com.txapp.musicplayer.util.TXAPreferences.currentAudioFadeDuration > 0) {
+                                player.volume = 0f
+                            }
                             playSong(song)
                         }
                     }
@@ -808,7 +813,9 @@ class MusicService : MediaLibraryService() {
                 if (player.isPlaying) {
                     startFadeOut(isManualPause = true) { player.pause() }
                 } else {
-                    if (player.volume > 0.9f) player.volume = 0f // Force fade in
+                    if (player.volume > 0.9f && com.txapp.musicplayer.util.TXAPreferences.currentAudioFadeDuration > 0) {
+                        player.volume = 0f
+                    }
                     player.play() 
                     // onPlaybackStateChanged will handle startFadeIn(true)
                 }
@@ -893,7 +900,9 @@ class MusicService : MediaLibraryService() {
                         }
                         if (songs.isNotEmpty()) {
                             isManualSkip = true
-                            player.volume = 0f
+                            if (com.txapp.musicplayer.util.TXAPreferences.currentAudioFadeDuration > 0) {
+                                player.volume = 0f
+                            }
                             playQueue(songs)
                         }
                     }
@@ -943,14 +952,18 @@ class MusicService : MediaLibraryService() {
                             val targetIndex = songs.indexOfFirst { it.id == songId }
                             if (targetIndex >= 0) {
                                 isManualSkip = true
-                                player.volume = 0f
+                                if (com.txapp.musicplayer.util.TXAPreferences.currentAudioFadeDuration > 0) {
+                                    player.volume = 0f
+                                }
                                 playSongInContext(songs, targetIndex)
                             } else {
                                 // Fallback if not found in context (shouldn't happen)
                                 val fallbackSong = musicRepository.getSongById(songId)
                                 if (fallbackSong != null) {
                                     isManualSkip = true
-                                    player.volume = 0f
+                                    if (com.txapp.musicplayer.util.TXAPreferences.currentAudioFadeDuration > 0) {
+                                        player.volume = 0f
+                                    }
                                     playSong(fallbackSong)
                                 }
                             }
