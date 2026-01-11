@@ -246,16 +246,73 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         TXAPreferences.setFloatingLyricsPosition(posX, posY)
 
         val snapToRight = posX > screenWidth / 2 - 30
-        posX = if (snapToRight) screenWidth - 140 else 20
+        val targetX = if (snapToRight) screenWidth - 140 else 20
         
-        layoutParams?.x = posX
-        
-        // Animate snap could be done here with a value animator, but simpler for now:
-        try {
-            floatingView?.let { windowManager.updateViewLayout(it, layoutParams) }
-        } catch (e: Exception) {
-            TXALogger.floatingE("FloatingLyricsService", "Failed to snap layout", e)
+        // Smooth animation using ValueAnimator
+        val animator = android.animation.ValueAnimator.ofInt(posX, targetX)
+        animator.duration = 200 // 200ms animation
+        animator.interpolator = android.view.animation.DecelerateInterpolator()
+        animator.addUpdateListener { valueAnimator ->
+            posX = valueAnimator.animatedValue as Int
+            layoutParams?.x = posX
+            try {
+                floatingView?.let { windowManager.updateViewLayout(it, layoutParams) }
+            } catch (e: Exception) {
+                // Ignore if view is already removed
+            }
         }
+        animator.start()
+    }
+    
+    // Dim background view for expanded state
+    private var dimView: ComposeView? = null
+    private var dimLayoutParams: WindowManager.LayoutParams? = null
+    
+    private fun showDimBackground() {
+        if (dimView != null) return
+        
+        dimLayoutParams = WindowManager.LayoutParams().apply {
+            type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            else
+                @Suppress("DEPRECATION")
+                WindowManager.LayoutParams.TYPE_PHONE
+            
+            flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+            
+            format = PixelFormat.TRANSLUCENT
+            width = WindowManager.LayoutParams.MATCH_PARENT
+            height = WindowManager.LayoutParams.MATCH_PARENT
+        }
+        
+        dimView = ComposeView(this).apply {
+            setViewTreeLifecycleOwner(this@FloatingLyricsService)
+            setViewTreeSavedStateRegistryOwner(this@FloatingLyricsService)
+            setContent {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5f))
+                )
+            }
+        }
+        
+        try {
+            windowManager.addView(dimView, dimLayoutParams)
+        } catch (e: Exception) {
+            TXALogger.floatingE("FloatingLyricsService", "Failed to add dim view", e)
+        }
+    }
+    
+    private fun hideDimBackground() {
+        dimView?.let {
+            try {
+                windowManager.removeView(it)
+            } catch (e: Exception) { }
+        }
+        dimView = null
     }
 
     private fun setExpandedState(expanded: Boolean) {
@@ -264,6 +321,9 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
 
         try {
             if (expanded) {
+                // Show dim background first
+                showDimBackground()
+                
                 // When expanded, we center the view on screen or make it match specific size
                 // To keep it simple and safe from clipping, we Center it.
                 // NOTE: We save the old bubble pos to restore later
@@ -282,6 +342,9 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
                     y = 0
                 }
             } else {
+                // Hide dim background
+                hideDimBackground()
+                
                 // Restore to bubble mode
                 val savedPos = TXAPreferences.getFloatingLyricsPosition()
                 // If we have saved pos, use it, else default
@@ -396,6 +459,7 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
         removeFloatingView()
         removeTrashView()
+        hideDimBackground() // Clean up dim background
         serviceScope.cancel()
         viewModelStore.clear()
         _isServiceRunning.value = false
