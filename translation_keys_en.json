@@ -511,5 +511,8 @@
   "txamusic_floating_lyrics_tap_hint": "Tap bubble to show lyrics",
   "txamusic_floating_lyrics_stop": "Stop",
   "txamusic_floating_lyrics_title": "Floating Lyrics",
-  "txamusic_floating_lyrics_waiting": "Waiting for music..."
+  "txamusic_floating_lyrics_waiting": "Waiting for music...",
+  "txamusic_shortcuts_shuffle_all": "Shuffle All",
+  "txamusic_shortcuts_top_tracks": "Top Tracks",
+  "txamusic_shortcuts_last_added": "Last Added"
 }

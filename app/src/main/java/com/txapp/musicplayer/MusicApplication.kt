@@ -33,7 +33,11 @@ class MusicApplication : Application() {
         }
         
         // Init Artist Image Service (Deezer API)
+        // Init Artist Image Service (Deezer API)
         ArtistImageService.init(this)
+
+        // Init Dynamic Shortcuts
+        com.txapp.musicplayer.appshortcuts.DynamicShortcutManager.init(this)
 
         database = Room.databaseBuilder(
             applicationContext,

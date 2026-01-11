@@ -612,6 +612,10 @@ object TXATranslation {
         "txamusic_refresh_daily" to "Daily",
         "txamusic_refresh_weekly" to "Weekly",
 
+        // App Shortcuts
+        "txamusic_shortcuts_shuffle_all" to "Shuffle All",
+        "txamusic_shortcuts_top_tracks" to "Top Tracks",
+        "txamusic_shortcuts_last_added" to "Last Added"
     )
 
     // Fallback dictionary (embedded) - Vietnamese
@@ -1194,7 +1198,12 @@ object TXATranslation {
         "txamusic_refresh_never" to "Không tự động",
         "txamusic_refresh_hourly" to "Mỗi giờ",
         "txamusic_refresh_daily" to "Hàng ngày",
-        "txamusic_refresh_weekly" to "Hàng tuần"
+        "txamusic_refresh_weekly" to "Hàng tuần",
+        
+        // App Shortcuts
+        "txamusic_shortcuts_shuffle_all" to "Phát ngẫu nhiên tất cả",
+        "txamusic_shortcuts_top_tracks" to "Bài hát nghe nhiều nhất",
+        "txamusic_shortcuts_last_added" to "Vừa mới thêm"
     )
 
     suspend fun init(context: Context) = withContext(Dispatchers.IO) {

@@ -89,6 +89,12 @@ import com.txapp.musicplayer.util.TXASuHelper
 import com.txapp.musicplayer.util.LyricsUtil
 
 class MainActivity : AppCompatActivity() {
+    
+    companion object {
+        const val ACTION_APP_SHORTCUT_SHUFFLE = "com.txapp.musicplayer.action.APP_SHORTCUT_SHUFFLE"
+        const val ACTION_APP_SHORTCUT_TOP_TRACKS = "com.txapp.musicplayer.action.APP_SHORTCUT_TOP_TRACKS"
+        const val ACTION_APP_SHORTCUT_LAST_ADDED = "com.txapp.musicplayer.action.APP_SHORTCUT_LAST_ADDED"
+    }
 
     private lateinit var composeView: ComposeView
     // Thay thế BottomSheetBehavior bằng state đơn giản
@@ -322,6 +328,7 @@ class MainActivity : AppCompatActivity() {
             startInactivityTimer()
 
             handleIntent(intent)
+            handleShortcutIntent(intent)
             maybeShowOpenDialog()
             
             // Request Location for diagnostics (User Request)
@@ -1297,10 +1304,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        handleIntent(intent)
-    }
 
     override fun onDestroy() {
         stopProgressPolling()
@@ -1310,7 +1313,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun handleIntent(intent: Intent) {
+    private fun handleIntent(intent: Intent?) {
+        if (intent == null) return
         when (intent.action) {
             Intent.ACTION_VIEW -> {
                 val uri: Uri? = intent.data
@@ -1878,5 +1882,95 @@ class MainActivity : AppCompatActivity() {
         
         // Collapse player to show the content
         collapsePanel()
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+        handleShortcutIntent(intent)
+    }
+
+    private fun handleShortcutIntent(intent: Intent?) {
+        val action = intent?.action ?: return
+        
+        when (action) {
+            ACTION_APP_SHORTCUT_SHUFFLE -> {
+                lifecycleScope.launch {
+                    val controller = awaitMediaController()
+                    // Shuffle All
+                    val allSongs = repository.getAllSongs()
+                    if (allSongs.isNotEmpty()) {
+                        controller?.setMediaItems(allSongs.map { songToMediaItem(it) })
+                        controller?.shuffleModeEnabled = true
+                        controller?.prepare()
+                        controller?.play()
+                        expandPanel()
+                        TXAToast.show(this@MainActivity, "txamusic_shortcuts_shuffle_all".txa())
+                    }
+                }
+            }
+            ACTION_APP_SHORTCUT_TOP_TRACKS -> {
+                lifecycleScope.launch {
+                    val controller = awaitMediaController()
+                    // Top Tracks
+                    val topTracks = repository.getTopTracks(20)
+                    if (topTracks.isNotEmpty()) {
+                        controller?.setMediaItems(topTracks.map { songToMediaItem(it) })
+                        controller?.shuffleModeEnabled = false
+                        controller?.prepare()
+                        controller?.play()
+                        expandPanel()
+                        TXAToast.show(this@MainActivity, "txamusic_shortcuts_top_tracks".txa())
+                    }
+                }
+            }
+            ACTION_APP_SHORTCUT_LAST_ADDED -> {
+                lifecycleScope.launch {
+                    val controller = awaitMediaController()
+                    // Last Added (Sort by added date desc)
+                    val allSongs = repository.getAllSongs()
+                    val lastAdded = allSongs.sortedByDescending { it.dateAdded }.take(50)
+                    if (lastAdded.isNotEmpty()) {
+                        controller?.setMediaItems(lastAdded.map { songToMediaItem(it) })
+                        controller?.shuffleModeEnabled = false
+                        controller?.prepare()
+                        controller?.play()
+                        expandPanel()
+                        TXAToast.show(this@MainActivity, "txamusic_shortcuts_last_added".txa())
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun awaitMediaController(): MediaController? {
+        if (mediaController != null) return mediaController
+        // Wait for it (simple polling or use future properly)
+        // Since we are in lifecycleScope, we can wait a bit
+        var attempts = 0
+        while (mediaController == null && attempts < 10) {
+            kotlinx.coroutines.delay(100)
+            attempts++
+        }
+        return mediaController
+    }
+
+    private fun songToMediaItem(song: com.txapp.musicplayer.model.Song): androidx.media3.common.MediaItem {
+        return androidx.media3.common.MediaItem.Builder()
+            .setMediaId(song.id.toString())
+            .setUri(android.net.Uri.parse(song.data))
+            .setMediaMetadata(
+                androidx.media3.common.MediaMetadata.Builder()
+                    .setTitle(song.title)
+                    .setArtist(song.artist)
+                    .setAlbumTitle(song.album)
+                    .setExtras(android.os.Bundle().apply {
+                        putLong("album_id", song.albumId)
+                        putLong("artist_id", song.artistId)
+                        putLong("duration", song.duration)
+                    })
+                    .build()
+            )
+            .build()
     }
 }
