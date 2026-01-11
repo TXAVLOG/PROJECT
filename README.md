@@ -15,7 +15,7 @@ Nếu bạn có thắc mắc hoặc gặp lỗi, vui lòng:
 
 Chào mừng bạn đến với **TXA Music Player** - ứng dụng nghe nhạc hiện đại, giao diện đẹp mắt và nhiều tính năng tùy biến mạnh mẽ dành cho Android.
 
-![Version](https://img.shields.io/badge/Version-2.6.0__txa-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-2.6.1__txa-blue?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-GPL--3.0-orange?style=for-the-badge)
 
@@ -27,7 +27,7 @@ TXAPP Music Player được xây dựng dựa trên kiến trúc hiện đại, 
 - **Material You**: Giao diện thích ứng theo màu sắc hệ thống.
 - **Tag Editor**: Chỉnh sửa thông tin bài hát trực tiếp.
 
-> **Phiên bản hiện tại:** <!-- VERSION_START -->2.6.0_txa<!-- VERSION_END -->
+> **Phiên bản hiện tại:** <!-- VERSION_START -->2.6.1_txa<!-- VERSION_END -->
 > *(Được cập nhật tự động từ [version.properties](version.properties))*
 
 ## 📦 Thông Tin Build (Latest Build Info)
