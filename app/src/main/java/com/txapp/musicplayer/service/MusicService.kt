@@ -99,6 +99,7 @@ class MusicService : MediaLibraryService() {
     private var lastPlaybackProgressTime: Long = 0
     private var lastPlaybackPosition: Long = 0
     private var lastStuckCheckTime: Long = 0
+    private var isManualSkip: Boolean = false
 
     private val connectionReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -395,9 +396,11 @@ class MusicService : MediaLibraryService() {
                     // This could be manual play or auto transition
                     // If position is near start, it's likely a start of song
                     if (player.currentPosition < 1000) {
-                         startFadeIn(isManualPlay = false) // Use crossfade for song start
+                         startFadeIn(isManualPlay = isManualSkip) 
+                         isManualSkip = false // Reset after applying
                     } else {
-                         startFadeIn(isManualPlay = true) // Likely resumed from pause
+                         // Resumed from pause
+                         startFadeIn(isManualPlay = true)
                     }
                 }
             }
@@ -408,9 +411,16 @@ class MusicService : MediaLibraryService() {
                 reason: Int
             ) {
                 if (reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION) {
+                    isManualSkip = false
                     startFadeIn(isManualPlay = false)
+                } else if (reason == Player.DISCONTINUITY_REASON_SEEK) {
+                    // Could be manual skip or manual seek
+                    // If it was triggered by ACTION_NEXT/PREV, isManualSkip is true
+                    if (isManualSkip && player.playbackState == Player.STATE_READY) {
+                        startFadeIn(isManualPlay = true)
+                        isManualSkip = false
+                    }
                 }
-                // Don't fade on manual Seek to avoid "cutting" feel
             }
 
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
@@ -786,6 +796,8 @@ class MusicService : MediaLibraryService() {
                     serviceScope.launch {
                         val song = musicRepository.getSongById(songId)
                         if (song != null) {
+                            isManualSkip = true
+                            player.volume = 0f
                             playSong(song)
                         }
                     }
@@ -796,22 +808,23 @@ class MusicService : MediaLibraryService() {
                 if (player.isPlaying) {
                     startFadeOut(isManualPause = true) { player.pause() }
                 } else {
+                    if (player.volume > 0.9f) player.volume = 0f // Force fade in
                     player.play() 
                     // onPlaybackStateChanged will handle startFadeIn(true)
                 }
             }
 
             ACTION_NEXT -> {
-                startFadeOut { 
+                startFadeOut(isManualPause = true) { 
+                    isManualSkip = true
                     player.seekToNextMediaItem()
-                    // startFadeIn will be triggered by listener
                 }
             }
 
             ACTION_PREVIOUS -> {
-                 startFadeOut { 
+                 startFadeOut(isManualPause = true) { 
+                    isManualSkip = true
                     player.seekToPreviousMediaItem()
-                    // startFadeIn will be triggered by listener
                 }
             }
 
@@ -879,6 +892,8 @@ class MusicService : MediaLibraryService() {
                             musicRepository.getSongById(id)?.let { songs.add(it) }
                         }
                         if (songs.isNotEmpty()) {
+                            isManualSkip = true
+                            player.volume = 0f
                             playQueue(songs)
                         }
                     }
@@ -927,11 +942,15 @@ class MusicService : MediaLibraryService() {
                             // Find index of target song in the ordered list
                             val targetIndex = songs.indexOfFirst { it.id == songId }
                             if (targetIndex >= 0) {
+                                isManualSkip = true
+                                player.volume = 0f
                                 playSongInContext(songs, targetIndex)
                             } else {
                                 // Fallback if not found in context (shouldn't happen)
                                 val fallbackSong = musicRepository.getSongById(songId)
                                 if (fallbackSong != null) {
+                                    isManualSkip = true
+                                    player.volume = 0f
                                     playSong(fallbackSong)
                                 }
                             }
