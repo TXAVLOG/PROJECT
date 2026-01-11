@@ -56,14 +56,14 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:mimeType="audio/*" />
             </intent-filter>
-            <!-- Register Shortcut Actions -->
-            <intent-filter>
-                <action android:name="com.txapp.musicplayer.action.APP_SHORTCUT_SHUFFLE" />
-                <action android:name="com.txapp.musicplayer.action.APP_SHORTCUT_TOP_TRACKS" />
-                <action android:name="com.txapp.musicplayer.action.APP_SHORTCUT_LAST_ADDED" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
         </activity>
+
+        <!-- App Shortcut Launcher Activity -->
+        <activity
+            android:name=".appshortcuts.AppShortcutLauncherActivity"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <activity
             android:name=".ui.NowPlayingActivity"

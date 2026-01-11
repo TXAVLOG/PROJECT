@@ -4,19 +4,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
-import android.graphics.drawable.Icon
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.core.os.bundleOf
 import com.txapp.musicplayer.R
-import com.txapp.musicplayer.ui.MainActivity
 import com.txapp.musicplayer.util.TXATranslation
-import java.util.Arrays
 
 object DynamicShortcutManager {
 
-    private const val SHORTCUT_ID_SHUFFLE_ALL = "shuffle_all"
-    private const val SHORTCUT_ID_TOP_TRACKS = "top_tracks"
-    private const val SHORTCUT_ID_LAST_ADDED = "last_added"
+    private const val ID_PREFIX = "com.txapp.musicplayer.appshortcuts.id."
 
     fun init(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
@@ -28,38 +24,27 @@ object DynamicShortcutManager {
     private fun updateShortcuts(context: Context) {
         val shortcutManager = context.getSystemService(ShortcutManager::class.java) ?: return
 
-        val shortcuts = ArrayList<ShortcutInfo>()
-
-        // Shuffle All
-        shortcuts.add(
+        val shortcuts = listOf(
             createShortcut(
                 context,
-                SHORTCUT_ID_SHUFFLE_ALL,
+                ID_PREFIX + "shuffle_all",
                 TXATranslation.txa("txamusic_shortcuts_shuffle_all"),
                 R.drawable.ic_app_shortcut_shuffle_all,
-                MainActivity.ACTION_APP_SHORTCUT_SHUFFLE
-            )
-        )
-
-        // Top Tracks
-        shortcuts.add(
+                AppShortcutLauncherActivity.SHORTCUT_TYPE_SHUFFLE_ALL
+            ),
             createShortcut(
                 context,
-                SHORTCUT_ID_TOP_TRACKS,
+                ID_PREFIX + "top_tracks",
                 TXATranslation.txa("txamusic_shortcuts_top_tracks"),
                 R.drawable.ic_app_shortcut_top_tracks,
-                MainActivity.ACTION_APP_SHORTCUT_TOP_TRACKS
-            )
-        )
-
-        // Last Added
-        shortcuts.add(
+                AppShortcutLauncherActivity.SHORTCUT_TYPE_TOP_TRACKS
+            ),
             createShortcut(
                 context,
-                SHORTCUT_ID_LAST_ADDED,
+                ID_PREFIX + "last_added",
                 TXATranslation.txa("txamusic_shortcuts_last_added"),
                 R.drawable.ic_app_shortcut_last_added,
-                MainActivity.ACTION_APP_SHORTCUT_LAST_ADDED
+                AppShortcutLauncherActivity.SHORTCUT_TYPE_LAST_ADDED
             )
         )
 
@@ -76,12 +61,12 @@ object DynamicShortcutManager {
         id: String,
         label: String,
         iconResId: Int,
-        action: String
+        shortcutType: Long
     ): ShortcutInfo {
-        // Create Intent pointing directly to MainActivity
-        val intent = Intent(context, MainActivity::class.java).apply {
-            this.action = action
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        // Create Intent pointing to AppShortcutLauncherActivity with ACTION_VIEW
+        val intent = Intent(context, AppShortcutLauncherActivity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            putExtras(bundleOf(AppShortcutLauncherActivity.KEY_SHORTCUT_TYPE to shortcutType))
         }
 
         return ShortcutInfo.Builder(context, id)
@@ -90,5 +75,11 @@ object DynamicShortcutManager {
             .setIcon(AppShortcutIconGenerator.generateThemedIcon(context, iconResId))
             .setIntent(intent)
             .build()
+    }
+
+    fun reportShortcutUsed(context: Context, shortcutId: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
+            context.getSystemService(ShortcutManager::class.java)?.reportShortcutUsed(shortcutId)
+        }
     }
 }
