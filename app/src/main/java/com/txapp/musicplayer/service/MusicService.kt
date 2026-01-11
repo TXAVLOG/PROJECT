@@ -352,9 +352,23 @@ class MusicService : MediaLibraryService() {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 updateMediaSessionLayout()
                 FloatingLyricsService.updatePlaybackState(isPlaying)
-                if (!isPlaying) {
+                if (isPlaying) {
+                    // Critical: If resuming from pause, ensure volume is restored
+                    if (player.volume < 1.0f) {
+                        startFadeIn(isManualPlay = true)
+                    }
+                } else {
                     savePlaybackState()
                     saveCurrentSongProgress()
+                }
+            }
+
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                if (playWhenReady && player.playbackState == Player.STATE_READY) {
+                    // Ensure volume is restored when user hits play
+                    if (player.volume < 1.0f) {
+                        startFadeIn(isManualPlay = true)
+                    }
                 }
             }
 

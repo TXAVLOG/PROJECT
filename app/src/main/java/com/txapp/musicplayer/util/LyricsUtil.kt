@@ -131,13 +131,8 @@ object LyricsUtil {
         if (sorted.isNotEmpty()) {
             val firstStart = sorted[0].timestamp
             if (firstStart >= 3000) {
-                // Add 3... 2... 1... countdown
-                // 3 at (start - 3000)
-                processed.add(LyricLine(firstStart - 3000, "3...", firstStart - 2000))
-                // 2 at (start - 2000)
-                processed.add(LyricLine(firstStart - 2000, "2...", firstStart - 1000))
-                // 1 at (start - 1000)
-                processed.add(LyricLine(firstStart - 1000, "1...", firstStart))
+                // Add a single countdown marker for the UI to handle smoothly
+                processed.add(LyricLine(firstStart - 3000, "•••", firstStart))
             }
         }
 

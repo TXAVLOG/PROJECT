@@ -989,18 +989,22 @@ private fun ExpandedLyricsPanel(
                     
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                          if (activeLine != null) {
-                             val lineDuration = (activeLine.endTimestamp - activeLine.timestamp).coerceAtLeast(1)
-                             val elapsed = (currentPosition - activeLine.timestamp).coerceAtLeast(0)
-                             val progress = (elapsed.toFloat() / lineDuration.toFloat()).coerceIn(0f, 1f)
-                             
-                             Text(
-                                 text = buildKaraokeText(activeLine.text, progress),
-                                 fontSize = 18.sp,
-                                 fontWeight = FontWeight.Bold,
-                                 textAlign = TextAlign.Center,
-                                 lineHeight = 26.sp,
-                                 modifier = Modifier.fillMaxWidth()
-                             )
+                              if (activeLine.text == "•••" || activeLine.text == "....") {
+                                 LyricsCountdown(activeLine, currentPosition)
+                              } else {
+                                  val lineDuration = (activeLine.endTimestamp - activeLine.timestamp).coerceAtLeast(1)
+                                  val elapsed = (currentPosition - activeLine.timestamp).coerceAtLeast(0)
+                                  val progress = (elapsed.toFloat() / lineDuration.toFloat()).coerceIn(0f, 1f)
+                                  
+                                  Text(
+                                      text = buildKaraokeText(activeLine.text, progress),
+                                      fontSize = 18.sp,
+                                      fontWeight = FontWeight.Bold,
+                                      textAlign = TextAlign.Center,
+                                      lineHeight = 26.sp,
+                                      modifier = Modifier.fillMaxWidth()
+                                  )
+                              }
                          }
                          
                          if (nextLine != null) {
@@ -1017,6 +1021,62 @@ private fun ExpandedLyricsPanel(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun LyricsCountdown(line: LyricLine, currentPosition: Long) {
+    val duration = (line.endTimestamp - line.timestamp).coerceAtLeast(1)
+    val elapsed = (currentPosition - line.timestamp).coerceAtLeast(0)
+    val progress = (elapsed.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+    
+    // We want to show 3 dots, and they disappear or dim as time progresses
+    // For "3.. 2.. 1..", we have 3 segments
+    val count = when {
+        progress < 0.33f -> 3
+        progress < 0.66f -> 2
+        progress < 0.95f -> 1
+        else -> 0
+    }
+
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(vertical = 12.dp)
+    ) {
+        repeat(3) { i ->
+            val dotIndex = i // 0, 1, 2
+            // For count = 3, all dots active (i=0,1,2)
+            // For count = 2, dots 1, 2 active
+            // For count = 1, dot 2 active
+            val isActive = (2 - dotIndex) < count
+            
+            val alpha by animateFloatAsState(
+                targetValue = if (isActive) 1f else 0.2f,
+                animationSpec = tween(300),
+                label = "dotAlpha"
+            )
+            val scale by animateFloatAsState(
+                targetValue = if (isActive) 1.2f else 0.8f,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                label = "dotScale"
+            )
+            
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .size(12.dp)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        this.alpha = alpha
+                    }
+                    .background(
+                        if (isActive) Color(0xFF1DB954) else Color.White.copy(alpha = 0.3f), 
+                        CircleShape
+                    )
+            )
         }
     }
 }
