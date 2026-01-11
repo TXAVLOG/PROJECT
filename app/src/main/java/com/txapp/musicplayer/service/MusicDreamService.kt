@@ -439,37 +439,37 @@ class MusicDreamService : DreamService(), LifecycleOwner, SavedStateRegistryOwne
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(48.dp))
-
                     // Music info and controls
-                    val mediaItem = currentMediaItem
-                    if (mediaItem != null && showMusic) {
-                        MusicInfoCard(
-                            mediaItem = mediaItem,
-                            isPlaying = isPlaying,
-                            currentPosition = currentPosition,
-                            duration = duration,
-                            showControls = showControls,
-                            clockColor = clockColor,
-                            onPlayPause = {
-                                mediaController?.let { controller ->
-                                    if (controller.isPlaying) {
-                                        controller.pause()
-                                    } else {
-                                        controller.play()
+                    if (showMusic) {
+                        Spacer(modifier = Modifier.height(48.dp))
+                        val mediaItem = currentMediaItem
+                        if (mediaItem != null) {
+                            MusicInfoCard(
+                                mediaItem = mediaItem,
+                                isPlaying = isPlaying,
+                                currentPosition = currentPosition,
+                                duration = duration,
+                                showControls = showControls,
+                                clockColor = clockColor,
+                                onPlayPause = {
+                                    mediaController?.let { controller ->
+                                        if (controller.isPlaying) {
+                                            controller.pause()
+                                        } else {
+                                            controller.play()
+                                        }
                                     }
+                                },
+                                onPrevious = {
+                                    mediaController?.seekToPrevious()
+                                },
+                                onNext = {
+                                    mediaController?.seekToNext()
                                 }
-                            },
-                            onPrevious = {
-                                mediaController?.seekToPrevious()
-                            },
-                            onNext = {
-                                mediaController?.seekToNext()
-                            }
-                        )
-                    } else { // Corrected: added 'else'
-                        // No music playing state
-                        NoMusicPlaying()
+                            )
+                        } else {
+                            NoMusicPlaying()
+                        }
                     }
                 }
             }
