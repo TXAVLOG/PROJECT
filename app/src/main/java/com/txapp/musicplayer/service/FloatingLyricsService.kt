@@ -76,7 +76,8 @@ import kotlin.math.roundToInt
 
 /**
  * Floating Lyrics Bubble Service - Messenger Style
- * 
+ * Code by TXA
+ *
  * Features:
  * - Draggable bubble that snaps to screen edges
  * - Tap to expand/collapse lyrics panel
