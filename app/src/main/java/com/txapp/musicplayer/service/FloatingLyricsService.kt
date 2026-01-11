@@ -671,19 +671,20 @@ fun CollapsedBubble(
     val duration by FloatingLyricsService.duration.collectAsState()
     
     // Status Logic:
-    // Playing -> Green, Pulsing
-    // Paused (Pos > 0) -> Amber, No Pulse
-    // Not Started (Pos == 0) -> Gray/Transparent, No Pulse
+    // Playing -> Green Ring
+    // Paused -> Amber Ring
+    // Not Started/Invalid Duration -> Gray Ring
     val isPaused = !isPlaying && currentPosition > 0
-    val isNotStarted = !isPlaying && currentPosition <= 100 // Allow small buffer for 0
     
+    // Fix: If duration is invalid or very small, show 0 progress to avoid "Full" circle bug
+    val validDuration = duration > 1000
     val progress = remember(currentPosition, duration) {
-        if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f
+        if (validDuration) (currentPosition.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f
     }
     
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.8f,
+        initialValue = 0.6f, // Deeper pulse for better visibility
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(1000, easing = LinearEasing),
@@ -721,7 +722,7 @@ fun CollapsedBubble(
         val ringColor = when {
             isPlaying -> Color(0xFF1DB954) // Green
             isPaused -> Color(0xFFFFB300) // Amber
-            else -> Color.Gray.copy(alpha = 0.5f) // Gray/Dim
+            else -> Color.Gray.copy(alpha = 0.5f) // Dim
         }
 
         CircularProgressIndicator(
@@ -729,7 +730,7 @@ fun CollapsedBubble(
             modifier = Modifier.size(60.dp),
             color = ringColor,
             strokeWidth = 3.dp,
-            trackColor = Color.Transparent
+            trackColor = Color.Gray.copy(alpha = 0.3f) // Visible track so user sees it's a progress bar
         )
 
         // Timer overlay with formatted duration
@@ -753,7 +754,7 @@ fun CollapsedBubble(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = 2.dp, y = 2.dp) // Push slightly outside
+                    .offset(x = 2.dp, y = 2.dp)
                     .size(18.dp)
                     .clip(CircleShape)
                     .background(Color.Red)
