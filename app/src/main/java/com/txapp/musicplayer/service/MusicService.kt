@@ -232,6 +232,9 @@ class MusicService : MediaLibraryService() {
         
         // Restore previous state
         restorePlaybackState()
+        
+        // Sync widgets
+        com.txapp.musicplayer.appwidget.TXAMusicWidget.updateWidgets(this)
 
         // Load per-song playback history
         serviceScope.launch {

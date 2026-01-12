@@ -178,15 +178,14 @@ fun WidgetSettingsScreen(
 
 @Composable
 fun WidgetPreviewCard(settings: WidgetSettings) {
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1A1A1A)
-        )
+            .height(140.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF111111)) // Slightly darker background for contrast
     ) {
+        // Shadow/Ambient light effect (optional, keep it simple but premium)
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -197,17 +196,17 @@ fun WidgetPreviewCard(settings: WidgetSettings) {
             if (settings.showAlbumArt) {
                 Box(
                     modifier = Modifier
-                        .size(90.dp)
+                        .size(100.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color(0xFF2A2A2A)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "🎵",
+                        text = "✨", // Cosmic vibe like the generated image
                         fontSize = 32.sp
                     )
                 }
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(16.dp))
             }
             
             Column(
@@ -215,24 +214,26 @@ fun WidgetPreviewCard(settings: WidgetSettings) {
             ) {
                 if (settings.showTitle) {
                     Text(
-                        text = "txamusic_widget_preview_title".txa(),
+                        text = "Stellar Echoes", // Using example from prompt
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp
+                        fontSize = 17.sp,
+                        maxLines = 1
                     )
                 }
                 if (settings.showArtist) {
                     Text(
-                        text = "txamusic_widget_preview_artist".txa(),
+                        text = "TXA Deep Space",
                         color = Color(0xFFAAAAAA),
-                        fontSize = 13.sp
+                        fontSize = 14.sp,
+                        maxLines = 1
                     )
                 }
                 
                 if (settings.showProgress) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     LinearProgressIndicator(
-                        progress = { 0.4f },
+                        progress = { 0.6f },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(4.dp)
@@ -242,20 +243,33 @@ fun WidgetPreviewCard(settings: WidgetSettings) {
                     )
                 }
                 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 
-                // Control buttons preview
+                // Control buttons preview - using icons for better look
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (settings.showShuffle) {
-                        Text("🔀", fontSize = 16.sp)
+                        Text("🔀", fontSize = 16.sp, color = Color.White.copy(alpha = 0.7f))
                     }
-                    Text("⏮️", fontSize = 16.sp)
-                    Text("▶️", fontSize = 20.sp)
-                    Text("⏭️", fontSize = 16.sp)
+                    Text("⏮️", fontSize = 18.sp, color = Color.White)
+                    
+                    // Main Play Button
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(Color(0xFF00D269)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("▶️", fontSize = 14.sp)
+                    }
+                    
+                    Text("⏭️", fontSize = 18.sp, color = Color.White)
                     if (settings.showRepeat) {
-                        Text("🔁", fontSize = 16.sp)
+                        Text("🔁", fontSize = 16.sp, color = Color.White.copy(alpha = 0.7f))
                     }
                 }
             }

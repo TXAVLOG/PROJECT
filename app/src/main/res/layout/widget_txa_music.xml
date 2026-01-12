@@ -1,33 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="8dp"
-    android:background="@drawable/widget_background">
+    android:padding="12dp"
+    android:background="@drawable/widget_background"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
 
-    <!-- Album Art (Left Side) -->
+    <!-- Album Art -->
     <ImageView
         android:id="@+id/widget_album_art"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_alignParentStart="true"
-        android:layout_centerVertical="true"
+        android:layout_width="90dp"
+        android:layout_height="90dp"
         android:scaleType="centerCrop"
         android:src="@drawable/ic_default_album_art"
-        android:contentDescription="@string/txamusic_album_art"
-        android:background="@drawable/widget_album_art_bg" />
+        android:background="@drawable/widget_album_art_bg"
+        android:clipToOutline="true"
+        android:contentDescription="@string/txamusic_album_art" />
 
-    <!-- Content Container (Right Side) -->
+    <!-- Content Container -->
     <LinearLayout
         android:id="@+id/widget_content"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_toEndOf="@id/widget_album_art"
-        android:layout_centerVertical="true"
-        android:layout_marginStart="12dp"
-        android:orientation="vertical"
-        android:gravity="center_vertical">
+        android:layout_weight="1"
+        android:layout_marginStart="16dp"
+        android:orientation="vertical">
 
         <!-- Song Title -->
         <TextView
@@ -35,15 +34,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="TXA Music"
-            android:textColor="@color/widget_text_primary"
+            android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
             android:maxLines="1"
             android:ellipsize="marquee"
-            android:marqueeRepeatLimit="marquee_forever"
-            android:singleLine="true"
-            android:focusable="true"
-            android:focusableInTouchMode="true" />
+            android:singleLine="true" />
 
         <!-- Artist Name -->
         <TextView
@@ -51,10 +47,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Tap to play"
-            android:textColor="@color/widget_text_secondary"
+            android:textColor="#AAAAAA"
             android:textSize="13sp"
             android:maxLines="1"
-            android:ellipsize="end"
             android:layout_marginTop="2dp" />
 
         <!-- Progress Bar -->
@@ -64,7 +59,6 @@
             android:layout_width="match_parent"
             android:layout_height="4dp"
             android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
             android:max="100"
             android:progress="0"
             android:progressDrawable="@drawable/widget_progress_drawable" />
@@ -81,9 +75,9 @@
             <!-- Shuffle Button -->
             <ImageButton
                 android:id="@+id/widget_btn_shuffle"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@android:color/transparent"
                 android:src="@drawable/ic_shuffle_widget"
                 android:scaleType="centerInside"
                 android:contentDescription="@string/txamusic_shuffle" />
@@ -91,10 +85,10 @@
             <!-- Previous Button -->
             <ImageButton
                 android:id="@+id/widget_btn_prev"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:layout_marginStart="4dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@android:color/transparent"
                 android:src="@drawable/ic_skip_prev_widget"
                 android:scaleType="centerInside"
                 android:contentDescription="@string/txamusic_previous" />
@@ -102,8 +96,8 @@
             <!-- Play/Pause Button -->
             <ImageButton
                 android:id="@+id/widget_btn_play_pause"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:layout_marginStart="4dp"
                 android:background="@drawable/widget_play_button_bg"
                 android:src="@drawable/ic_play_widget"
@@ -113,10 +107,10 @@
             <!-- Next Button -->
             <ImageButton
                 android:id="@+id/widget_btn_next"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:layout_marginStart="4dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@android:color/transparent"
                 android:src="@drawable/ic_skip_next_widget"
                 android:scaleType="centerInside"
                 android:contentDescription="@string/txamusic_next" />
@@ -124,16 +118,14 @@
             <!-- Repeat Button -->
             <ImageButton
                 android:id="@+id/widget_btn_repeat"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:layout_marginStart="4dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@android:color/transparent"
                 android:src="@drawable/ic_repeat_off_widget"
                 android:scaleType="centerInside"
                 android:contentDescription="@string/txamusic_repeat" />
 
         </LinearLayout>
-
     </LinearLayout>
-
-</RelativeLayout>
+</LinearLayout>
