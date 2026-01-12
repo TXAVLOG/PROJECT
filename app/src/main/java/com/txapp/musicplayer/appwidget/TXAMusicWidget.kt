@@ -211,6 +211,8 @@ class TXAMusicWidget : AppWidgetProvider() {
                 Player.REPEAT_MODE_ALL -> R.drawable.ic_repeat_widget
                 else -> R.drawable.ic_repeat_off_widget
             }
+            val repeatAlpha = if (cachedRepeatMode != Player.REPEAT_MODE_OFF) 255 else 128
+            views.setInt(R.id.widget_btn_repeat, "setImageAlpha", repeatAlpha)
             views.setImageViewResource(R.id.widget_btn_repeat, repeatIcon)
             views.setViewVisibility(R.id.widget_btn_repeat, android.view.View.VISIBLE)
         } else {
