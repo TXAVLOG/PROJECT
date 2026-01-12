@@ -466,13 +466,38 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         
         // Initialize position from prefs
         val savedPos = TXAPreferences.getFloatingLyricsPosition()
+        var initX: Int
+        var initY: Int
+        
         if (savedPos.first != -1 && savedPos.second != -1) {
-            posX = savedPos.first
-            posY = savedPos.second
+            initX = savedPos.first
+            initY = savedPos.second
+            
+            // Check if last position was in the trash/dismiss zone (X)
+            // If it was killed exactly when hovering over X, reset to default on restart
+            val trashCenterX = screenWidth / 2
+            val trashCenterY = screenHeight - 150 
+            val bubbleCenterX = initX + 30
+            val bubbleCenterY = initY + 30
+            
+            val distanceToTrash = kotlin.math.sqrt(
+                ((trashCenterX - bubbleCenterX) * (trashCenterX - bubbleCenterX) + 
+                 (trashCenterY - bubbleCenterY) * (trashCenterY - bubbleCenterY)).toDouble()
+            )
+            
+            if (distanceToTrash < 200) {
+                // Reset to default position (Top Right area)
+                initX = screenWidth - 140
+                initY = screenHeight / 4
+                TXALogger.floatingI("FloatingLyricsService", "Last position was in trash zone, resetting to default.")
+            }
         } else {
-            posX = screenWidth - 140
-            posY = screenHeight / 4
+            initX = screenWidth - 140
+            initY = screenHeight / 4
         }
+        
+        posX = initX
+        posY = initY
         
         layoutParams?.x = posX
         layoutParams?.y = posY

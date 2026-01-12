@@ -615,7 +615,22 @@ object TXATranslation {
         // App Shortcuts
         "txamusic_shortcuts_shuffle_all" to "Shuffle All",
         "txamusic_shortcuts_top_tracks" to "Top Tracks",
-        "txamusic_shortcuts_last_added" to "Last Added"
+        "txamusic_shortcuts_last_added" to "Last Added",
+        
+        // Widget Settings
+        "txamusic_widget_settings" to "Widget Settings",
+        "txamusic_widget_settings_desc" to "Customize the appearance and controls of your home screen widget.",
+        "txamusic_widget_preview_title" to "Sample Song",
+        "txamusic_widget_preview_artist" to "Sample Artist",
+        "txamusic_widget_display" to "Display Options",
+        "txamusic_widget_show_album_art" to "Show Album Art",
+        "txamusic_widget_show_title" to "Show Song Title",
+        "txamusic_widget_show_artist" to "Show Artist Name",
+        "txamusic_widget_show_progress" to "Show Progress Bar",
+        "txamusic_widget_controls" to "Control Options",
+        "txamusic_widget_show_shuffle" to "Show Shuffle Button",
+        "txamusic_widget_show_repeat" to "Show Repeat Button",
+        "txamusic_widget_info" to "Changes will be applied immediately to all widget instances on your home screen."
     )
 
     // Fallback dictionary (embedded) - Vietnamese
@@ -1203,7 +1218,22 @@ object TXATranslation {
         // App Shortcuts
         "txamusic_shortcuts_shuffle_all" to "Phát ngẫu nhiên tất cả",
         "txamusic_shortcuts_top_tracks" to "Bài hát nghe nhiều nhất",
-        "txamusic_shortcuts_last_added" to "Vừa mới thêm"
+        "txamusic_shortcuts_last_added" to "Vừa mới thêm",
+
+        // Widget Settings
+        "txamusic_widget_settings" to "Cài đặt Widget",
+        "txamusic_widget_settings_desc" to "Tùy chỉnh giao diện và điều khiển của widget ngoài màn hình chính.",
+        "txamusic_widget_preview_title" to "Tên bài hát",
+        "txamusic_widget_preview_artist" to "Tên nghệ sĩ",
+        "txamusic_widget_display" to "Tùy chọn hiển thị",
+        "txamusic_widget_show_album_art" to "Hiện ảnh bìa",
+        "txamusic_widget_show_title" to "Hiện tiêu đề bài hát",
+        "txamusic_widget_show_artist" to "Hiện tên nghệ sĩ",
+        "txamusic_widget_show_progress" to "Hiện thanh tiến trình",
+        "txamusic_widget_controls" to "Tùy chọn điều khiển",
+        "txamusic_widget_show_shuffle" to "Hiện nút trộn bài",
+        "txamusic_widget_show_repeat" to "Hiện nút lặp lại",
+        "txamusic_widget_info" to "Các thay đổi sẽ được áp dụng ngay lập tức cho tất cả các widget trên màn hình chính của bạn."
     )
 
     suspend fun init(context: Context) = withContext(Dispatchers.IO) {
