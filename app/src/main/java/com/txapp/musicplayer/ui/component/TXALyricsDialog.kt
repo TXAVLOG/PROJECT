@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -443,19 +444,50 @@ fun LyricsDialog(
                                 val isCurrent = index == activeIndex
                                 val isPast = index < activeIndex
                                 
+                                val duration = line.endTimestamp - line.timestamp
+                                val progress = if (isCurrent && duration > 0) {
+                                    ((currentPosition - line.timestamp).toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+                                } else {
+                                    0f
+                                }
+
+                                val primaryColor = MaterialTheme.colorScheme.primary
+                                val secondaryColor = Color.White.copy(alpha = 0.7f)
+                                
+                                val brush = if (isCurrent) {
+                                    androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                        0.0f to primaryColor,
+                                        progress to primaryColor,
+                                        progress + 0.05f to secondaryColor, // Smooth edge
+                                        1.0f to secondaryColor
+                                    )
+                                } else {
+                                    androidx.compose.ui.graphics.SolidColor(
+                                        if (isPast) Color.White.copy(alpha = 0.4f) else secondaryColor
+                                    )
+                                }
+
                                 Text(
                                     text = line.text,
                                     fontSize = if (isCurrent) 22.sp else 16.sp,
                                     fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                                    color = when {
-                                        isCurrent -> MaterialTheme.colorScheme.primary
-                                        isPast -> Color.White.copy(alpha = 0.4f)
-                                        else -> Color.White.copy(alpha = 0.7f)
+                                    style = if (isCurrent) {
+                                         androidx.compose.ui.text.TextStyle(
+                                             brush = brush
+                                         )
+                                    } else {
+                                         LocalTextStyle.current.copy(color = if (isPast) Color.White.copy(alpha = 0.4f) else secondaryColor)
                                     },
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 12.dp, horizontal = 16.dp)
+                                        // Animate scale for smoother entry
+                                        .graphicsLayer {
+                                            val scale = if (isCurrent) 1.05f else 1f
+                                            scaleX = scale
+                                            scaleY = scale
+                                        }
                                 )
                             }
                         }

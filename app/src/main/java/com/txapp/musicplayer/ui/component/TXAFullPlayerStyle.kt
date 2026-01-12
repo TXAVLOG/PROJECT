@@ -13,6 +13,7 @@ import java.util.Date
 import java.util.Locale
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.TextStyle
 import com.txapp.musicplayer.R
 import com.txapp.musicplayer.util.LyricsUtil
 import android.media.AudioManager
@@ -1980,9 +1981,8 @@ fun MoreOptionsDropdown(
 /**
  * Synced Lyrics View for Player - Karaoke-style (NCT/ZingMP3)
  * Features:
- * - Word-by-word highlight based on timing
+ * - Word-by-word highlight based on timing (Smooth Gradient)
  * - Double-tap to seek to lyric position
- * - Ellipsis animation between gaps
  */
 @Composable
 fun SyncedLyricsView(
@@ -1993,16 +1993,26 @@ fun SyncedLyricsView(
 ) {
     val listState = rememberLazyListState()
     
+    // Calculates the active index based on current position + offset
     val activeIndex = remember(lyrics, currentPosition) {
-        lyrics.indexOfLast { it.timestamp <= currentPosition }.coerceAtLeast(0)
+        val adjustedPos = currentPosition + 300 // Slight offset for better sync
+        lyrics.indexOfLast { it.timestamp <= adjustedPos }.coerceAtLeast(0)
     }
     
+    // Auto-scroll to active line
     LaunchedEffect(activeIndex) {
         if (lyrics.isNotEmpty() && activeIndex >= 0) {
-            listState.animateScrollToItem(
-                index = (activeIndex - 2).coerceAtLeast(0),
-                scrollOffset = 0
-            )
+            // Check if we need to snap (first load) or animate
+            val targetIndex = (activeIndex - 1).coerceAtLeast(0)
+            
+            // If the difference is large (e.g. re-entering screen), snap instead of scroll
+            // This prevents the "scroll from top" visual glitch
+            val firstVisible = listState.firstVisibleItemIndex
+            if (kotlin.math.abs(firstVisible - targetIndex) > 10) {
+                listState.scrollToItem(targetIndex)
+            } else {
+                listState.animateScrollToItem(targetIndex)
+            }
         }
     }
     
@@ -2013,35 +2023,25 @@ fun SyncedLyricsView(
         contentPadding = PaddingValues(vertical = 120.dp)
     ) {
         itemsIndexed(lyrics) { index, line ->
-            val isActive = index == activeIndex
+            val isCurrent = index == activeIndex
             val isPast = index < activeIndex
-            val scale by animateFloatAsState(if (isActive) 1.15f else 1f, label = "scale")
-            val baseAlpha by animateFloatAsState(if (isActive) 1f else if (isPast) 0.35f else 0.5f, label = "alpha")
             
-            // Calculate word-by-word highlight progress for active line
-            val lineProgress = if (isActive && line.endTimestamp > line.timestamp) {
-                val duration = (line.endTimestamp - line.timestamp).toFloat()
-                val elapsed = (currentPosition - line.timestamp).toFloat()
-                (elapsed / duration).coerceIn(0f, 1f)
-            } else if (isPast) {
-                1f // Fully highlighted for past lines
-            } else {
-                0f
-            }
-            
-            // Karaoke-style annotated text with word highlight
-            val annotatedText = remember(line.text, lineProgress, isActive, isPast) {
-                buildKaraokeText(line.text, lineProgress, isActive, isPast, accentColor)
-            }
-            
+            // Animation for current line scaling
+            val scale by animateFloatAsState(
+                targetValue = if (isCurrent) 1.05f else 1f, 
+                animationSpec = tween(300),
+                label = "scale"
+            )
+
+            // Karaoke Fill Logic
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 12.dp, horizontal = 24.dp)
+                    .padding(vertical = 12.dp, horizontal = 20.dp)
                     .graphicsLayer {
                         scaleX = scale
                         scaleY = scale
-                        alpha = baseAlpha
+                        alpha = if (isCurrent) 1f else if (isPast) 0.4f else 0.6f
                     }
                     .pointerInput(line.timestamp) {
                         detectTapGestures(
@@ -2049,61 +2049,49 @@ fun SyncedLyricsView(
                                 onLyricClick(line.timestamp)
                             }
                         )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                if (isCurrent) {
+                    // Calculate fill progress
+                    val duration = line.endTimestamp - line.timestamp
+                    val progress = if (duration > 0) {
+                        ((currentPosition - line.timestamp).toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+                    } else {
+                        0f
                     }
-            ) {
-                androidx.compose.foundation.text.BasicText(
-                    text = annotatedText,
-                    style = androidx.compose.ui.text.TextStyle(
-                        fontSize = if (isActive) 20.sp else 18.sp,
-                        lineHeight = 30.sp,
-                        fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.Medium,
-                        textAlign = TextAlign.Center
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-    }
-}
 
-/**
- * Build karaoke-style annotated string with word-by-word highlight
- */
-private fun buildKaraokeText(
-    text: String,
-    progress: Float,
-    isActive: Boolean,
-    isPast: Boolean,
-    accentColor: Color
-): androidx.compose.ui.text.AnnotatedString {
-    return androidx.compose.ui.text.buildAnnotatedString {
-        if (text.isEmpty()) return@buildAnnotatedString
-        
-        val highlightedLength = (text.length * progress).toInt()
-        
-        // Highlighted part (already sung)
-        if (highlightedLength > 0) {
-            withStyle(
-                style = androidx.compose.ui.text.SpanStyle(
-                    color = if (isActive) accentColor else Color.White.copy(alpha = 0.7f),
-                    fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.SemiBold
-                )
-            ) {
-                append(text.substring(0, highlightedLength.coerceAtMost(text.length)))
-            }
-        }
-        
-        // Remaining part (not yet sung)
-        if (highlightedLength < text.length) {
-            withStyle(
-                style = androidx.compose.ui.text.SpanStyle(
-                    color = if (isPast) Color.White.copy(alpha = 0.5f) 
-                            else if (isActive) Color.White.copy(alpha = 0.6f)
-                            else Color.White.copy(alpha = 0.5f),
-                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium
-                )
-            ) {
-                append(text.substring(highlightedLength))
+                    // Gradient Brush for Karaoke Effect
+                    val currentBrush = Brush.horizontalGradient(
+                        0.0f to accentColor,
+                        progress to accentColor,
+                        progress + 0.05f to Color.White.copy(alpha = 0.7f), // Soft edge
+                        1.0f to Color.White.copy(alpha = 0.7f)
+                    )
+
+                    Text(
+                        text = line.text,
+                        style = TextStyle(
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            brush = currentBrush
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    // Standard text for non-active lines
+                    Text(
+                        text = line.text,
+                        style = TextStyle(
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            color = if (isPast) Color.White.copy(alpha = 0.4f) else Color.White.copy(alpha = 0.7f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
     }
