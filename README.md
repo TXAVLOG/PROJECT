@@ -55,7 +55,7 @@ D9DC6DCD993AB0F0DDE7C5CF027259E7525FB7A4B104CE8328F9806D0E547E0F
 
 
 1. **Cài đặt / Cập nhật**:
-   - **Người dùng mới**: Tải file APK từ thư mục `TXABUILD/` hoặc từ trang Releases.
+   - **Người dùng mới**: Tải file APK từ thư mục `TXABUILD/` sau khi down mã nguồn về và tự build nhé hoặc từ trang Releases.
    - **Người dùng cũ**: Vào **Cài đặt -> Kiểm tra cập nhật** để tải bản mới nhất trực tiếp.
 
 2. **Cấp quyền**:
