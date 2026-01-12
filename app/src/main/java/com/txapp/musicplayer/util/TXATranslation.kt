@@ -889,7 +889,7 @@ object TXATranslation {
 
         // Support Author / Donate
         "txamusic_settings_support_author" to "Hỗ trợ tác giả",
-        "txamusic_settings_support_author_desc" to "Mua cho tôi ly cà phê để hỗ trợ phát triển",
+        "txamusic_settings_support_author_desc" to "Tiếp thêm chút linh lực để ứng dụng ngày càng hoàn thiện hơn",
 
         "txamusic_shuffle_on" to "Bật xáo trộn 🔀",
         "txamusic_shuffle_off" to "Tắt xáo trộn",
