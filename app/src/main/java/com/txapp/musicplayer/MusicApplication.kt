@@ -10,10 +10,16 @@ import kotlinx.coroutines.launch
 
 class MusicApplication : Application() {
 
+    companion object {
+        lateinit var instance: MusicApplication
+            private set
+    }
+
     lateinit var database: MusicDatabase
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
 
         // 1. Init Crash Handler FIRST to catch everything else
         com.txapp.musicplayer.util.TXACrashHandler.init(this)
@@ -33,7 +39,6 @@ class MusicApplication : Application() {
         }
         
         // Init Artist Image Service (Deezer API)
-        // Init Artist Image Service (Deezer API)
         ArtistImageService.init(this)
 
         // Init Dynamic Shortcuts
@@ -47,4 +52,3 @@ class MusicApplication : Application() {
          .build()
     }
 }
-

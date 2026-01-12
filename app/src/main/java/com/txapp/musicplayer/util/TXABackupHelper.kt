@@ -193,9 +193,9 @@ object TXABackupHelper {
                     
                     for (playlist in playlists) {
                         val songIds = playlistDao.getPlaylistSongIds(playlist.id)
-                        val songsInPlaylist = songIds.mapNotNull { id ->
-                            allSongs.find { it.id == id }?.let { 
-                                SongIdentifier(it.data, it.title, it.artist)
+                        val songsInPlaylist = songIds.mapNotNull { sid ->
+                            allSongs.firstOrNull { s -> s.id == sid }?.let { matched ->
+                                SongIdentifier(matched.data, matched.title, matched.artist)
                             }
                         }
                         playlistDataList.add(PlaylistData(playlist.name, songsInPlaylist))
@@ -685,7 +685,9 @@ object TXABackupHelper {
             put("lastTab", TXAPreferences.currentLastTab)
             put("albumGridSize", TXAPreferences.currentAlbumGridSize)
             put("artistGridSize", TXAPreferences.currentArtistGridSize)
-
+            
+            // Widget settings (included in Settings backup)
+            put("widgetSettings", com.txapp.musicplayer.appwidget.WidgetSettings.load(MusicApplication.instance).toJson())
         }
         
         zipOut.putNextEntry(ZipEntry(SETTINGS_FILE))
@@ -864,6 +866,17 @@ object TXABackupHelper {
             TXAPreferences.currentLastTab = json.optInt("lastTab", 0)
             TXAPreferences.currentAlbumGridSize = json.optInt("albumGridSize", 2)
             TXAPreferences.currentArtistGridSize = json.optInt("artistGridSize", 3)
+            
+            // Restore widget settings
+            val widgetJson = json.optString("widgetSettings", "")
+            if (widgetJson.isNotEmpty()) {
+                try {
+                    val widgetSettings = com.txapp.musicplayer.appwidget.WidgetSettings.fromJson(widgetJson)
+                    widgetSettings.save(MusicApplication.instance)
+                } catch (e: Exception) {
+                    TXALogger.appE(TAG, "Failed to restore widget settings", e)
+                }
+            }
 
             
             val eqBands = json.optString("eqBandLevels", "")

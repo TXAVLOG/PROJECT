@@ -278,6 +278,22 @@ class MusicService : MediaLibraryService() {
                 // Update Floating Lyrics
                 updateLyricsForFloatingPlayer()
                 
+                // Sync widget with new song info
+                if (mediaItem != null) {
+                    val metadata = mediaItem.mediaMetadata
+                    val albumId = metadata.extras?.getLong("album_id") ?: -1L
+                    val albumArtUri = if (albumId >= 0) "content://media/external/audio/albumart/$albumId" else ""
+                    
+                    com.txapp.musicplayer.appwidget.TXAMusicWidget.updateState(
+                        context = this@MusicService,
+                        title = (metadata.title ?: "Unknown").toString(),
+                        artist = (metadata.artist ?: "Unknown").toString(),
+                        albumArtUri = albumArtUri,
+                        isPlaying = player.isPlaying,
+                        duration = player.duration
+                    )
+                }
+                
                 // Prompt Playback Position for the new item
                 if (mediaItem != null && com.txapp.musicplayer.util.TXAPreferences.isRememberPlaybackPositionEnabled) {
                     val path = getNormalizedPath(mediaItem.localConfiguration?.uri)
@@ -350,11 +366,24 @@ class MusicService : MediaLibraryService() {
                 val shuffleBroadcast = Intent("com.txapp.musicplayer.action.SHUFFLE_MODE_CHANGED")
                 shuffleBroadcast.putExtra("is_enabled", shuffleModeEnabled)
                 sendBroadcast(shuffleBroadcast)
+                
+                // Sync widget
+                com.txapp.musicplayer.appwidget.TXAMusicWidget.updateState(
+                    context = this@MusicService,
+                    isShuffleOn = shuffleModeEnabled
+                )
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 updateMediaSessionLayout()
                 FloatingLyricsService.updatePlaybackState(isPlaying)
+                
+                // Sync widget
+                com.txapp.musicplayer.appwidget.TXAMusicWidget.updateState(
+                    context = this@MusicService,
+                    isPlaying = isPlaying
+                )
+                
                 if (isPlaying) {
                     // Critical: If resuming from pause, ensure volume is restored
                     if (player.volume < 1.0f) {
@@ -383,6 +412,12 @@ class MusicService : MediaLibraryService() {
                 val repeatBroadcast = Intent("com.txapp.musicplayer.action.REPEAT_MODE_CHANGED")
                 repeatBroadcast.putExtra("mode", repeatMode)
                 sendBroadcast(repeatBroadcast)
+                
+                // Sync widget
+                com.txapp.musicplayer.appwidget.TXAMusicWidget.updateState(
+                    context = this@MusicService,
+                    repeatMode = repeatMode
+                )
             }
 
             override fun onAudioSessionIdChanged(audioSessionId: Int) {

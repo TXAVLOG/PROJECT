@@ -1674,6 +1674,17 @@ fun PersonalizeSettings(
         }
         item {
             SettingsToggleCard(
+                icon = Icons.Outlined.Widgets,
+                title = "txamusic_widget_settings".txa(),
+                subtitle = "txamusic_widget_settings_desc".txa(),
+                onClick = {
+                    val intent = Intent(context, com.txapp.musicplayer.appwidget.WidgetSettingsActivity::class.java)
+                    context.startActivity(intent)
+                }
+            )
+        }
+        item {
+            SettingsToggleCard(
                 icon = Icons.Outlined.Style,
                 title = "txamusic_settings_grid_title".txa(),
                 subtitle = "$gridSize Columns",

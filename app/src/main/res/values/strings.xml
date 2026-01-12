@@ -142,4 +142,14 @@
     <string name="txamusic_refresh_hourly">Every Hour</string>
     <string name="txamusic_refresh_daily">Daily</string>
     <string name="txamusic_refresh_weekly">Weekly</string>
+    
+    <!-- Widget (Home Screen - using native strings) -->
+    <string name="widget_name">TXA Music</string>
+    <string name="widget_description">Control your music from home screen</string>
+    <string name="txamusic_album_art">Album art</string>
+    <string name="txamusic_shuffle">Shuffle</string>
+    <string name="txamusic_previous">Previous</string>
+    <string name="txamusic_play_pause">Play/Pause</string>
+    <string name="txamusic_next">Next</string>
+    <string name="txamusic_repeat">Repeat</string>
 </resources>

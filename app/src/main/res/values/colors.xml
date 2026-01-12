@@ -15,4 +15,10 @@
     <color name="glass_stroke_dark">#33FFFFFF</color>
     <color name="glass_progress_light">#B36D28D9</color>
     <color name="glass_progress_dark">#26FFFFFF</color>
+    
+    <!-- Widget Colors -->
+    <color name="widget_text_primary">#FFFFFF</color>
+    <color name="widget_text_secondary">#AAAAAA</color>
+    <color name="widget_accent">#00D269</color>
+    <color name="widget_background">#CC1A1A1A</color>
 </resources>
