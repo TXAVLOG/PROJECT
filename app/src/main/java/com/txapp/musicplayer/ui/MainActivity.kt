@@ -304,6 +304,11 @@ class MainActivity : AppCompatActivity() {
             // Setup panels với visibility thay vì BottomSheetBehavior
             setupSlidingPanel()
 
+            // Auto-start Floating Lyrics if enabled (only when app is explicitly opened)
+            if (TXAPreferences.showLyricsInPlayer.value) {
+                com.txapp.musicplayer.service.FloatingLyricsService.startService(this@MainActivity)
+            }
+
             composeView = binding.composeView
             setupCompose()
             

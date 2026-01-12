@@ -238,9 +238,11 @@ class MusicService : MediaLibraryService() {
             com.txapp.musicplayer.util.TXAPlaybackHistory.load(this@MusicService)
             
             // Auto-start Floating Lyrics if enabled
-            if (com.txapp.musicplayer.util.TXAPreferences.showLyricsInPlayer.value) {
-                com.txapp.musicplayer.service.FloatingLyricsService.startService(this@MusicService)
-            }
+            // Auto-start Floating Lyrics if enabled
+            // MOVED to MainActivity to comply with: "Show only when app opened"
+            // if (com.txapp.musicplayer.util.TXAPreferences.showLyricsInPlayer.value) {
+            //    com.txapp.musicplayer.service.FloatingLyricsService.startService(this@MusicService)
+            // }
         }
 
         // SessionActivity for Samsung Now Bar / Dynamic Island
