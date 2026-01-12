@@ -298,6 +298,10 @@ object TXATranslation {
         "txamusic_settings_image_quality_auto" to "Auto (Network)",
         "txamusic_network_check_failed" to "Unable to check for updates. No internet connection.",
 
+        // Support Author / Donate
+        "txamusic_settings_support_author" to "Support Author",
+        "txamusic_settings_support_author_desc" to "Buy me a coffee to support development",
+
 
 
         // Holiday Greetings
@@ -882,6 +886,10 @@ object TXATranslation {
         "txamusic_social_youtube" to "YouTube",
         "txamusic_social_github" to "GitHub",
         "txamusic_social_telegram" to "Telegram",
+
+        // Support Author / Donate
+        "txamusic_settings_support_author" to "Hỗ trợ tác giả",
+        "txamusic_settings_support_author_desc" to "Mua cho tôi ly cà phê để hỗ trợ phát triển",
 
         "txamusic_shuffle_on" to "Bật xáo trộn 🔀",
         "txamusic_shuffle_off" to "Tắt xáo trộn",

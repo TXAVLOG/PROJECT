@@ -2476,6 +2476,19 @@ fun AboutSettings(isChecking: Boolean, onCheckUpdate: () -> Unit, onSocialClick:
             )
         }
         
+        // Support Author / Donate
+        item {
+            SettingsToggleCard(
+                icon = Icons.Outlined.Favorite,
+                title = "txamusic_settings_support_author".txa(),
+                subtitle = "txamusic_settings_support_author_desc".txa(),
+                onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buymeacoffee.com/txaro"))
+                    context.startActivity(intent)
+                }
+            )
+        }
+        
         item {
             DeviceInfoCardContent()
         }
