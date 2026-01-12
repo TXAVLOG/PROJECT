@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -2479,7 +2480,7 @@ fun AboutSettings(isChecking: Boolean, onCheckUpdate: () -> Unit, onSocialClick:
         // Support Author / Donate
         item {
             SettingsToggleCard(
-                icon = Icons.Outlined.Favorite,
+                icon = ImageVector.vectorResource(com.txapp.musicplayer.R.drawable.ic_buymeacoffee),
                 title = "txamusic_settings_support_author".txa(),
                 subtitle = "txamusic_settings_support_author_desc".txa(),
                 onClick = {
