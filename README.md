@@ -9,40 +9,42 @@ Nếu bạn có thắc mắc hoặc gặp lỗi, vui lòng:
 - Hoặc liên hệ qua Facebook: [![Facebook](https://img.shields.io/badge/Facebook-1877F2?style=flat-square&logo=facebook&logoColor=white)](https://fb.com/vlog.txa.2311)
 
 ### Thông tin File
-- **Phiên bản**: v2.6.1_txa
-- **Kích thước**: 181.2 MB
+- **Phiên bản**: v2.7.0_txa
+- **Kích thước**: 181.9 MB
 
 
 Chào mừng bạn đến với **TXA Music Player** - ứng dụng nghe nhạc hiện đại, giao diện đẹp mắt và nhiều tính năng tùy biến mạnh mẽ dành cho Android.
 
-![Version](https://img.shields.io/badge/Version-2.6.1__txa-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-2.7.0__txa-blue?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-GPL--3.0-orange?style=for-the-badge)
 
 ## 📌 Tổng Quan
 
 TXAPP Music Player được xây dựng dựa trên kiến trúc hiện đại, tập trung vào trải nghiệm người dùng với các tính năng nổi bật:
+- **Widget 4x2 Mới**: Thiết kế Premium, điều khiển trực tiếp (Play/Pause, Next...) ngay trên màn hình chính.
+- **Support Author**: Tính năng ủng hộ tác giả (Buy Me a Coffee) tích hợp.
 - **Synced Lyrics**: Hiển thị lời bài hát đồng bộ (giống ZingMP3).
 - **Mini Player**: Trình phát thu nhỏ tiện lợi với đầy đủ điều khiển.
 - **Material You**: Giao diện thích ứng theo màu sắc hệ thống.
 - **Tag Editor**: Chỉnh sửa thông tin bài hát trực tiếp.
 
-> **Phiên bản hiện tại:** <!-- VERSION_START -->2.6.1_txa<!-- VERSION_END -->
+> **Phiên bản hiện tại:** <!-- VERSION_START -->2.7.0_txa<!-- VERSION_END -->
 > *(Được cập nhật tự động từ [version.properties](version.properties))*
 
 ## 📦 Thông Tin Build (Latest Build Info)
 
 | Check | Value |
 | :--- | :--- |
-| **File Name** | `TXAMUSIC_v2.6.1_txa.apk` |
-| **Version** | v2.6.1_txa |
-| **Build Date** | 11/01/2026 |
-| **Size** | 181.2 MB |
+| **File Name** | `TXAMUSIC_v2.7.0_txa.apk` |
+| **Version** | v2.7.0_txa |
+| **Build Date** | 13/01/2026 |
+| **Size** | 181.9 MB |
 | **Status** | Stable / Signed |
 
 **SHA-256 Checksum:**
 ```text
-00CD1E29FA6153B649380EC0E01B18C2F6FC2EA18C168D8CD8D044BCE2D53F97
+D9DC6DCD993AB0F0DDE7C5CF027259E7525FB7A4B104CE8328F9806D0E547E0F
 ```
 
 > **Lưu ý:** Hãy kiểm tra mã SHA-256 sau khi tải về để đảm bảo file gốc không bị chỉnh sửa.
