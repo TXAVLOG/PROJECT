@@ -54,9 +54,9 @@ D9DC6DCD993AB0F0DDE7C5CF027259E7525FB7A4B104CE8328F9806D0E547E0F
 ## 📖 Hướng Dẫn Sử Dụng (Cho Người Dùng)
 
 
-1. **Cài đặt**:
-   - Tải file APK mới nhất từ thư mục `TXABUILD/` hoặc từ trang Releases.
-   - Cài đặt vào thiết bị Android (Yêu cầu Android 9.0+).
+1. **Cài đặt / Cập nhật**:
+   - **Người dùng mới**: Tải file APK từ thư mục `TXABUILD/` hoặc từ trang Releases.
+   - **Người dùng cũ**: Vào **Cài đặt -> Kiểm tra cập nhật** để tải bản mới nhất trực tiếp.
 
 2. **Cấp quyền**:
    - Mở ứng dụng và cấp quyền truy cập bộ nhớ (Storage) để app có thể quét nhạc.
