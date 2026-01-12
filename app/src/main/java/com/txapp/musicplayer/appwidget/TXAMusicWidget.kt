@@ -9,13 +9,10 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.widget.RemoteViews
 import androidx.media3.common.Player
-import androidx.media3.session.MediaController
-import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.ListenableFuture
-import com.google.common.util.concurrent.MoreExecutors
 import com.txapp.musicplayer.R
 import com.txapp.musicplayer.service.MusicService
 import com.txapp.musicplayer.ui.MainActivity
@@ -24,7 +21,7 @@ import kotlinx.coroutines.*
 import java.io.FileNotFoundException
 
 /**
- * TXA Music Widget 4x3
+ * TXA Music Widget 4x2
  * 
  * Features:
  * - Album art display
@@ -34,19 +31,21 @@ import java.io.FileNotFoundException
  * - Shuffle & Repeat indicators
  * - Fully customizable via WidgetSettings
  * - Syncs with MediaSession, Notification, Samsung Now Bar
+ * 
+ * Uses Intent-based service communication (like Backup_Ref) instead of MediaController binding
+ * to avoid BroadcastReceiver service binding issues.
  */
 class TXAMusicWidget : AppWidgetProvider() {
 
     companion object {
         private const val TAG = "TXAMusicWidget"
         
-        // Actions for widget buttons
-        const val ACTION_PLAY_PAUSE = "com.txapp.musicplayer.widget.PLAY_PAUSE"
-        const val ACTION_NEXT = "com.txapp.musicplayer.widget.NEXT"
-        const val ACTION_PREV = "com.txapp.musicplayer.widget.PREV"
-        const val ACTION_SHUFFLE = "com.txapp.musicplayer.widget.SHUFFLE"
-        const val ACTION_REPEAT = "com.txapp.musicplayer.widget.REPEAT"
-        const val ACTION_FAVORITE = "com.txapp.musicplayer.widget.FAVORITE"
+        // Actions for widget buttons - must match MusicService companion object
+        const val ACTION_TOGGLE_PLAYBACK = "com.txapp.musicplayer.action.TOGGLE_PLAYBACK"
+        const val ACTION_NEXT = "com.txapp.musicplayer.action.NEXT"
+        const val ACTION_PREVIOUS = "com.txapp.musicplayer.action.PREVIOUS"
+        const val ACTION_TOGGLE_SHUFFLE = "com.txapp.musicplayer.action.TOGGLE_SHUFFLE"
+        const val ACTION_TOGGLE_REPEAT = "com.txapp.musicplayer.action.TOGGLE_REPEAT"
         const val ACTION_UPDATE = "com.txapp.musicplayer.widget.UPDATE"
         
         // Cached state for quick updates
@@ -101,7 +100,6 @@ class TXAMusicWidget : AppWidgetProvider() {
         }
     }
 
-    private var controllerFuture: ListenableFuture<MediaController>? = null
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     override fun onUpdate(
@@ -131,12 +129,6 @@ class TXAMusicWidget : AppWidgetProvider() {
                     updateAppWidget(context, appWidgetManager, id)
                 }
             }
-            ACTION_PLAY_PAUSE -> sendMediaCommand(context, "play_pause")
-            ACTION_NEXT -> sendMediaCommand(context, "next")
-            ACTION_PREV -> sendMediaCommand(context, "prev")
-            ACTION_SHUFFLE -> sendMediaCommand(context, "shuffle")
-            ACTION_REPEAT -> sendMediaCommand(context, "repeat")
-            ACTION_FAVORITE -> sendMediaCommand(context, "favorite")
         }
     }
 
@@ -252,22 +244,38 @@ class TXAMusicWidget : AppWidgetProvider() {
         views.setOnClickPendingIntent(R.id.widget_title, openAppPendingIntent)
         views.setOnClickPendingIntent(R.id.widget_artist, openAppPendingIntent)
         
-        // Control buttons
-        views.setOnClickPendingIntent(R.id.widget_btn_prev, createActionIntent(context, ACTION_PREV))
-        views.setOnClickPendingIntent(R.id.widget_btn_play_pause, createActionIntent(context, ACTION_PLAY_PAUSE))
-        views.setOnClickPendingIntent(R.id.widget_btn_next, createActionIntent(context, ACTION_NEXT))
-        views.setOnClickPendingIntent(R.id.widget_btn_shuffle, createActionIntent(context, ACTION_SHUFFLE))
-        views.setOnClickPendingIntent(R.id.widget_btn_repeat, createActionIntent(context, ACTION_REPEAT))
+        // Control buttons - send Intent directly to MusicService
+        val serviceName = ComponentName(context, MusicService::class.java)
+        views.setOnClickPendingIntent(R.id.widget_btn_prev, buildServicePendingIntent(context, ACTION_PREVIOUS, serviceName))
+        views.setOnClickPendingIntent(R.id.widget_btn_play_pause, buildServicePendingIntent(context, ACTION_TOGGLE_PLAYBACK, serviceName))
+        views.setOnClickPendingIntent(R.id.widget_btn_next, buildServicePendingIntent(context, ACTION_NEXT, serviceName))
+        views.setOnClickPendingIntent(R.id.widget_btn_shuffle, buildServicePendingIntent(context, ACTION_TOGGLE_SHUFFLE, serviceName))
+        views.setOnClickPendingIntent(R.id.widget_btn_repeat, buildServicePendingIntent(context, ACTION_TOGGLE_REPEAT, serviceName))
     }
 
-    private fun createActionIntent(context: Context, action: String): PendingIntent {
-        val intent = Intent(context, TXAMusicWidget::class.java).apply {
-            this.action = action
+    /**
+     * Build a PendingIntent that sends an action directly to MusicService.
+     * Uses getForegroundService for Android O+ to comply with background execution limits.
+     */
+    private fun buildServicePendingIntent(
+        context: Context,
+        action: String,
+        serviceName: ComponentName
+    ): PendingIntent {
+        val intent = Intent(action).apply {
+            component = serviceName
         }
-        return PendingIntent.getBroadcast(
-            context, action.hashCode(), intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            PendingIntent.getForegroundService(
+                context, action.hashCode(), intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            PendingIntent.getService(
+                context, action.hashCode(), intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
     }
 
     private fun loadAlbumArt(
@@ -320,50 +328,5 @@ class TXAMusicWidget : AppWidgetProvider() {
             TXALogger.appE(TAG, "Error loading bitmap", e)
             null
         }
-    }
-
-    private fun sendMediaCommand(context: Context, command: String) {
-        TXALogger.appI(TAG, "Sending command: $command")
-        
-        val sessionToken = SessionToken(context, ComponentName(context, MusicService::class.java))
-        val controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
-        
-        controllerFuture.addListener({
-            try {
-                val controller = controllerFuture.get()
-                when (command) {
-                    "play_pause" -> {
-                        if (controller.isPlaying) {
-                            controller.pause()
-                        } else {
-                            controller.play()
-                        }
-                    }
-                    "next" -> controller.seekToNextMediaItem()
-                    "prev" -> controller.seekToPreviousMediaItem()
-                    "shuffle" -> controller.shuffleModeEnabled = !controller.shuffleModeEnabled
-                    "repeat" -> {
-                        controller.repeatMode = when (controller.repeatMode) {
-                            Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
-                            Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
-                            else -> Player.REPEAT_MODE_OFF
-                        }
-                    }
-                }
-                
-                // Update widget state immediately
-                scope.launch {
-                    delay(100) // Small delay for state to propagate
-                    updateState(
-                        context = context,
-                        isPlaying = controller.isPlaying,
-                        isShuffleOn = controller.shuffleModeEnabled,
-                        repeatMode = controller.repeatMode
-                    )
-                }
-            } catch (e: Exception) {
-                TXALogger.appE(TAG, "Error executing command: $command", e)
-            }
-        }, MoreExecutors.directExecutor())
     }
 }
