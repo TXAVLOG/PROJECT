@@ -315,17 +315,33 @@ class TXAMusicWidget : AppWidgetProvider() {
     private fun loadBitmapFromUri(context: Context, uri: Uri): Bitmap? {
         return try {
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                // Scale down for widget
+                val bytes = inputStream.readBytes()
+                
+                // First decode with inJustDecodeBounds=true to check dimensions
                 val options = BitmapFactory.Options().apply {
-                    inSampleSize = 2 // 1/2 size for memory efficiency
+                    inJustDecodeBounds = true
                 }
-                BitmapFactory.decodeStream(inputStream, null, options)
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+                
+                // Calculate inSampleSize to target ~300px
+                val targetSize = 300
+                var inSampleSize = 1
+                if (options.outHeight > targetSize || options.outWidth > targetSize) {
+                    val halfHeight: Int = options.outHeight / 2
+                    val halfWidth: Int = options.outWidth / 2
+                    while (halfHeight / inSampleSize >= targetSize && halfWidth / inSampleSize >= targetSize) {
+                        inSampleSize *= 2
+                    }
+                }
+                
+                // Decode with calculated inSampleSize
+                val decodeOptions = BitmapFactory.Options().apply {
+                    this.inSampleSize = inSampleSize
+                }
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size, decodeOptions)
             }
-        } catch (e: FileNotFoundException) {
-            TXALogger.appW(TAG, "Album art not found: $uri")
-            null
         } catch (e: Exception) {
-            TXALogger.appE(TAG, "Error loading bitmap", e)
+            TXALogger.appE(TAG, "Error loading bitmap: ${e.message}")
             null
         }
     }

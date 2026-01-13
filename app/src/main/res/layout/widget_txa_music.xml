@@ -15,7 +15,6 @@
         android:layout_height="100dp"
         android:scaleType="centerCrop"
         android:src="@drawable/ic_default_album_art"
-        android:background="@drawable/widget_album_art_bg"
         android:contentDescription="@string/txamusic_album_art" />
 
     <!-- Content Container -->

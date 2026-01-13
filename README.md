@@ -44,7 +44,7 @@ TXAPP Music Player được xây dựng dựa trên kiến trúc hiện đại, 
 
 **SHA-256 Checksum:**
 ```text
-D9DC6DCD993AB0F0DDE7C5CF027259E7525FB7A4B104CE8328F9806D0E547E0F
+D9B731239AD32F1FB9DEB274974DF4F8ECC48B88C76A9A646681269DF2E9873F
 ```
 
 > **Lưu ý:** Hãy kiểm tra mã SHA-256 sau khi tải về để đảm bảo file gốc không bị chỉnh sửa.
