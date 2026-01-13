@@ -19,6 +19,7 @@ import com.txapp.musicplayer.service.MusicService
 import com.txapp.musicplayer.ui.MainActivity
 import com.txapp.musicplayer.util.TXALogger
 import com.txapp.musicplayer.util.TXATranslation
+import com.txapp.musicplayer.util.TXAFormat
 import kotlinx.coroutines.*
 
 /**
@@ -154,6 +155,12 @@ class TXAMusicWidget : AppWidgetProvider() {
         views.setProgressBar(R.id.widget_progress, 100, cachedProgress, false)
         views.setProgressBar(R.id.widget_circle_progress, 100, cachedProgress, false)
         
+        // Set default time display
+        val currentTimeStr = TXAFormat.formatDuration(cachedPosition)
+        val totalTimeStr = TXAFormat.formatDuration(cachedDuration)
+        views.setTextViewText(R.id.widget_time_current, currentTimeStr)
+        views.setTextViewText(R.id.widget_time_total, totalTimeStr)
+        
         // Apply visibility settings
         applySettings(context, views, settings)
         
@@ -262,6 +269,12 @@ class TXAMusicWidget : AppWidgetProvider() {
         
         // Circle progress (around album art)
         views.setProgressBar(R.id.widget_circle_progress, 100, cachedProgress, false)
+        
+        // Time display - Current position (left) and Total duration (right)
+        val currentTimeStr = TXAFormat.formatDuration(cachedPosition)
+        val totalTimeStr = TXAFormat.formatDuration(cachedDuration)
+        views.setTextViewText(R.id.widget_time_current, currentTimeStr)
+        views.setTextViewText(R.id.widget_time_total, totalTimeStr)
         
         // Apply visibility settings
         applySettings(context, views, settings)

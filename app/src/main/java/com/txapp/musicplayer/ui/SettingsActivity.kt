@@ -1137,12 +1137,14 @@ fun NowPlayingSettings() {
         }
         
         // Floating Lyrics Overlay Toggle with Permission Check
-        item {
-            var showOverlayPermissionDialog by remember { mutableStateOf(false) }
-            val showLyricsInPlayer by TXAPreferences.showLyricsInPlayer.collectAsState()
-            val hasOverlayPermission = remember(LocalLifecycleOwner.current) {
-                mutableStateOf(Settings.canDrawOverlays(context))
-            }
+        // Hide on emulator as overlay doesn't work properly
+        if (!TXADeviceInfo.isEmulator()) {
+            item {
+                var showOverlayPermissionDialog by remember { mutableStateOf(false) }
+                val showLyricsInPlayer by TXAPreferences.showLyricsInPlayer.collectAsState()
+                val hasOverlayPermission = remember(LocalLifecycleOwner.current) {
+                    mutableStateOf(Settings.canDrawOverlays(context))
+                }
             
             // Refresh permission status on resume
             DisposableEffect(LocalLifecycleOwner.current) {
@@ -1251,6 +1253,7 @@ fun NowPlayingSettings() {
                 )
             }
         }
+        } // End of if (!TXADeviceInfo.isEmulator())
     }
 
     if (showSpeedDialog) {
