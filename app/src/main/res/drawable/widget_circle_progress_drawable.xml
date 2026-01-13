@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Background ring (transparent center, slight border) -->
+    <!-- Background ring -->
     <item>
         <shape android:shape="ring"
             android:innerRadiusRatio="2.5"
             android:thicknessRatio="20"
             android:useLevel="false">
-            <solid android:color="#33FFFFFF" />
+            <solid android:color="#22FFFFFF" />
         </shape>
     </item>
 
-    <!-- Progress ring (TXA green) -->
+    <!-- Progress ring: Sweeping Cyan to Blue Gradient -->
     <item>
         <rotate
             android:fromDegrees="270"
@@ -19,7 +19,12 @@
                 android:innerRadiusRatio="2.5"
                 android:thicknessRatio="20"
                 android:useLevel="true">
-                <solid android:color="#00D269" />
+                <gradient
+                    android:type="sweep"
+                    android:startColor="#00F2FE"
+                    android:endColor="#4FACFE"
+                    android:centerY="0.5"
+                    android:centerX="0.5" />
             </shape>
         </rotate>
     </item>

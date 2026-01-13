@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -240,15 +241,25 @@ fun WidgetPreviewCard(settings: WidgetSettings) {
                         Text("3:45", color = Color(0xFF888888), fontSize = 10.sp)
                     }
                     Spacer(modifier = Modifier.height(2.dp))
-                    LinearProgressIndicator(
-                        progress = { 0.4f },
+                    // Use a custom Box with Gradient to simulate the premium look
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(4.dp)
-                            .clip(RoundedCornerShape(2.dp)),
-                        color = Color(0xFF00D269),
-                        trackColor = Color(0xFF333333)
-                    )
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color(0xFF333333))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.4f)
+                                .fillMaxHeight()
+                                .background(
+                                    brush = Brush.horizontalGradient(
+                                        colors = listOf(Color(0xFF00F2FE), Color(0xFF4FACFE))
+                                    )
+                                )
+                        )
+                    }
                 }
                 
                 Spacer(modifier = Modifier.height(12.dp))
