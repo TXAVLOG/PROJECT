@@ -5,11 +5,11 @@
     android:background="@android:color/transparent">
 
     <FrameLayout
-        android:layout_width="64dp"
-        android:layout_height="64dp"
+        android:layout_width="140dp"
+        android:layout_height="140dp"
         android:layout_gravity="center"
         android:background="#1A1A1A"
-        android:padding="2dp">
+        android:padding="4dp">
 
         <ProgressBar
             android:id="@+id/widget_circle_progress"
@@ -22,8 +22,8 @@
 
         <ImageView
             android:id="@+id/widget_album_art"
-            android:layout_width="54dp"
-            android:layout_height="54dp"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
             android:layout_gravity="center"
             android:scaleType="centerCrop"
             android:background="@drawable/widget_album_art_bg"
