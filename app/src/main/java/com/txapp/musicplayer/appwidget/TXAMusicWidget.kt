@@ -150,6 +150,10 @@ class TXAMusicWidget : AppWidgetProvider() {
         // Set default play button
         views.setImageViewResource(R.id.widget_btn_play_pause, R.drawable.ic_play_widget)
         
+        // Set default progress (0%)
+        views.setProgressBar(R.id.widget_progress, 100, cachedProgress, false)
+        views.setProgressBar(R.id.widget_circle_progress, 100, cachedProgress, false)
+        
         // Apply visibility settings
         applySettings(context, views, settings)
         
@@ -253,8 +257,11 @@ class TXAMusicWidget : AppWidgetProvider() {
         views.setInt(R.id.widget_btn_repeat, "setImageAlpha", repeatAlpha)
         views.setImageViewResource(R.id.widget_btn_repeat, repeatIcon)
         
-        // Progress bar
+        // Linear progress bar (below artist)
         views.setProgressBar(R.id.widget_progress, 100, cachedProgress, false)
+        
+        // Circle progress (around album art)
+        views.setProgressBar(R.id.widget_circle_progress, 100, cachedProgress, false)
         
         // Apply visibility settings
         applySettings(context, views, settings)
