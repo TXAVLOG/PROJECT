@@ -3,8 +3,7 @@
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_background"
-    android:clipToOutline="true">
+    android:background="@drawable/widget_background">
 
     <!-- Big Background Album Art (blurred overlay style) -->
     <ImageView
@@ -47,7 +46,7 @@
             android:textSize="16sp"
             android:layout_marginTop="6dp" />
 
-        <View
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="32dp" />
 
@@ -89,7 +88,7 @@
             </RelativeLayout>
         </LinearLayout>
 
-        <View
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="32dp" />
 

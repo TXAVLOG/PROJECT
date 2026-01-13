@@ -164,7 +164,7 @@ open class TXAMusicWidget : AppWidgetProvider() {
      * Initialize widgets to default state
      */
     private fun defaultAppWidget(context: Context, appWidgetIds: IntArray) {
-        val views = RemoteViews(context.packageName, R.layout.widget_txa_music)
+        val views = RemoteViews(context.packageName, getLayoutId())
         val settings = WidgetSettings.load(context)
         
         // Set default text using TXATranslation
@@ -182,7 +182,6 @@ open class TXAMusicWidget : AppWidgetProvider() {
         
         // Set default progress (0%)
         views.setProgressBar(R.id.widget_progress, 100, cachedProgress, false)
-        views.setProgressBar(R.id.widget_circle_progress, 100, cachedProgress, false)
         
         // Set default time display
         val currentTimeStr = TXAFormat.formatDuration(cachedPosition)
@@ -209,7 +208,7 @@ open class TXAMusicWidget : AppWidgetProvider() {
             ACTION_UPDATE -> {
                 val appWidgetManager = AppWidgetManager.getInstance(context)
                 val widgetIds = appWidgetManager.getAppWidgetIds(
-                    ComponentName(context, TXAMusicWidget::class.java)
+                    ComponentName(context, this::class.java)
                 )
                 performUpdate(context, widgetIds)
             }
@@ -268,13 +267,10 @@ open class TXAMusicWidget : AppWidgetProvider() {
         val defaultTitle = TXATranslation.get("txamusic_app_name")
         val defaultArtist = TXATranslation.get("txamusic_widget_preview_artist")
         
-        if (cachedTitle.isEmpty() && cachedArtist.isEmpty()) {
-            views.setViewVisibility(R.id.widget_media_titles, View.INVISIBLE)
-        } else {
-            views.setViewVisibility(R.id.widget_media_titles, View.VISIBLE)
-            views.setTextViewText(R.id.widget_title, cachedTitle.ifEmpty { defaultTitle })
-            views.setTextViewText(R.id.widget_artist, cachedArtist.ifEmpty { defaultArtist })
-        }
+        // Set visibility of the content area
+        views.setViewVisibility(R.id.widget_media_titles, View.VISIBLE)
+        views.setTextViewText(R.id.widget_title, if (cachedTitle.isEmpty()) defaultTitle else cachedTitle)
+        views.setTextViewText(R.id.widget_artist, if (cachedArtist.isEmpty()) defaultArtist else cachedArtist)
         
         // Update play/pause button
         val playPauseIcon = if (cachedIsPlaying) {
@@ -298,11 +294,12 @@ open class TXAMusicWidget : AppWidgetProvider() {
         views.setInt(R.id.widget_btn_repeat, "setImageAlpha", repeatAlpha)
         views.setImageViewResource(R.id.widget_btn_repeat, repeatIcon)
         
-        // Linear progress bar (below artist)
-        views.setProgressBar(R.id.widget_progress, 100, cachedProgress, false)
-        
-        // Circle progress (around album art)
-        views.setProgressBar(R.id.widget_circle_progress, 100, cachedProgress, false)
+        // Progress bar (only linear now)
+        try {
+            views.setProgressBar(R.id.widget_progress, 100, cachedProgress, false)
+        } catch (e: Exception) {
+            TXALogger.appE(TAG, "Error setting progress bar", e)
+        }
         
         // Time display - Current position (left) and Total duration (right)
         val currentTimeStr = TXAFormat.formatDuration(cachedPosition)
