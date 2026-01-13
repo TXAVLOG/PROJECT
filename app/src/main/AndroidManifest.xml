@@ -178,17 +178,46 @@
             </intent-filter>
         </receiver>
 
-        <!-- Music Widget -->
+        <!-- Music Widget - Classic -->
         <receiver
             android:name=".appwidget.TXAMusicWidget"
             android:exported="true"
-            android:label="@string/widget_name">
+            android:label="@string/widget_classic_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.txapp.musicplayer.widget.UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_txa_music_info" />
+        </receiver>
+
+        <!-- Music Widget - Small (4x1) -->
+        <receiver
+            android:name=".appwidget.TXAMusicWidgetSmall"
+            android:exported="true"
+            android:label="@string/widget_small_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.txapp.musicplayer.widget.UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/app_widget_small_info" />
+        </receiver>
+
+        <!-- Music Widget - Big (4x4) -->
+        <receiver
+            android:name=".appwidget.TXAMusicWidgetBig"
+            android:exported="true"
+            android:label="@string/widget_big_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.txapp.musicplayer.widget.UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/app_widget_big_info" />
         </receiver>
     </application>
 

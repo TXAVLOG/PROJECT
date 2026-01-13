@@ -9,6 +9,6 @@
     android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen|keyguard"
-    android:previewImage="@drawable/widget_classic"
-    android:description="@string/widget_description"
+    android:previewImage="@drawable/widget_classic_preview"
+    android:description="@string/widget_classic_desc"
     android:updatePeriodMillis="0" />

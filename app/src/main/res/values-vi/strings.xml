@@ -161,4 +161,12 @@
     <string name="txamusic_refresh_hourly">Mỗi giờ</string>
     <string name="txamusic_refresh_daily">Hàng ngày</string>
     <string name="txamusic_refresh_weekly">Hàng tuần</string>
+    
+    <string name="txamusic_widget_category">TXA Music</string>
+    <string name="widget_classic_name">TXA Cổ điển (Classic)</string>
+    <string name="widget_classic_desc">Điều khiển tiêu chuẩn với thanh tiến trình</string>
+    <string name="widget_small_name">TXA Tí hon (Mini)</string>
+    <string name="widget_small_desc">Thanh điều khiển nhỏ gọn, tiết kiệm không gian</string>
+    <string name="widget_big_name">TXA Khổng lồ (Jumbo)</string>
+    <string name="widget_big_desc">Widget lớn với hình nền to và đầy đủ phím bấm</string>
 </resources>

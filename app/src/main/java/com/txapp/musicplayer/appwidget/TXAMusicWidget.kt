@@ -33,7 +33,21 @@ import kotlinx.coroutines.*
  * - Integrated with TXATranslation for multilingual support
  * - Syncs with MediaSession and Notification
  */
-class TXAMusicWidget : AppWidgetProvider() {
+/**
+ * Specialized providers for different widget sizes
+ */
+class TXAMusicWidgetSmall : TXAMusicWidget() {
+    override fun getLayoutId() = com.txapp.musicplayer.R.layout.widget_txa_music_small
+}
+
+class TXAMusicWidgetBig : TXAMusicWidget() {
+    override fun getLayoutId() = com.txapp.musicplayer.R.layout.widget_txa_music_big
+}
+
+open class TXAMusicWidget : AppWidgetProvider() {
+
+    open fun getLayoutId() = com.txapp.musicplayer.R.layout.widget_txa_music
+
 
     companion object {
         private const val TAG = "TXAMusicWidget"
@@ -72,10 +86,17 @@ class TXAMusicWidget : AppWidgetProvider() {
          * Update all widget instances with current playback state
          */
         fun updateWidgets(context: Context) {
-            val intent = Intent(context, TXAMusicWidget::class.java).apply {
-                action = ACTION_UPDATE
+            val providers = arrayOf(
+                TXAMusicWidget::class.java,
+                TXAMusicWidgetSmall::class.java,
+                TXAMusicWidgetBig::class.java
+            )
+            for (provider in providers) {
+                val intent = Intent(context, provider).apply {
+                    action = ACTION_UPDATE
+                }
+                context.sendBroadcast(intent)
             }
-            context.sendBroadcast(intent)
         }
         
         /**
@@ -95,14 +116,14 @@ class TXAMusicWidget : AppWidgetProvider() {
             title?.let { cachedTitle = it }
             artist?.let { cachedArtist = it }
             albumArtUri?.let { cachedAlbumArtUri = it }
-            isPlaying?.let { cachedIsPlaying = it }
+            isPlaying?.let { if (it) cachedIsPlaying = true else cachedIsPlaying = false; cachedIsPlaying = it }
             isShuffleOn?.let { cachedIsShuffleOn = it }
             repeatMode?.let { cachedRepeatMode = it }
             position?.let { cachedPosition = it }
             duration?.let { cachedDuration = it }
             
-            if (cachedDuration > 0 && position != null) {
-                cachedProgress = ((position * 100) / cachedDuration).toInt()
+            if (cachedDuration > 0 && cachedPosition > 0) {
+                cachedProgress = ((cachedPosition * 100) / cachedDuration).toInt()
             }
             
             updateWidgets(context)
@@ -113,10 +134,18 @@ class TXAMusicWidget : AppWidgetProvider() {
          */
         fun hasInstances(context: Context): Boolean {
             val appWidgetManager = AppWidgetManager.getInstance(context)
-            val widgetIds = appWidgetManager.getAppWidgetIds(
-                ComponentName(context, TXAMusicWidget::class.java)
+            val providers = arrayOf(
+                TXAMusicWidget::class.java,
+                TXAMusicWidgetSmall::class.java,
+                TXAMusicWidgetBig::class.java
             )
-            return widgetIds.isNotEmpty()
+            for (provider in providers) {
+                val widgetIds = appWidgetManager.getAppWidgetIds(
+                    ComponentName(context, provider)
+                )
+                if (widgetIds.isNotEmpty()) return true
+            }
+            return false
         }
     }
 
@@ -217,7 +246,7 @@ class TXAMusicWidget : AppWidgetProvider() {
             appWidgetManager.updateAppWidget(appWidgetIds, views)
         } else {
             appWidgetManager.updateAppWidget(
-                ComponentName(context, TXAMusicWidget::class.java),
+                ComponentName(context, this::class.java),
                 views
             )
         }
@@ -227,7 +256,12 @@ class TXAMusicWidget : AppWidgetProvider() {
      * Update all active widget instances by pushing changes
      */
     private fun performUpdate(context: Context, appWidgetIds: IntArray?) {
-        val views = RemoteViews(context.packageName, R.layout.widget_txa_music)
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val targetIds = appWidgetIds ?: appWidgetManager.getAppWidgetIds(ComponentName(context, this::class.java))
+        
+        if (targetIds.isEmpty()) return
+
+        val views = RemoteViews(context.packageName, getLayoutId())
         val settings = WidgetSettings.load(context)
         
         // Set the titles
