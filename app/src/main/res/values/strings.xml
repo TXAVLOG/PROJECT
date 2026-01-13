@@ -144,12 +144,14 @@
     <string name="txamusic_refresh_weekly">Weekly</string>
     
     <string name="txamusic_widget_category">TXA Music</string>
-    <string name="widget_classic_name">TXA Classic</string>
-    <string name="widget_classic_desc">Standard music control with progress bar</string>
-    <string name="widget_small_name">TXA Mini</string>
-    <string name="widget_small_desc">Compact bar with basic music controls</string>
-    <string name="widget_big_name">TXA Jumbo</string>
-    <string name="widget_big_desc">Large widget with full controls and big artwork</string>
-    <string name="widget_circle_name">TXA Circle</string>
-    <string name="widget_circle_desc">Minimalist circular player</string>
+    <string name="widget_classic_name">TXA Classic (4x2)</string>
+    <string name="widget_classic_desc">Standard music control with circular progress</string>
+    <string name="widget_small_name">TXA Slim (4x1)</string>
+    <string name="widget_small_desc">Compact horizontal bar with basic controls</string>
+    <string name="widget_big_name">TXA Jumbo (4x4)</string>
+    <string name="widget_big_desc">Full-screen sized music hub with large artwork</string>
+    <string name="widget_mini_name">TXA Tiny (1x1)</string>
+    <string name="widget_mini_desc">Minimalist 1x1 album art with circular progress</string>
+    <string name="widget_square_name">TXA Square (2x2)</string>
+    <string name="widget_square_desc">Balanced square widget for home screens</string>
 </resources>

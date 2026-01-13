@@ -44,6 +44,14 @@ class TXAMusicWidgetBig : TXAMusicWidget() {
     override fun getLayoutId() = com.txapp.musicplayer.R.layout.widget_txa_music_big
 }
 
+class TXAMusicWidgetMini : TXAMusicWidget() {
+    override fun getLayoutId() = com.txapp.musicplayer.R.layout.widget_txa_music_mini
+}
+
+class TXAMusicWidgetSquare : TXAMusicWidget() {
+    override fun getLayoutId() = com.txapp.musicplayer.R.layout.widget_txa_music_square
+}
+
 open class TXAMusicWidget : AppWidgetProvider() {
 
     open fun getLayoutId() = com.txapp.musicplayer.R.layout.widget_txa_music
@@ -89,7 +97,9 @@ open class TXAMusicWidget : AppWidgetProvider() {
             val providers = arrayOf(
                 TXAMusicWidget::class.java,
                 TXAMusicWidgetSmall::class.java,
-                TXAMusicWidgetBig::class.java
+                TXAMusicWidgetBig::class.java,
+                TXAMusicWidgetMini::class.java,
+                TXAMusicWidgetSquare::class.java
             )
             for (provider in providers) {
                 val intent = Intent(context, provider).apply {
@@ -137,7 +147,9 @@ open class TXAMusicWidget : AppWidgetProvider() {
             val providers = arrayOf(
                 TXAMusicWidget::class.java,
                 TXAMusicWidgetSmall::class.java,
-                TXAMusicWidgetBig::class.java
+                TXAMusicWidgetBig::class.java,
+                TXAMusicWidgetMini::class.java,
+                TXAMusicWidgetSquare::class.java
             )
             for (provider in providers) {
                 val widgetIds = appWidgetManager.getAppWidgetIds(

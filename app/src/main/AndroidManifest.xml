@@ -219,6 +219,34 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/app_widget_big_info" />
         </receiver>
+
+        <!-- Music Widget - Mini (1x1) -->
+        <receiver
+            android:name=".appwidget.TXAMusicWidgetMini"
+            android:exported="true"
+            android:label="@string/widget_mini_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.txapp.musicplayer.widget.UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/app_widget_mini_info" />
+        </receiver>
+
+        <!-- Music Widget - Square (2x2) -->
+        <receiver
+            android:name=".appwidget.TXAMusicWidgetSquare"
+            android:exported="true"
+            android:label="@string/widget_square_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.txapp.musicplayer.widget.UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/app_widget_square_info" />
+        </receiver>
     </application>
 
 </manifest>
