@@ -966,6 +966,11 @@ class MusicService : MediaLibraryService() {
             
             ACTION_TOGGLE_SHUFFLE -> {
                 toggleShuffle()
+                // Update widget immediately
+                com.txapp.musicplayer.appwidget.TXAMusicWidget.updateState(
+                    this,
+                    isShuffleOn = player.shuffleModeEnabled
+                )
             }
             
             ACTION_TOGGLE_REPEAT -> {
@@ -989,6 +994,13 @@ class MusicService : MediaLibraryService() {
                  val repeatBroadcast = Intent("com.txapp.musicplayer.action.REPEAT_MODE_CHANGED")
                  repeatBroadcast.putExtra("mode", newMode)
                  sendBroadcast(repeatBroadcast)
+                 
+                 // Update widget immediately
+                 com.txapp.musicplayer.appwidget.TXAMusicWidget.updateState(
+                    this,
+                    repeatMode = newMode
+                 )
+                 
                  updateMediaSessionLayout()
             }
             

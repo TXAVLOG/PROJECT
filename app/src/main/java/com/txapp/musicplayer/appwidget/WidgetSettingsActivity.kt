@@ -231,9 +231,17 @@ fun WidgetPreviewCard(settings: WidgetSettings) {
                 }
                 
                 if (settings.showProgress) {
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("1:24", color = Color(0xFF888888), fontSize = 10.sp)
+                        Text("3:45", color = Color(0xFF888888), fontSize = 10.sp)
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
                     LinearProgressIndicator(
-                        progress = { 0.6f },
+                        progress = { 0.4f },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(4.dp)
