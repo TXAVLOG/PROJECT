@@ -3,15 +3,15 @@
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_background">
+    android:background="#1A1A1A">
 
     <!-- Big Background Album Art (blurred overlay style) -->
     <ImageView
-        android:id="@+id/widget_album_art"
+        android:id="@+id/widget_album_art_bg_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
-        android:alpha="0.25"
+        android:alpha="0.2"
         android:src="@drawable/ic_default_album_art" />
 
     <!-- Content Center Area -->
@@ -20,8 +20,34 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="24dp"
+        android:padding="20dp"
         android:gravity="center">
+
+        <!-- Central Disk with Circle Progress -->
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp">
+
+            <ProgressBar
+                android:id="@+id/widget_circle_progress"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="160dp"
+                android:layout_height="160dp"
+                android:layout_gravity="center"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/widget_circle_progress_drawable" />
+
+            <ImageView
+                android:id="@+id/widget_album_art"
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_gravity="center"
+                android:scaleType="centerCrop"
+                android:background="@drawable/widget_album_art_bg"
+                android:src="@drawable/ic_default_album_art" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/widget_title"
@@ -32,7 +58,7 @@
             android:ellipsize="marquee"
             android:text="TXA Music"
             android:textColor="#FFFFFF"
-            android:textSize="24sp"
+            android:textSize="22sp"
             android:textStyle="bold" />
 
         <TextView
@@ -43,32 +69,23 @@
             android:singleLine="true"
             android:text="Tap to play"
             android:textColor="#CCFFFFFF"
-            android:textSize="16sp"
-            android:layout_marginTop="6dp" />
+            android:textSize="15sp"
+            android:layout_marginTop="4dp" />
 
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="32dp" />
+            android:layout_height="24dp" />
 
-        <!-- Progress with Glow -->
+        <!-- Linear Progress with Times -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <ProgressBar
-                android:id="@+id/widget_progress"
-                style="@android:style/Widget.ProgressBar.Horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="6dp"
-                android:max="100"
-                android:progress="0"
-                android:progressDrawable="@drawable/widget_progress_drawable" />
-
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp">
+                android:layout_marginBottom="8dp">
                 <TextView
                     android:id="@+id/widget_time_current"
                     android:layout_width="wrap_content"
@@ -86,13 +103,22 @@
                     android:textColor="#FFFFFF"
                     android:textSize="12sp" />
             </RelativeLayout>
+
+            <ProgressBar
+                android:id="@+id/widget_progress"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/widget_progress_drawable" />
         </LinearLayout>
 
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="32dp" />
+            android:layout_height="24dp" />
 
-        <!-- Controls (Large and bold) -->
+        <!-- Controls -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -101,40 +127,40 @@
 
             <ImageButton
                 android:id="@+id/widget_btn_shuffle"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_shuffle_widget"
                 android:scaleType="centerInside" />
 
             <ImageButton
                 android:id="@+id/widget_btn_prev"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_skip_prev_widget"
                 android:scaleType="centerInside" />
 
             <ImageButton
                 android:id="@+id/widget_btn_play_pause"
-                android:layout_width="86dp"
-                android:layout_height="86dp"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_play_widget"
                 android:scaleType="centerInside" />
 
             <ImageButton
                 android:id="@+id/widget_btn_next"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_skip_next_widget"
                 android:scaleType="centerInside" />
 
             <ImageButton
                 android:id="@+id/widget_btn_repeat"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_repeat_off_widget"
                 android:scaleType="centerInside" />

@@ -182,6 +182,7 @@ open class TXAMusicWidget : AppWidgetProvider() {
         
         // Set default progress (0%)
         views.setProgressBar(R.id.widget_progress, 100, cachedProgress, false)
+        views.setProgressBar(R.id.widget_circle_progress, 100, cachedProgress, false)
         
         // Set default time display
         val currentTimeStr = TXAFormat.formatDuration(cachedPosition)
@@ -294,11 +295,12 @@ open class TXAMusicWidget : AppWidgetProvider() {
         views.setInt(R.id.widget_btn_repeat, "setImageAlpha", repeatAlpha)
         views.setImageViewResource(R.id.widget_btn_repeat, repeatIcon)
         
-        // Progress bar (only linear now)
+        // Progress bars (Linear and Circle)
         try {
             views.setProgressBar(R.id.widget_progress, 100, cachedProgress, false)
+            views.setProgressBar(R.id.widget_circle_progress, 100, cachedProgress, false)
         } catch (e: Exception) {
-            TXALogger.appE(TAG, "Error setting progress bar", e)
+            TXALogger.appE(TAG, "Error setting progress bars", e)
         }
         
         // Time display - Current position (left) and Total duration (right)

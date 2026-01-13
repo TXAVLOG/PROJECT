@@ -5,18 +5,34 @@
     android:layout_height="match_parent"
     android:background="#1A1A1A"
     android:orientation="horizontal"
-    android:padding="8dp"
+    android:padding="10dp"
     tools:ignore="ContentDescription">
 
-    <!-- Left side: Album Art -->
-    <ImageView
-        android:id="@+id/widget_album_art"
-        android:layout_width="86dp"
-        android:layout_height="86dp"
-        android:layout_gravity="center_vertical"
-        android:scaleType="centerCrop"
-        android:background="#20FFFFFF"
-        android:src="@drawable/ic_default_album_art" />
+    <!-- Left side: Album Art with Circle Progress -->
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:padding="2dp">
+
+        <ProgressBar
+            android:id="@+id/widget_circle_progress"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="92sp"
+            android:layout_height="92sp"
+            android:layout_gravity="center"
+            android:max="100"
+            android:progress="0"
+            android:progressDrawable="@drawable/widget_circle_progress_drawable" />
+
+        <ImageView
+            android:id="@+id/widget_album_art"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_gravity="center"
+            android:scaleType="centerCrop"
+            android:background="@drawable/widget_album_art_bg"
+            android:src="@drawable/ic_default_album_art" />
+    </FrameLayout>
 
     <!-- Right side: Content Area -->
     <LinearLayout
@@ -25,7 +41,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:layout_marginStart="12dp"
+        android:layout_marginStart="14dp"
         android:gravity="center_vertical">
 
         <TextView
@@ -36,7 +52,7 @@
             android:ellipsize="marquee"
             android:text="TXA Music"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:textSize="17sp"
             android:textStyle="bold" />
 
         <TextView
@@ -49,44 +65,90 @@
             android:textSize="12sp"
             android:layout_marginTop="2dp" />
 
+        <!-- Times display restored -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="2dp">
+            <TextView
+                android:id="@+id/widget_time_current"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:text="0:00"
+                android:textColor="#88FFFFFF"
+                android:textSize="10sp" />
+            <TextView
+                android:id="@+id/widget_time_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:text="0:00"
+                android:textColor="#88FFFFFF"
+                android:textSize="10sp" />
+        </RelativeLayout>
+
         <ProgressBar
             android:id="@+id/widget_progress"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
-            android:layout_height="4dp"
-            android:layout_marginTop="8dp"
+            android:layout_height="3dp"
             android:max="100"
-            android:progress="0" />
+            android:progress="0"
+            android:progressDrawable="@drawable/widget_progress_drawable" />
 
+        <!-- Controls -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="10dp"
             android:gravity="center">
 
             <ImageButton
+                android:id="@+id/widget_btn_shuffle"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_shuffle_widget"
+                android:scaleType="centerInside" />
+
+            <ImageButton
                 android:id="@+id/widget_btn_prev"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_skip_prev_widget"
                 android:scaleType="centerInside" />
 
             <ImageButton
                 android:id="@+id/widget_btn_play_pause"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1.2"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_play_widget"
                 android:scaleType="centerInside" />
 
             <ImageButton
                 android:id="@+id/widget_btn_next"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_skip_next_widget"
+                android:scaleType="centerInside" />
+                
+            <ImageButton
+                android:id="@+id/widget_btn_repeat"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_repeat_off_widget"
                 android:scaleType="centerInside" />
         </LinearLayout>
     </LinearLayout>
