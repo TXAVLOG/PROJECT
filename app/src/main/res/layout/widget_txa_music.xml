@@ -3,24 +3,22 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="100dp"
+    android:layout_height="match_parent"
     android:background="@drawable/widget_background"
     android:orientation="horizontal"
-    android:padding="6dp"
     android:clipToOutline="true"
     tools:ignore="ContentDescription">
 
-    <!-- Left: Album Art Area -->
+    <!-- Left side: Album Art Container -->
     <FrameLayout
-        android:layout_width="88dp"
-        android:layout_height="88dp"
-        android:layout_gravity="center_vertical"
-        android:layout_marginStart="2dp">
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:padding="8dp">
 
         <ImageView
             android:id="@+id/widget_album_art"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:layout_gravity="center"
             android:scaleType="centerCrop"
             android:background="@drawable/widget_album_art_bg"
@@ -30,8 +28,8 @@
         <ProgressBar
             android:id="@+id/widget_circle_progress"
             style="@android:style/Widget.ProgressBar.Horizontal"
-            android:layout_width="86dp"
-            android:layout_height="86dp"
+            android:layout_width="88dp"
+            android:layout_height="88dp"
             android:layout_gravity="center"
             android:max="100"
             android:progress="0"
@@ -39,16 +37,15 @@
             android:progressDrawable="@drawable/widget_circle_progress_drawable" />
     </FrameLayout>
 
-    <!-- Right: Content Overlay -->
+    <!-- Right side: Content Area -->
     <LinearLayout
         android:id="@+id/widget_media_titles"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="6dp">
+        android:paddingTop="12dp"
+        android:paddingBottom="10dp"
+        android:paddingEnd="12dp">
 
         <TextView
             android:id="@+id/widget_title"
@@ -69,17 +66,18 @@
             android:text="Tap to play"
             android:textColor="#B0B0B0"
             android:textSize="12sp"
-            android:layout_marginTop="1dp" />
+            android:layout_marginTop="2dp" />
 
         <Spacer
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <!-- Times & Progress -->
+        <!-- Time Labels -->
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="2dp">
             <TextView
                 android:id="@+id/widget_time_current"
                 android:layout_width="wrap_content"
@@ -98,28 +96,28 @@
                 android:textSize="10sp" />
         </RelativeLayout>
 
+        <!-- Premium Gradient Progress Bar -->
         <ProgressBar
             android:id="@+id/widget_progress"
             style="@android:style/Widget.ProgressBar.Horizontal"
             android:layout_width="match_parent"
-            android:layout_height="3dp"
-            android:layout_marginTop="2dp"
+            android:layout_height="4dp"
             android:max="100"
             android:progress="0"
             android:progressDrawable="@drawable/widget_progress_drawable" />
 
-        <!-- Controls -->
+        <!-- Control Buttons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="6dp"
-            android:gravity="center_vertical">
+            android:layout_marginTop="4dp"
+            android:gravity="center">
 
             <ImageButton
                 android:id="@+id/widget_btn_shuffle"
                 android:layout_width="0dp"
-                android:layout_height="28dp"
+                android:layout_height="32dp"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_shuffle_widget"
@@ -128,7 +126,7 @@
             <ImageButton
                 android:id="@+id/widget_btn_prev"
                 android:layout_width="0dp"
-                android:layout_height="28dp"
+                android:layout_height="32dp"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_skip_prev_widget"
@@ -138,7 +136,7 @@
                 android:id="@+id/widget_btn_play_pause"
                 android:layout_width="0dp"
                 android:layout_height="32dp"
-                android:layout_weight="1.2"
+                android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_play_widget"
                 android:scaleType="centerInside" />
@@ -146,7 +144,7 @@
             <ImageButton
                 android:id="@+id/widget_btn_next"
                 android:layout_width="0dp"
-                android:layout_height="28dp"
+                android:layout_height="32dp"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_skip_next_widget"
@@ -155,7 +153,7 @@
             <ImageButton
                 android:id="@+id/widget_btn_repeat"
                 android:layout_width="0dp"
-                android:layout_height="28dp"
+                android:layout_height="32dp"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_repeat_off_widget"
