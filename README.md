@@ -9,20 +9,21 @@ Nếu bạn có thắc mắc hoặc gặp lỗi, vui lòng:
 - Hoặc liên hệ qua Facebook: [![Facebook](https://img.shields.io/badge/Facebook-1877F2?style=flat-square&logo=facebook&logoColor=white)](https://fb.com/vlog.txa.2311)
 
 ### Thông tin File
-- **Phiên bản**: v2.7.0_txa
-- **Kích thước**: 181.9 MB
+- **Phiên bản**: v2.8.0_txa
+- **Kích thước**: 181.4 MB
 
 
 Chào mừng bạn đến với **TXA Music Player** - ứng dụng nghe nhạc hiện đại, giao diện đẹp mắt và nhiều tính năng tùy biến mạnh mẽ dành cho Android.
 
-![Version](https://img.shields.io/badge/Version-2.7.0__txa-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-2.8.0__txa-blue?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-GPL--3.0-orange?style=for-the-badge)
 
 ## 📌 Tổng Quan
 
 TXAPP Music Player được xây dựng dựa trên kiến trúc hiện đại, tập trung vào trải nghiệm người dùng với các tính năng nổi bật:
-- **Widget 4x2 Mới**: Thiết kế Premium, điều khiển trực tiếp (Play/Pause, Next...) ngay trên màn hình chính.
+- **Hệ Thống Widget Mới**: 5 loại widget (Classic, Slim 4x2, Jumbo 4x4, Mini 2x2, Square 2x2) với thiết kế Premium.
+- **Vòng Tiến Trình (Circular Progress)**: Hiển thị trạng thái bài hát bo tròn theo Album Art cực đẹp.
 - **Support Author**: Tính năng ủng hộ tác giả (Buy Me a Coffee) tích hợp.
 - **Synced Lyrics**: Hiển thị lời bài hát đồng bộ (giống ZingMP3).
 - **Mini Player**: Trình phát thu nhỏ tiện lợi với đầy đủ điều khiển.
@@ -36,15 +37,15 @@ TXAPP Music Player được xây dựng dựa trên kiến trúc hiện đại, 
 
 | Check | Value |
 | :--- | :--- |
-| **File Name** | `TXAMUSIC_v2.7.0_txa.apk` |
-| **Version** | v2.7.0_txa |
-| **Build Date** | 13/01/2026 |
-| **Size** | 181.9 MB |
+| **File Name** | `TXAMUSIC_v2.8.0_txa.apk` |
+| **Version** | v2.8.0_txa |
+| **Build Date** | 14/01/2026 |
+| **Size** | 181.4 MB |
 | **Status** | Stable / Signed |
 
 **SHA-256 Checksum:**
 ```text
-D9B731239AD32F1FB9DEB274974DF4F8ECC48B88C76A9A646681269DF2E9873F
+76C7234C47B060C38152CEFD5E4C592BE33F6C18E390E5E730D2B58008A9EDC9
 ```
 
 > **Lưu ý:** Hãy kiểm tra mã SHA-256 sau khi tải về để đảm bảo file gốc không bị chỉnh sửa.

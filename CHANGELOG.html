@@ -1,246 +1,120 @@
-<!DOCTYPE html>
-<html>
+<style>
+    body {
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: #121212;
+        color: #E0E0E0;
+        margin: 0;
+        padding: 20px;
+        line-height: 1.6;
+    }
 
-<head>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap');
+    .container {
+        max-width: 600px;
+        margin: auto;
+        background: #1E1E1E;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        border: 1px solid #333;
+    }
 
-        body {
-            font-family: 'Outfit', sans-serif;
-            background: radial-gradient(circle at top right, #1a1e2e, #020617);
-            color: #f8fafc;
-            padding: 40px 20px;
-            line-height: 1.6;
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
+    h2 {
+        color: #00F2FE;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 0;
+    }
+
+    h3 {
+        color: #4FACFE;
+        border-bottom: 1px solid #333;
+        padding-bottom: 8px;
+        margin-top: 25px;
+    }
+
+    ul {
+        padding-left: 20px;
+        list-style: none;
+    }
+
+    li {
+        margin-bottom: 12px;
+        position: relative;
+    }
+
+    li::before {
+        content: "•";
+        color: #00F2FE;
+        font-weight: bold;
+        position: absolute;
+        left: -15px;
+    }
+
+    .badge {
+        background: linear-gradient(90deg, #00F2FE, #4FACFE);
+        color: #000;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        font-weight: bold;
+        margin-left: 10px;
+    }
+
+    .footer {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 0.9em;
+        color: #888;
+    }
+
+    .pulse {
+        animation: pulse-animation 2s infinite;
+    }
+
+    @keyframes pulse-animation {
+        0% {
+            transform: scale(1);
         }
 
-        .container {
-            width: 100%;
-            max-width: 700px;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(20px) saturate(200%);
-            -webkit-backdrop-filter: blur(20px) saturate(200%);
-            border-radius: 32px;
-            padding: 48px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            animation: premiumEntrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+        50% {
+            transform: scale(1.05);
         }
 
-        /* Animated background gradient accent */
-        .container::before {
-            content: "";
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: conic-gradient(from 180deg at 50% 50%, #3b82f6 0deg, transparent 60deg, #8b5cf6 120deg, transparent 180deg, #3b82f6 360deg);
-            opacity: 0.05;
-            animation: rotate 15s linear infinite;
-            z-index: -1;
+        100% {
+            transform: scale(1);
         }
+    }
+</style>
 
-        @keyframes rotate {
-            from {
-                transform: rotate(0deg);
-            }
+<div class="container">
+    <h2>📱 Cập nhật phiên bản 2.8.0_txa <span class="badge pulse">MỚI</span></h2>
 
-            to {
-                transform: rotate(360deg);
-            }
-        }
+    <h3>✨ Có gì mới?</h3>
+    <ul>
+        <li><b>Hệ thống Widget Premium:</b> Ra mắt 5 phong cách widget mới từ tí hon đến khổng lồ, phù hợp với mọi màn
+            hình.</li>
+        <li><b>Widget Đĩa nhạc (2x2):</b> Thiết kế đĩa nhạc mini tinh tế với vòng tiến trình rực rỡ và nút điều khiển
+            ngay trên mặt đĩa.</li>
+        <li><b>Widget Jumbo (4x4):</b> Trải nghiệm âm nhạc toàn màn hình với ảnh bìa sống động và đầy đủ thông tin chi
+            tiết.</li>
+        <li><b>Vòng tiến trình thông minh:</b> Theo dõi thời gian bài hát ngay quanh ảnh đại diện với hiệu ứng vòng tròn
+            Cyan cao cấp.</li>
+    </ul>
 
-        @keyframes premiumEntrance {
-            from {
-                opacity: 0;
-                transform: scale(0.95) translateY(20px);
-            }
+    <h3>🐛 Sửa lỗi</h3>
+    <ul>
+        <li>Khắc phục triệt để lỗi widget bị trắng hoặc không hiển thị trên các dòng máy Android đời mới.</li>
+        <li>Sửa lỗi đồng bộ thông tin bài hát giữa ứng dụng và widget.</li>
+    </ul>
 
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
+    <h3>⚡ Cải thiện hiệu suất</h3>
+    <ul>
+        <li>Tối ưu hóa việc tải ảnh bìa giúp widget hoạt động mượt mà hơn và không gây tốn pin.</li>
+        <li>Tăng tốc độ phản hồi khi nhấn các nút điều khiển trên màn hình chính.</li>
+    </ul>
 
-        h1 {
-            font-size: 32px;
-            margin-bottom: 8px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #fff 30%, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.5px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .subtitle {
-            color: #64748b;
-            font-size: 16px;
-            margin-bottom: 40px;
-            font-weight: 400;
-        }
-
-        h2 {
-            color: #f1f5f9;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-top: 40px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 700;
-        }
-
-        h2::before {
-            content: "";
-            width: 4px;
-            height: 16px;
-            background: #3b82f6;
-            border-radius: 2px;
-            box-shadow: 0 0 10px #3b82f6;
-        }
-
-        h2::after {
-            content: "";
-            flex: 1;
-            height: 1px;
-            background: linear-gradient(to right, rgba(255, 255, 255, 0.1), transparent);
-        }
-
-        ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        li {
-            margin-bottom: 20px;
-            padding: 16px 20px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: transform 0.3s ease, background 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        li:hover {
-            transform: translateX(5px);
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(59, 130, 246, 0.3);
-        }
-
-        .item-title {
-            color: #60a5fa;
-            font-weight: 700;
-            font-size: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .item-desc {
-            color: #94a3b8;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .badge {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 100px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        }
-
-        .footer {
-            margin-top: 60px;
-            text-align: center;
-            font-size: 14px;
-            color: #475569;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            padding-top: 30px;
-        }
-
-        .glow-dot {
-            width: 8px;
-            height: 8px;
-            background: #3b82f6;
-            border-radius: 50%;
-            display: inline-block;
-            box-shadow: 0 0 12px #3b82f6;
-        }
-    </style>
-</head>
-
-<body>
-
-    <div class="container">
-        <h1>🚀 Phiên bản 2.6.1_txa <span class="badge">Mới</span></h1>
-        <div class="subtitle">Nâng cấp trải nghiệm Phím tắt & Lời bài hát</div>
-
-        <h2>✨ Có gì mới?</h2>
-        <ul>
-            <li>
-                <div class="item-title"><span class="glow-dot"></span> App Shortcuts Overhaul</div>
-                <div class="item-desc">Đã sửa lỗi "App not installed" và ổn định hóa hệ thống phím tắt. Giờ đây bạn có
-                    thể truy cập nhanh vào bài hát mà không gặp trở ngại nào.</div>
-            </li>
-            <li>
-                <div class="item-title"><span class="glow-dot"></span> Metadata Preservation</div>
-                <div class="item-desc">Tự động bảo toàn trạng thái <b>Yêu thích</b> và thông tin <b>Thẻ nhạc</b>
-                    (Artist, Album, Tags) khi khởi chạy trực tiếp từ màn hình chính.</div>
-            </li>
-        </ul>
-
-        <h2>🎨 Giao diện & Trải nghiệm</h2>
-        <ul>
-            <li>
-                <div class="item-title"><span class="glow-dot"></span> Lyrics Interaction</div>
-                <div class="item-desc">Loại bỏ hiệu ứng làm tối nền khi phóng to bong bóng lời bài hát nổi, giúp trải
-                    nghiệm đa nhiệm mượt mà và tập trung hơn.</div>
-            </li>
-            <li>
-                <div class="item-title"><span class="glow-dot"></span> Premium Visuals</div>
-                <div class="item-desc">Cải thiện độ tương phản và tinh chỉnh hiệu ứng chuyển động trong trình phát nhạc
-                    full-screen.</div>
-            </li>
-        </ul>
-
-        <h2>🛠️ Hệ thống</h2>
-        <ul>
-            <li>
-                <div class="item-title"><span class="glow-dot"></span> Media3 Optimization</div>
-                <div class="item-desc">Tối ưu hóa cách xử lý MediaItem giúp ứng dụng phản hồi nhanh hơn khi di chuyển
-                    giữa các bài hát.</div>
-            </li>
-            <li>
-                <div class="item-title"><span class="glow-dot"></span> Cleaner Codebase</div>
-                <div class="item-desc">Dọn dẹp mã nguồn dư thừa, tăng tính ổn định của ứng dụng trên các phiên bản
-                    Android đời mới.</div>
-            </li>
-        </ul>
-
-        <div class="footer">
-            Cảm ơn bạn đã đồng hành cùng <b>TXAMUSIC</b>! ✨
-        </div>
+    <div class="footer">
+        🎵 Cám ơn bạn đã sử dụng TXAMUSIC! Chúc bạn nghe nhạc vui vẻ. 🎧
     </div>
-
-</body>
-
-</html>
+</div>
