@@ -166,6 +166,10 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
         }
 
         fun startService(context: Context) {
+            if (com.txapp.musicplayer.util.TXADeviceInfo.isEmulator()) {
+                TXALogger.floatingI("FloatingLyricsService", "Refusing to start service: Emulator detected.")
+                return
+            }
             if (!Settings.canDrawOverlays(context)) {
                 TXALogger.floatingE("FloatingLyricsService", "Cannot start service: overlay permission not granted.")
                 return
@@ -355,7 +359,10 @@ class FloatingLyricsService : Service(), LifecycleOwner, SavedStateRegistryOwner
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == "STOP") {
+        if (intent?.action == "STOP" || com.txapp.musicplayer.util.TXADeviceInfo.isEmulator()) {
+            if (com.txapp.musicplayer.util.TXADeviceInfo.isEmulator()) {
+                TXALogger.floatingI("FloatingLyricsService", "Stopping service: Emulator detected.")
+            }
             stopSelf()
             return START_NOT_STICKY
         }

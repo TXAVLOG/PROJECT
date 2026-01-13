@@ -305,7 +305,7 @@ class MainActivity : AppCompatActivity() {
             setupSlidingPanel()
 
             // Auto-start Floating Lyrics if enabled (only when app is explicitly opened)
-            if (TXAPreferences.showLyricsInPlayer.value) {
+            if (TXAPreferences.showLyricsInPlayer.value && !com.txapp.musicplayer.util.TXADeviceInfo.isEmulator()) {
                 com.txapp.musicplayer.service.FloatingLyricsService.startService(this@MainActivity)
             }
 

@@ -1209,7 +1209,7 @@ fun NowPlayingSettings() {
                             checked = showLyricsInPlayer,
                             onCheckedChange = { enabled ->
                                 TXAPreferences.setShowLyricsInPlayer(enabled)
-                                if (enabled) {
+                                if (enabled && !com.txapp.musicplayer.util.TXADeviceInfo.isEmulator()) {
                                     com.txapp.musicplayer.service.FloatingLyricsService.startService(context)
                                 } else {
                                     com.txapp.musicplayer.service.FloatingLyricsService.stopService(context)
