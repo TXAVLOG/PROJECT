@@ -113,6 +113,10 @@ object TXAUpdateManager {
                     }
                     
                     updateInfo.value = info
+                    
+                    // Save pending changelog for post-update display
+                    TXAPreferences.setPendingChangelog(latestVersionCode.toLong(), info.changelog)
+                    
                     return@withContext info
                 }
             }
@@ -124,21 +128,21 @@ object TXAUpdateManager {
     }
 
     /**
-     * Fetch latest changelog from server regardless of version check
+     * Fetch changelog for a specific version from server
      */
-    suspend fun fetchChangelog(): String? = withContext(Dispatchers.IO) {
+    suspend fun fetchChangelog(versionCode: Long? = null, locale: String? = null): String? = withContext(Dispatchers.IO) {
         try {
-            val jsonBody = JSONObject().apply {
-                put("packageId", "com.txapp.musicplayer")
-                put("versionCode", TXADeviceInfo.getVersionCode()) // Current version
-                put("versionName", TXADeviceInfo.getVersionName())
-                put("platform", "android")
-                put("locale", TXATranslation.getSystemLanguage())
-            }
+            val targetVersion = versionCode ?: TXADeviceInfo.getVersionCode()
+            val targetLocale = locale ?: TXATranslation.getSystemLanguage()
+            
+            // New API endpoint structure: /api/changelog/{version}?locale={locale}
+            // Base URL: https://soft.nrotxa.online/txamusic/api
+            val baseUrl = "https://soft.nrotxa.online/txamusic/api/changelog/$targetVersion"
+            val urlWithParams = "$baseUrl?locale=$targetLocale"
 
             val request = Request.Builder()
-                .url(API_URL)
-                .post(jsonBody.toString().toRequestBody("application/json".toMediaType()))
+                .url(urlWithParams)
+                .get()
                 .build()
 
             val response = TXAHttp.client.newCall(request).execute()
@@ -147,13 +151,12 @@ object TXAUpdateManager {
                 val json = JSONObject(body)
                 
                 if (json.optBoolean("ok")) {
-                    val latest = json.optJSONObject("latest")
-                    return@withContext latest?.optString("changelog")
+                    return@withContext json.optString("changelog")
                 }
             }
             null
         } catch (e: Exception) {
-            TXALogger.apiE("UpdateManager", "Fetch changelog failed", e)
+            TXALogger.apiE("UpdateManager", "Fetch changelog for $versionCode failed", e)
             null
         }
     }

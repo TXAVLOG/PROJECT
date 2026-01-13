@@ -464,6 +464,27 @@ object TXAPreferences {
     fun getLastSeenVersionCode(): Long = prefs.getLong(KEY_LAST_SEEN_VERSION_CODE, 0L)
     fun setLastSeenVersionCode(code: Long) = prefs.edit().putLong(KEY_LAST_SEEN_VERSION_CODE, code).apply()
 
+    // Key for pending changelog (to show after update)
+    private const val KEY_PENDING_CHANGELOG = "setting_pending_changelog"
+    private const val KEY_PENDING_CHANGELOG_VERSION = "setting_pending_changelog_version"
+
+    fun getPendingChangelog(): String? = prefs.getString(KEY_PENDING_CHANGELOG, null)
+    fun getPendingChangelogVersion(): Long = prefs.getLong(KEY_PENDING_CHANGELOG_VERSION, 0L)
+
+    fun setPendingChangelog(version: Long, changelog: String?) {
+        prefs.edit()
+            .putLong(KEY_PENDING_CHANGELOG_VERSION, version)
+            .putString(KEY_PENDING_CHANGELOG, changelog)
+            .apply()
+    }
+
+    fun clearPendingChangelog() {
+        prefs.edit()
+            .remove(KEY_PENDING_CHANGELOG)
+            .remove(KEY_PENDING_CHANGELOG_VERSION)
+            .apply()
+    }
+
     // ============== LANGUAGE HELPER ==============
     fun getCurrentLanguage(): String {
         return try {

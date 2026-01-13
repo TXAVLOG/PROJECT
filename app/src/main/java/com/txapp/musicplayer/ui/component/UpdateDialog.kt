@@ -86,153 +86,163 @@ fun UpdateDialog(
                 animationSpec = androidx.compose.animation.core.tween(durationMillis = 200)
             )
         ) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(0.9f).wrapContentHeight(),
-                shape = RoundedCornerShape(28.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 16.dp), // Thêm khoảng cách ở dưới
+                contentAlignment = Alignment.BottomCenter
             ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                // Header
-                Text(
-                    text = "txamusic_update_available".txa().format(updateInfo.latestVersionName),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "txamusic_update_date".txa().format(TXAFormat.formatUtcToLocal(updateInfo.releaseDate)),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Nội dung chính
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    // 1. Luôn hiện Changelog (trừ khi đã tải xong hoặc lỗi quá nghiêm trọng)
-                    if (downloadState !is DownloadState.Success && downloadState !is DownloadState.Error) {
+                Surface(
+                    modifier = Modifier
+                        .widthIn(max = 600.dp) // Giới hạn chiều rộng trên màn hình lớn
+                        .fillMaxWidth(0.95f) // Gần full width trên mobile
+                        .wrapContentHeight(),
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 6.dp
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        // Header
                         Text(
-                            text = "txamusic_update_whats_new".txa(),
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 8.dp)
+                            text = "txamusic_update_available".txa().format(updateInfo.latestVersionName),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
                         )
-                        Box(
-                            modifier = Modifier
-                                .height(if (downloadState == null && !resolving) 220.dp else 140.dp)
-                                .fillMaxWidth()
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                    shape = RoundedCornerShape(16.dp)
+                        Text(
+                            text = "txamusic_update_date".txa().format(TXAFormat.formatUtcToLocal(updateInfo.releaseDate)),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Nội dung chính
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            // 1. Luôn hiện Changelog (trừ khi đã tải xong hoặc lỗi quá nghiêm trọng)
+                            if (downloadState !is DownloadState.Success && downloadState !is DownloadState.Error) {
+                                Text(
+                                    text = "txamusic_update_whats_new".txa(),
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(bottom = 8.dp)
                                 )
-                                .padding(4.dp) // Padding ngoài để lộ border/background
-                        ) {
-                            Surface(
-                                modifier = Modifier.fillMaxSize(),
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color.Transparent, // Để WebView quản lý màu nền
-                                border = androidx.compose.foundation.BorderStroke(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                                )
-                            ) {
-                                AndroidView(
-                                    modifier = Modifier.padding(8.dp),
-                                    factory = { ctx ->
-                                        WebView(ctx).apply {
-                                            setBackgroundColor(0)
-                                            loadDataWithBaseURL(null, updateInfo.changelog, "text/html", "UTF-8", null)
+                                Box(
+                                    modifier = Modifier
+                                        .height(if (downloadState == null && !resolving) 220.dp else 140.dp)
+                                        .fillMaxWidth()
+                                        .background(
+                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                            shape = RoundedCornerShape(16.dp)
+                                        )
+                                        .padding(4.dp) // Padding ngoài để lộ border/background
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.fillMaxSize(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Color.Transparent, // Để WebView quản lý màu nền
+                                        border = androidx.compose.foundation.BorderStroke(
+                                            width = 1.dp,
+                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                        )
+                                    ) {
+                                        AndroidView(
+                                            modifier = Modifier.padding(8.dp),
+                                            factory = { ctx ->
+                                                WebView(ctx).apply {
+                                                    setBackgroundColor(0)
+                                                    loadDataWithBaseURL(null, updateInfo.changelog, "text/html", "UTF-8", null)
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            // 2. Trạng thái Đang Resolve link
+                            if (resolving) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text("txamusic_update_resolving".txa(), style = MaterialTheme.typography.bodyMedium)
+                                }
+                            }
+
+                            // 3. Trạng thái Đang tải
+                            if (downloadState is DownloadState.Progress) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                DownloadProgressUI(downloadState)
+                            }
+
+                            // 4. Trạng thái Lỗi
+                            if (downloadState is DownloadState.Error) {
+                                ErrorAndCopyUI(url = updateInfo.downloadUrl, errorMessage = downloadState.message)
+                            }
+
+                            // 5. Trạng thái Thành công
+                            if (downloadState is DownloadState.Success) {
+                                Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(48.dp))
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text("txamusic_update_ready".txa(), fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Dòng nút bấm (Cập nhật logic ẩn hiện)
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            // Nút "Để sau" (Ẩn khi đang tải hoặc bắt buộc update)
+                            if (!updateInfo.forceUpdate && downloadState !is DownloadState.Progress && downloadState !is DownloadState.Success && !resolving) {
+                                TextButton(onClick = onDismiss) { Text("txamusic_btn_later".txa()) }
+                            }
+
+                            // Nút "Hủy tải" (Chỉ hiện khi đang tải)
+                            if (downloadState is DownloadState.Progress || resolving) {
+                                TextButton(
+                                    onClick = { TXAUpdateManager.stopDownload(context) },
+                                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                ) {
+                                    Text("txamusic_btn_cancel_download".txa())
+                                }
+                            }
+                            
+                            // Nút chức năng chính
+                            when (downloadState) {
+                                is DownloadState.Success -> {
+                                    Button(
+                                        onClick = { onInstallClick(downloadState.file) },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                                    ) {
+                                        Icon(Icons.Default.InstallMobile, null)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("txamusic_btn_install".txa())
+                                    }
+                                }
+                                is DownloadState.Progress -> {
+                                    // Không hiện nút khi đang tải để tránh bấm nhầm
+                                }
+                                is DownloadState.Error -> {
+                                    TextButton(onClick = onDismiss) { Text("txamusic_btn_confirm".txa()) }
+                                }
+                                else -> {
+                                    if (!resolving) {
+                                        Button(
+                                            onClick = onUpdateClick,
+                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                                        ) {
+                                            Icon(Icons.Default.Download, null)
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("txamusic_btn_update".txa())
                                         }
                                     }
-                                )
-                            }
-                        }
-                    }
-
-                    // 2. Trạng thái Đang Resolve link
-                    if (resolving) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text("txamusic_update_resolving".txa(), style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
-
-                    // 3. Trạng thái Đang tải
-                    if (downloadState is DownloadState.Progress) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        DownloadProgressUI(downloadState)
-                    }
-
-                    // 4. Trạng thái Lỗi
-                    if (downloadState is DownloadState.Error) {
-                        ErrorAndCopyUI(url = updateInfo.downloadUrl, errorMessage = downloadState.message)
-                    }
-
-                    // 5. Trạng thái Thành công
-                    if (downloadState is DownloadState.Success) {
-                        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(48.dp))
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("txamusic_update_ready".txa(), fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Dòng nút bấm (Cập nhật logic ẩn hiện)
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    // Nút "Để sau" (Ẩn khi đang tải hoặc bắt buộc update)
-                    if (!updateInfo.forceUpdate && downloadState !is DownloadState.Progress && downloadState !is DownloadState.Success && !resolving) {
-                        TextButton(onClick = onDismiss) { Text("txamusic_btn_later".txa()) }
-                    }
-
-                    // Nút "Hủy tải" (Chỉ hiện khi đang tải)
-                    if (downloadState is DownloadState.Progress || resolving) {
-                        TextButton(
-                            onClick = { TXAUpdateManager.stopDownload(context) },
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Text("txamusic_btn_cancel_download".txa())
-                        }
-                    }
-                    
-                    // Nút chức năng chính
-                    when (downloadState) {
-                        is DownloadState.Success -> {
-                            Button(
-                                onClick = { onInstallClick(downloadState.file) },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
-                            ) {
-                                Icon(Icons.Default.InstallMobile, null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("txamusic_btn_install".txa())
-                            }
-                        }
-                        is DownloadState.Progress -> {
-                            // Không hiện nút khi đang tải để tránh bấm nhầm
-                        }
-                        is DownloadState.Error -> {
-                            TextButton(onClick = onDismiss) { Text("txamusic_btn_confirm".txa()) }
-                        }
-                        else -> {
-                            if (!resolving) {
-                                Button(
-                                    onClick = onUpdateClick,
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                                ) {
-                                    Icon(Icons.Default.Download, null)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("txamusic_btn_update".txa())
                                 }
                             }
                         }
                     }
                 }
-            }
             }
         }
     }
@@ -362,94 +372,104 @@ fun PostUpdateDialog(
             ),
             exit = fadeOut(animationSpec = androidx.compose.animation.core.tween(200))
         ) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(0.9f).wrapContentHeight(),
-                shape = RoundedCornerShape(28.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 16.dp),
+                contentAlignment = Alignment.BottomCenter
             ) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    // Header với icon celebrate
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            Icons.Default.Celebration,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(32.dp)
+                Surface(
+                    modifier = Modifier
+                        .widthIn(max = 600.dp)
+                        .fillMaxWidth(0.95f)
+                        .wrapContentHeight(),
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 6.dp
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        // Header với icon celebrate
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                Icons.Default.Celebration,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "txamusic_post_update_title".txa(),
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "txamusic_post_update_intro".txa().format(appName, versionName),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // Changelog label
+                        Text(
+                            text = "txamusic_update_whats_new".txa(),
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "txamusic_post_update_title".txa(),
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "txamusic_post_update_intro".txa().format(appName, versionName),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
 
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Changelog label
-                    Text(
-                        text = "txamusic_update_whats_new".txa(),
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    // WebView Changelog
-                    Box(
-                        modifier = Modifier
-                            .height(250.dp)
-                            .fillMaxWidth()
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                shape = RoundedCornerShape(16.dp)
-                            )
-                            .padding(4.dp)
-                    ) {
-                        Surface(
-                            modifier = Modifier.fillMaxSize(),
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color.Transparent,
-                            border = androidx.compose.foundation.BorderStroke(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
+                        // WebView Changelog
+                        Box(
+                            modifier = Modifier
+                                .height(250.dp)
+                                .fillMaxWidth()
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                .padding(4.dp)
                         ) {
-                            AndroidView(
-                                modifier = Modifier.padding(8.dp),
-                                factory = { ctx ->
-                                    WebView(ctx).apply {
-                                        setBackgroundColor(0)
-                                        loadDataWithBaseURL(null, changelog, "text/html", "UTF-8", null)
+                            Surface(
+                                modifier = Modifier.fillMaxSize(),
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.Transparent,
+                                border = androidx.compose.foundation.BorderStroke(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                )
+                            ) {
+                                AndroidView(
+                                    modifier = Modifier.padding(8.dp),
+                                    factory = { ctx ->
+                                        WebView(ctx).apply {
+                                            setBackgroundColor(0)
+                                            loadDataWithBaseURL(null, changelog, "text/html", "UTF-8", null)
+                                        }
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
 
-                    // Close button
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        Button(
-                            onClick = onDismiss,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
+                        // Close button
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
                         ) {
-                            Text("txamusic_btn_close".txa())
+                            Button(
+                                onClick = onDismiss,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Text("txamusic_btn_close".txa())
+                            }
                         }
                     }
                 }

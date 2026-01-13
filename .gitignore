@@ -36,6 +36,8 @@ TXABUILD/
 # Log and text files
 *.log
 *.txt
+*.png
+*.jpg
 
 # JSON files (translation exports)
 *.json

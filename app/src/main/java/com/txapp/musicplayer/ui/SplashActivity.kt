@@ -351,22 +351,37 @@ class SplashActivity : AppCompatActivity() {
                 
                 if (lastSeenVersion > 0 && currentVersion > lastSeenVersion) {
                     // User just updated! Show changelog
-                    TXALogger.appI(TAG, "App was updated from $lastSeenVersion to $currentVersion. Showing PostUpdateDialog.")
+                    TXALogger.appI(TAG, "App was updated from $lastSeenVersion to $currentVersion. Checking for correct changelog.")
                     
-                    // Get changelog via API (same as UpdateDialog)
-                    val changelogHtml = try {
-                         TXAUpdateManager.fetchChangelog() ?: throw Exception("API returned valid response but no changelog")
-                    } catch (e: Exception) {
-                         TXALogger.appW(TAG, "Failed to fetch changelog from API, falling back to static file: ${e.message}")
-                         try {
-                             val changelogUrl = "https://raw.githubusercontent.com/TXAVLOG/PROJECT/main/CHANGELOG.html"
-                             withContext(Dispatchers.IO) {
-                                 java.net.URL(changelogUrl).readText()
+                    // 1. Check local pending changelog first (best case)
+                    val pendingVersion = TXAPreferences.getPendingChangelogVersion()
+                    val pendingChangelog = TXAPreferences.getPendingChangelog()
+                    
+                    var changelogHtml: String = ""
+                    
+                    if (pendingVersion == currentVersion && !pendingChangelog.isNullOrBlank()) {
+                        TXALogger.appI(TAG, "Using locally saved changelog for version $currentVersion")
+                        changelogHtml = pendingChangelog
+                    } else {
+                        // 2. Fallback: Fetch via API (might be wrong if server has newer version, but best we can do if local is missing)
+                        TXALogger.appW(TAG, "No local changelog for $currentVersion (pendingVersion=$pendingVersion). Fetching from API...")
+                        changelogHtml = try {
+                             TXAUpdateManager.fetchChangelog(currentVersion, targetLocale) ?: throw Exception("API returned valid response but no changelog")
+                        } catch (e: Exception) {
+                             TXALogger.appW(TAG, "Failed to fetch changelog from API, falling back to static file: ${e.message}")
+                             try {
+                                 val changelogUrl = "https://raw.githubusercontent.com/TXAVLOG/PROJECT/main/CHANGELOG.html"
+                                 withContext(Dispatchers.IO) {
+                                     java.net.URL(changelogUrl).readText()
+                                 }
+                             } catch (ex: Exception) {
+                                 "txamusic_update_no_changelog".txa() // Use a localized string if possible, or fallback
                              }
-                         } catch (ex: Exception) {
-                             "<p>Có gì mới? Vui lòng kiểm tra trong phần Cài đặt > Giới thiệu.</p>"
-                         }
+                        }
                     }
+                    
+                    // 3. Clean up pending changelog
+                    TXAPreferences.clearPendingChangelog()
                     
                     postUpdateChangelog.value = changelogHtml
                     
