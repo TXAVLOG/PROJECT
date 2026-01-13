@@ -15,7 +15,8 @@
         android:layout_height="48dp"
         android:scaleType="centerCrop"
         android:background="@drawable/widget_album_art_bg"
-        android:src="@drawable/ic_default_album_art" />
+        android:src="@drawable/ic_default_album_art"
+        android:clipToOutline="true" />
 
     <LinearLayout
         android:id="@+id/widget_media_titles"
@@ -23,7 +24,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:layout_marginStart="12dp">
+        android:layout_marginStart="14dp">
 
         <TextView
             android:id="@+id/widget_title"
@@ -33,7 +34,7 @@
             android:ellipsize="marquee"
             android:text="TXA Music"
             android:textColor="#FFFFFF"
-            android:textSize="14sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <TextView
@@ -43,19 +44,20 @@
             android:singleLine="true"
             android:text="Tap to play"
             android:textColor="#B0B0B0"
-            android:textSize="11sp" />
+            android:textSize="12sp" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:layout_marginStart="8dp">
 
         <ImageButton
             android:id="@+id/widget_btn_prev"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:background="@android:color/transparent"
             android:src="@drawable/ic_skip_prev_widget"
             android:scaleType="centerInside" />
 
@@ -63,7 +65,7 @@
             android:id="@+id/widget_btn_play_pause"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:background="@android:color/transparent"
             android:src="@drawable/ic_play_widget"
             android:scaleType="centerInside" />
 
@@ -71,7 +73,7 @@
             android:id="@+id/widget_btn_next"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:background="@android:color/transparent"
             android:src="@drawable/ic_skip_next_widget"
             android:scaleType="centerInside" />
     </LinearLayout>

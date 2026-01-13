@@ -219,6 +219,20 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/app_widget_big_info" />
         </receiver>
+
+        <!-- Music Widget - Circle (2x2) -->
+        <receiver
+            android:name=".appwidget.TXAMusicWidgetCircle"
+            android:exported="true"
+            android:label="@string/widget_circle_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.txapp.musicplayer.widget.UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/app_widget_circle_info" />
+        </receiver>
     </application>
 
 </manifest>

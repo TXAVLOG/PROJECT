@@ -169,4 +169,6 @@
     <string name="widget_small_desc">Thanh điều khiển nhỏ gọn, tiết kiệm không gian</string>
     <string name="widget_big_name">TXA Khổng lồ (Jumbo)</string>
     <string name="widget_big_desc">Widget lớn với hình nền to và đầy đủ phím bấm</string>
+    <string name="widget_circle_name">TXA Đĩa nhạc (Circle)</string>
+    <string name="widget_circle_desc">Trình phát nhạc hình tròn tối giản</string>
 </resources>

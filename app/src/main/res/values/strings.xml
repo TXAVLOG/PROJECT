@@ -150,4 +150,6 @@
     <string name="widget_small_desc">Compact bar with basic music controls</string>
     <string name="widget_big_name">TXA Jumbo</string>
     <string name="widget_big_desc">Large widget with full controls and big artwork</string>
+    <string name="widget_circle_name">TXA Circle</string>
+    <string name="widget_circle_desc">Minimalist circular player</string>
 </resources>
