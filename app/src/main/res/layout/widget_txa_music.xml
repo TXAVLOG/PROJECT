@@ -13,28 +13,26 @@
     <FrameLayout
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:padding="8dp">
+        android:padding="2dp">
 
         <ImageView
             android:id="@+id/widget_album_art"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="86dp"
+            android:layout_height="86dp"
             android:layout_gravity="center"
             android:scaleType="centerCrop"
             android:background="@drawable/widget_album_art_bg"
             android:src="@drawable/ic_default_album_art"
             android:clipToOutline="true" />
-
+            
+        <!-- Circle progress removed to match old classic style if needed, 
+             or kept but hidden. Let's hide it for classic to avoid clutter -->
         <ProgressBar
             android:id="@+id/widget_circle_progress"
             style="@android:style/Widget.ProgressBar.Horizontal"
-            android:layout_width="88dp"
-            android:layout_height="88dp"
-            android:layout_gravity="center"
-            android:max="100"
-            android:progress="0"
-            android:indeterminate="false"
-            android:progressDrawable="@drawable/widget_circle_progress_drawable" />
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
     </FrameLayout>
 
     <!-- Right side: Content Area -->
@@ -43,9 +41,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:paddingTop="12dp"
-        android:paddingBottom="10dp"
-        android:paddingEnd="12dp">
+        android:paddingTop="10dp"
+        android:paddingBottom="8dp"
+        android:paddingEnd="12dp"
+        android:paddingStart="6dp">
 
         <TextView
             android:id="@+id/widget_title"
@@ -63,17 +62,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:singleLine="true"
-            android:text="Tap to play"
+            android:text="Artist Name"
             android:textColor="#B0B0B0"
             android:textSize="12sp"
             android:layout_marginTop="2dp" />
 
-        <Spacer
+        <View
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <!-- Time Labels -->
+        <!-- Times and Progress -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -96,28 +95,27 @@
                 android:textSize="10sp" />
         </RelativeLayout>
 
-        <!-- Premium Gradient Progress Bar -->
         <ProgressBar
             android:id="@+id/widget_progress"
             style="@android:style/Widget.ProgressBar.Horizontal"
             android:layout_width="match_parent"
-            android:layout_height="4dp"
+            android:layout_height="3dp"
             android:max="100"
             android:progress="0"
             android:progressDrawable="@drawable/widget_progress_drawable" />
 
-        <!-- Control Buttons -->
+        <!-- Controls -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="32dp"
             android:orientation="horizontal"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="6dp"
             android:gravity="center">
 
             <ImageButton
                 android:id="@+id/widget_btn_shuffle"
                 android:layout_width="0dp"
-                android:layout_height="32dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_shuffle_widget"
@@ -126,7 +124,7 @@
             <ImageButton
                 android:id="@+id/widget_btn_prev"
                 android:layout_width="0dp"
-                android:layout_height="32dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_skip_prev_widget"
@@ -135,7 +133,7 @@
             <ImageButton
                 android:id="@+id/widget_btn_play_pause"
                 android:layout_width="0dp"
-                android:layout_height="32dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_play_widget"
@@ -144,7 +142,7 @@
             <ImageButton
                 android:id="@+id/widget_btn_next"
                 android:layout_width="0dp"
-                android:layout_height="32dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_skip_next_widget"
@@ -153,7 +151,7 @@
             <ImageButton
                 android:id="@+id/widget_btn_repeat"
                 android:layout_width="0dp"
-                android:layout_height="32dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_repeat_off_widget"

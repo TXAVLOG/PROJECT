@@ -47,7 +47,7 @@
             android:textSize="16sp"
             android:layout_marginTop="6dp" />
 
-        <Spacer
+        <View
             android:layout_width="match_parent"
             android:layout_height="32dp" />
 
@@ -89,7 +89,7 @@
             </RelativeLayout>
         </LinearLayout>
 
-        <Spacer
+        <View
             android:layout_width="match_parent"
             android:layout_height="32dp" />
 
