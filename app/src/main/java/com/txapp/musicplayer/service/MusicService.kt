@@ -512,13 +512,27 @@ class MusicService : MediaLibraryService() {
             com.txapp.musicplayer.util.TXAEqualizerManager.init(com.txapp.musicplayer.service.MusicService.audioSessionId)
         }
 
-        // Periodic save for crash protection (every 1s for floating lyrics sync)
-        // Periodic save for crash protection (every 1s for floating lyrics sync)
+        // Periodic save for crash protection and widget/floating lyrics sync
         serviceScope.launch {
             var lastSaveTime = System.currentTimeMillis()
+            var lastWidgetUpdateTime = 0L
             while (isActive) {
                 if (player.isPlaying) {
                      FloatingLyricsService.updatePosition(player.currentPosition)
+                     
+                     // Update widget progress every 1 second (only if widget exists)
+                     val now = System.currentTimeMillis()
+                     if (now - lastWidgetUpdateTime > 1000) {
+                         lastWidgetUpdateTime = now
+                         if (com.txapp.musicplayer.appwidget.TXAMusicWidget.hasInstances(this@MusicService)) {
+                             com.txapp.musicplayer.appwidget.TXAMusicWidget.updateState(
+                                 context = this@MusicService,
+                                 position = player.currentPosition,
+                                 duration = player.duration
+                             )
+                         }
+                     }
+                     
                      delay(50)
                 } else {
                      delay(1000)
