@@ -9,13 +9,13 @@ Nếu bạn có thắc mắc hoặc gặp lỗi, vui lòng:
 - Hoặc liên hệ qua Facebook: [![Facebook](https://img.shields.io/badge/Facebook-1877F2?style=flat-square&logo=facebook&logoColor=white)](https://fb.com/vlog.txa.2311)
 
 ### Thông tin File
-- **Phiên bản**: v2.8.0_txa
-- **Kích thước**: 181.4 MB
+- **Phiên bản**: v2.9.0_txa
+- **Kích thước**: 181.43 MB
 
 
 Chào mừng bạn đến với **TXA Music Player** - ứng dụng nghe nhạc hiện đại, giao diện đẹp mắt và nhiều tính năng tùy biến mạnh mẽ dành cho Android.
 
-![Version](https://img.shields.io/badge/Version-2.8.0__txa-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-2.9.0__txa-blue?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-GPL--3.0-orange?style=for-the-badge)
 
@@ -37,15 +37,15 @@ TXAPP Music Player được xây dựng dựa trên kiến trúc hiện đại, 
 
 | Check | Value |
 | :--- | :--- |
-| **File Name** | `TXAMUSIC_v2.8.0_txa.apk` |
-| **Version** | v2.8.0_txa |
+| **File Name** | `TXAMUSIC_v2.9.0_txa.apk` |
+| **Version** | v2.9.0_txa |
 | **Build Date** | 14/01/2026 |
-| **Size** | 181.4 MB |
+| **Size** | 181.43 MB |
 | **Status** | Stable / Signed |
 
 **SHA-256 Checksum:**
 ```text
-76C7234C47B060C38152CEFD5E4C592BE33F6C18E390E5E730D2B58008A9EDC9
+E64F200F5F7BCBBDFD06339FB074BB912E3148EB57688898DE8567EFC9AEDCEF
 ```
 
 > **Lưu ý:** Hãy kiểm tra mã SHA-256 sau khi tải về để đảm bảo file gốc không bị chỉnh sửa.
