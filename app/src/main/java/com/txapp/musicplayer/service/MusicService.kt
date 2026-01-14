@@ -288,13 +288,14 @@ class MusicService : MediaLibraryService() {
                     val albumId = metadata.extras?.getLong("album_id") ?: -1L
                     val albumArtUri = if (albumId >= 0) "content://media/external/audio/albumart/$albumId" else ""
                     
+                    val currentDuration = player.duration
                     com.txapp.musicplayer.appwidget.TXAMusicWidget.updateState(
                         context = this@MusicService,
                         title = (metadata.title ?: "Unknown").toString(),
                         artist = (metadata.artist ?: "Unknown").toString(),
                         albumArtUri = albumArtUri,
                         isPlaying = player.isPlaying,
-                        duration = player.duration
+                        duration = if (currentDuration > 0) currentDuration else null
                     )
                 }
                 
@@ -433,15 +434,25 @@ class MusicService : MediaLibraryService() {
             }
 
             override fun onPlaybackStateChanged(state: Int) {
-                if (state == Player.STATE_READY && player.playWhenReady) {
-                    // This could be manual play or auto transition
-                    // If position is near start, it's likely a start of song
-                    if (player.currentPosition < 1000) {
-                         startFadeIn(isManualPlay = isManualSkip) 
-                         isManualSkip = false // Reset after applying
-                    } else {
-                         // Resumed from pause
-                         startFadeIn(isManualPlay = true)
+                if (state == Player.STATE_READY) {
+                    // Sync widget when ready - ensures duration is updated correctly
+                    com.txapp.musicplayer.appwidget.TXAMusicWidget.updateState(
+                        context = this@MusicService,
+                        position = player.currentPosition,
+                        duration = player.duration,
+                        isPlaying = player.isPlaying
+                    )
+                    
+                    if (player.playWhenReady) {
+                        // This could be manual play or auto transition
+                        // If position is near start, it's likely a start of song
+                        if (player.currentPosition < 1000) {
+                             startFadeIn(isManualPlay = isManualSkip) 
+                             isManualSkip = false // Reset after applying
+                        } else {
+                             // Resumed from pause
+                             startFadeIn(isManualPlay = true)
+                        }
                     }
                 }
             }
@@ -525,17 +536,29 @@ class MusicService : MediaLibraryService() {
                      if (now - lastWidgetUpdateTime > 1000) {
                          lastWidgetUpdateTime = now
                          if (com.txapp.musicplayer.appwidget.TXAMusicWidget.hasInstances(this@MusicService)) {
+                             val currentDuration = player.duration
                              com.txapp.musicplayer.appwidget.TXAMusicWidget.updateState(
                                  context = this@MusicService,
                                  position = player.currentPosition,
-                                 duration = player.duration
+                                 duration = if (currentDuration > 0) currentDuration else null
                              )
                          }
                      }
-                     
-                     delay(50)
                 } else {
-                     delay(1000)
+                     // Even when paused, update widget occasionally (every 2 seconds)
+                     val now = System.currentTimeMillis()
+                     if (now - lastWidgetUpdateTime > 2000) {
+                         lastWidgetUpdateTime = now
+                         if (com.txapp.musicplayer.appwidget.TXAMusicWidget.hasInstances(this@MusicService)) {
+                             val currentDuration = player.duration
+                             com.txapp.musicplayer.appwidget.TXAMusicWidget.updateState(
+                                 context = this@MusicService,
+                                 position = player.currentPosition,
+                                 duration = if (currentDuration > 0) currentDuration else null
+                             )
+                         }
+                     }
+                     delay(500)
                 }
 
                 if (System.currentTimeMillis() - lastSaveTime > 5000) {
