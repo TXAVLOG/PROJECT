@@ -30,7 +30,7 @@ TXAPP Music Player được xây dựng dựa trên kiến trúc hiện đại, 
 - **Material You**: Giao diện thích ứng theo màu sắc hệ thống.
 - **Tag Editor**: Chỉnh sửa thông tin bài hát trực tiếp.
 
-> **Phiên bản hiện tại:** <!-- VERSION_START -->2.8.0_txa<!-- VERSION_END -->
+> **Phiên bản hiện tại:** <!-- VERSION_START -->2.9.0_txa<!-- VERSION_END -->
 > *(Được cập nhật tự động từ [version.properties](version.properties))*
 
 ## 📦 Thông Tin Build (Latest Build Info)
