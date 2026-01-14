@@ -8,12 +8,18 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Paint
+import android.graphics.Shader
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
 import androidx.media3.common.Player
+import androidx.palette.graphics.Palette
 import com.txapp.musicplayer.R
 import com.txapp.musicplayer.service.MusicService
 import com.txapp.musicplayer.ui.MainActivity
@@ -21,6 +27,7 @@ import com.txapp.musicplayer.util.TXALogger
 import com.txapp.musicplayer.util.TXATranslation
 import com.txapp.musicplayer.util.TXAFormat
 import kotlinx.coroutines.*
+import kotlin.random.Random
 
 /**
  * TXA Music Widget - Classic Style
@@ -188,6 +195,10 @@ open class TXAMusicWidget : AppWidgetProvider() {
         
         // Set default album art
         views.setImageViewResource(R.id.widget_album_art, R.drawable.ic_default_album_art)
+        
+        // Set rainbow gradient background for default state
+        val rainbowGradient = createRainbowGradientBitmap(400, 400)
+        views.setImageViewBitmap(R.id.widget_gradient_bg, rainbowGradient)
         
         // Set default play button
         views.setImageViewResource(R.id.widget_btn_play_pause, R.drawable.ic_play_widget)
@@ -442,7 +453,7 @@ open class TXAMusicWidget : AppWidgetProvider() {
     }
 
     /**
-     * Load album art asynchronously
+     * Load album art asynchronously and apply gradient background
      */
     private fun loadAlbumArt(
         context: Context,
@@ -451,6 +462,9 @@ open class TXAMusicWidget : AppWidgetProvider() {
     ) {
         if (cachedAlbumArtUri.isEmpty()) {
             views.setImageViewResource(R.id.widget_album_art, R.drawable.ic_default_album_art)
+            // Apply rainbow gradient when no album art
+            val rainbowGradient = createRainbowGradientBitmap(400, 400)
+            views.setImageViewBitmap(R.id.widget_gradient_bg, rainbowGradient)
             pushUpdate(context, appWidgetIds, views)
             return
         }
@@ -463,8 +477,15 @@ open class TXAMusicWidget : AppWidgetProvider() {
                 withContext(Dispatchers.Main) {
                     if (bitmap != null) {
                         views.setImageViewBitmap(R.id.widget_album_art, bitmap)
+                        
+                        // Extract colors and create gradient
+                        val gradientBitmap = createGradientFromBitmap(bitmap)
+                        views.setImageViewBitmap(R.id.widget_gradient_bg, gradientBitmap)
                     } else {
                         views.setImageViewResource(R.id.widget_album_art, R.drawable.ic_default_album_art)
+                        // Apply rainbow gradient when no album art
+                        val rainbowGradient = createRainbowGradientBitmap(400, 400)
+                        views.setImageViewBitmap(R.id.widget_gradient_bg, rainbowGradient)
                     }
                     pushUpdate(context, appWidgetIds, views)
                 }
@@ -472,10 +493,112 @@ open class TXAMusicWidget : AppWidgetProvider() {
                 TXALogger.appE(TAG, "Error loading album art", e)
                 withContext(Dispatchers.Main) {
                     views.setImageViewResource(R.id.widget_album_art, R.drawable.ic_default_album_art)
+                    // Apply rainbow gradient on error
+                    val rainbowGradient = createRainbowGradientBitmap(400, 400)
+                    views.setImageViewBitmap(R.id.widget_gradient_bg, rainbowGradient)
                     pushUpdate(context, appWidgetIds, views)
                 }
             }
         }
+    }
+    
+    /**
+     * Create gradient bitmap from album art colors using Palette
+     */
+    private fun createGradientFromBitmap(source: Bitmap): Bitmap {
+        return try {
+            val palette = Palette.from(source).generate()
+            
+            // Get dominant and vibrant colors
+            val dominantColor = palette.getDominantColor(Color.parseColor("#1A1A1A"))
+            val vibrantColor = palette.getVibrantColor(dominantColor)
+            val darkVibrantColor = palette.getDarkVibrantColor(dominantColor)
+            val mutedColor = palette.getMutedColor(darkVibrantColor)
+            
+            // Create gradient with extracted colors
+            val gradientColors = intArrayOf(
+                darkenColor(darkVibrantColor, 0.7f),
+                darkenColor(dominantColor, 0.5f),
+                darkenColor(vibrantColor, 0.6f),
+                darkenColor(mutedColor, 0.8f)
+            )
+            
+            createGradientBitmap(400, 400, gradientColors)
+        } catch (e: Exception) {
+            TXALogger.appE(TAG, "Error creating gradient from bitmap", e)
+            createRainbowGradientBitmap(400, 400)
+        }
+    }
+    
+    /**
+     * Create a gradient bitmap with specified colors
+     */
+    private fun createGradientBitmap(width: Int, height: Int, colors: IntArray): Bitmap {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint()
+        
+        val positions = floatArrayOf(0f, 0.3f, 0.7f, 1f)
+        
+        val gradient = LinearGradient(
+            0f, 0f,
+            width.toFloat(), height.toFloat(),
+            colors,
+            positions,
+            Shader.TileMode.CLAMP
+        )
+        
+        paint.shader = gradient
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
+        
+        return bitmap
+    }
+    
+    /**
+     * Create a rainbow gradient bitmap for when no album art is available
+     */
+    private fun createRainbowGradientBitmap(width: Int, height: Int): Bitmap {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint()
+        
+        // Generate random vibrant rainbow-ish colors
+        val hue1 = Random.nextFloat() * 360f
+        val hue2 = (hue1 + 60 + Random.nextFloat() * 60) % 360f
+        val hue3 = (hue2 + 60 + Random.nextFloat() * 60) % 360f
+        val hue4 = (hue3 + 60 + Random.nextFloat() * 60) % 360f
+        
+        val colors = intArrayOf(
+            darkenColor(Color.HSVToColor(floatArrayOf(hue1, 0.8f, 0.9f)), 0.6f),
+            darkenColor(Color.HSVToColor(floatArrayOf(hue2, 0.7f, 0.8f)), 0.5f),
+            darkenColor(Color.HSVToColor(floatArrayOf(hue3, 0.8f, 0.7f)), 0.6f),
+            darkenColor(Color.HSVToColor(floatArrayOf(hue4, 0.6f, 0.6f)), 0.7f)
+        )
+        
+        val positions = floatArrayOf(0f, 0.35f, 0.65f, 1f)
+        
+        val gradient = LinearGradient(
+            0f, 0f,
+            width.toFloat(), height.toFloat(),
+            colors,
+            positions,
+            Shader.TileMode.CLAMP
+        )
+        
+        paint.shader = gradient
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
+        
+        return bitmap
+    }
+    
+    /**
+     * Darken a color by a factor
+     */
+    private fun darkenColor(color: Int, factor: Float): Int {
+        val r = (Color.red(color) * factor).toInt().coerceIn(0, 255)
+        val g = (Color.green(color) * factor).toInt().coerceIn(0, 255)
+        val b = (Color.blue(color) * factor).toInt().coerceIn(0, 255)
+        return Color.rgb(r, g, b)
     }
 
     /**
@@ -515,3 +638,4 @@ open class TXAMusicWidget : AppWidgetProvider() {
         }
     }
 }
+
