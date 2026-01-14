@@ -303,7 +303,16 @@ object TXATranslation {
         "txamusic_settings_support_author" to "Support Author",
         "txamusic_settings_support_author_desc" to "Buy me a coffee to support development",
 
-
+        // Search, Queue, Lyrics
+        "txamusic_search_hint" to "Search songs, albums, artists...",
+        "txamusic_playing_queue" to "Playing Queue",
+        "txamusic_queue_empty" to "Queue is empty",
+        "txamusic_up_next" to "Up Next",
+        "txamusic_clear_queue" to "Clear Queue",
+        "txamusic_clear_queue_confirm" to "Are you sure you want to clear the current queue?",
+        "txamusic_btn_clear" to "Clear",
+        "txamusic_no_lyrics" to "No lyrics found",
+        "txamusic_no_lyrics_hint" to "Add a .lrc file next to the audio file or search online",
 
         // Holiday Greetings
         "txamusic_holiday_newyear_title" to "Happy New Year 2026!",
@@ -1243,7 +1252,20 @@ object TXATranslation {
         "txamusic_widget_controls" to "Tùy chọn điều khiển",
         "txamusic_widget_show_shuffle" to "Hiện nút trộn bài",
         "txamusic_widget_show_repeat" to "Hiện nút lặp lại",
-        "txamusic_widget_info" to "Các thay đổi sẽ được áp dụng ngay lập tức cho tất cả các widget trên màn hình chính của bạn."
+        "txamusic_widget_info" to "Các thay đổi sẽ được áp dụng ngay lập tức cho tất cả các widget trên màn hình chính của bạn.",
+
+        // Search, Queue, Lyrics
+        "txamusic_search_hint" to "Tìm bài hát, album, nghệ sĩ...",
+        "txamusic_no_results" to "Không tìm thấy kết quả",
+        "txamusic_playing_queue" to "Danh sách chờ",
+        "txamusic_queue_empty" to "Danh sách chờ trống",
+        "txamusic_playing" to "Đang phát",
+        "txamusic_up_next" to "Tiếp theo",
+        "txamusic_clear_queue" to "Xóa danh sách chờ",
+        "txamusic_clear_queue_confirm" to "Bạn có chắc muốn xóa toàn bộ danh sách chờ?",
+        "txamusic_btn_clear" to "Xóa",
+        "txamusic_no_lyrics" to "Không tìm thấy lời bài hát",
+        "txamusic_no_lyrics_hint" to "Thêm file .lrc cạnh file nhạc hoặc tìm kiếm trực tuyến"
     )
 
     suspend fun init(context: Context) = withContext(Dispatchers.IO) {

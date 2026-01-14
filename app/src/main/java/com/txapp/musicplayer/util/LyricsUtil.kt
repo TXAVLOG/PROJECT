@@ -225,6 +225,43 @@ object LyricsUtil {
     /**
      * Save lyrics to file (as .lrc) and optionally to embedded tags
      */
+    /**
+     * Parsed lyrics container for LyricsFragment
+     */
+    data class ParsedLyrics(
+        val lines: List<LyricLineSimple>,
+        val isSynced: Boolean
+    )
+
+    data class LyricLineSimple(
+        val timestamp: Long,
+        val text: String
+    )
+
+    /**
+     * Load lyrics for a song path and return parsed result
+     */
+    suspend fun loadLyricsForSong(context: Context, audioFilePath: String): ParsedLyrics? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val raw = getRawLyrics(audioFilePath) ?: return@withContext null
+        
+        // Check if it's synced (has timestamps)
+        val isSynced = raw.contains(Regex("""\[\d+:\d{2}[.:]\d{2,3}\]"""))
+        
+        if (isSynced) {
+            val parsed = parseLrc(raw)
+            ParsedLyrics(
+                lines = parsed.map { LyricLineSimple(it.timestamp, it.text) },
+                isSynced = true
+            )
+        } else {
+            // Plain text lyrics
+            val lines = raw.lines().filter { it.isNotBlank() }.map { 
+                LyricLineSimple(0L, it.trim()) 
+            }
+            ParsedLyrics(lines = lines, isSynced = false)
+        }
+    }
+
     suspend fun saveLyrics(context: Context, audioFilePath: String, content: String): SaveResult = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         try {
             // 1. Save as .lrc file in same directory

@@ -60,6 +60,26 @@ object TXAActiveMP3 {
     private val _currentAlbumId = MutableStateFlow(-1L)
     val currentAlbumId: StateFlow<Long> = _currentAlbumId.asStateFlow()
     
+    // Queue state for PlayingQueueFragment
+    private val _currentQueue = MutableStateFlow(emptyList<com.txapp.musicplayer.model.Song>())
+    val currentQueue: StateFlow<List<com.txapp.musicplayer.model.Song>> = _currentQueue.asStateFlow()
+    
+    private val _currentQueueIndex = MutableStateFlow(0)
+    val currentQueueIndex: StateFlow<Int> = _currentQueueIndex.asStateFlow()
+    
+    // Current song metadata for LyricsFragment
+    private val _currentPosition = MutableStateFlow(0L)
+    val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
+    
+    private val _currentSongTitle = MutableStateFlow("")
+    val currentSongTitle: StateFlow<String> = _currentSongTitle.asStateFlow()
+    
+    private val _currentSongArtist = MutableStateFlow("")
+    val currentSongArtist: StateFlow<String> = _currentSongArtist.asStateFlow()
+    
+    private val _currentSongPath = MutableStateFlow("")
+    val currentSongPath: StateFlow<String> = _currentSongPath.asStateFlow()
+    
     /**
      * Cập nhật bài đang phát
      */
@@ -101,6 +121,30 @@ object TXAActiveMP3 {
      */
     fun isAlbumActive(albumId: Long): Boolean {
         return _currentAlbumId.value == albumId && _isPlaying.value
+    }
+    
+    /**
+     * Update queue state
+     */
+    fun updateQueue(songs: List<com.txapp.musicplayer.model.Song>, currentIndex: Int) {
+        _currentQueue.value = songs
+        _currentQueueIndex.value = currentIndex
+    }
+    
+    /**
+     * Update current playback position
+     */
+    fun updatePosition(position: Long) {
+        _currentPosition.value = position
+    }
+    
+    /**
+     * Update current song metadata
+     */
+    fun updateSongMetadata(title: String, artist: String, path: String) {
+        _currentSongTitle.value = title
+        _currentSongArtist.value = artist
+        _currentSongPath.value = path
     }
 
     // ════════════════════════════════════════════════════════════════════
