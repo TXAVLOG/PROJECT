@@ -5,7 +5,9 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -131,6 +133,42 @@ fun MiniPlayerAndroid15(
     
     val safeProgress = if (state.duration > 0) state.position.toFloat() / state.duration else 0f
     
+    // Dark/Light mode detection for Liquid Glass
+    val isDarkTheme = isSystemInDarkTheme()
+    
+    // Liquid Glass colors based on theme
+    val glassBackground = if (isDarkTheme) {
+        Color(0xFF1A1A2E).copy(alpha = 0.7f)
+    } else {
+        Color(0xFFF8F8FC).copy(alpha = 0.8f)
+    }
+    
+    val glassBorder = if (isDarkTheme) {
+        Color.White.copy(alpha = 0.15f)
+    } else {
+        Color.White.copy(alpha = 0.7f)
+    }
+    
+    val glassHighlight = if (isDarkTheme) {
+        Brush.verticalGradient(
+            listOf(
+                Color.White.copy(alpha = 0.1f),
+                Color.Transparent
+            )
+        )
+    } else {
+        Brush.verticalGradient(
+            listOf(
+                Color.White.copy(alpha = 0.6f),
+                Color.White.copy(alpha = 0.15f)
+            )
+        )
+    }
+    
+    // Text colors for glass effect - adaptive to theme
+    val glassTextPrimary = if (isDarkTheme) Color.White else Color(0xFF1A1A2E)
+    val glassTextSecondary = if (isDarkTheme) Color.White.copy(alpha = 0.7f) else Color(0xFF1A1A2E).copy(alpha = 0.7f)
+    
     // Lyrics logic for Mini Player
     val displayLyrics = remember(state.lyrics, state.position) {
         val raw = state.lyrics
@@ -152,51 +190,49 @@ fun MiniPlayerAndroid15(
         }
     }
 
-    // Determine contrast color for lyrics
-    // Determine contrast color for lyrics - Always White for Glass look but with optional shadow
-    val lyricsColor = Color.White
-    val secondaryTextColor = Color.White.copy(alpha = 0.7f)
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(84.dp) // Taller than standard
+            .height(84.dp)
             .padding(horizontal = 8.dp, vertical = 4.dp)
-            .clip(RoundedCornerShape(24.dp)) // More rounded for A15
-            .background(surfaceVariant.copy(alpha = 0.4f))
+            .clip(RoundedCornerShape(24.dp))
+            .background(glassBackground)
+            .border(
+                width = 1.dp,
+                color = glassBorder,
+                shape = RoundedCornerShape(24.dp)
+            )
             .clickable { onExpand() }
     ) {
-        // Liquid Glass Blur Overlay - Enhanced for A15
+        // Liquid Glass Highlight Overlay at top
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(32.dp)
+                .background(glassHighlight)
+        )
+        
+        // Subtle inner glow effect for glass depth
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.12f),
-                            Color.White.copy(alpha = 0.02f)
-                        )
-                    )
+                .then(
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        Modifier.blur(0.5.dp)
+                    } else Modifier
                 )
-                .blur(40.dp) // More blur for liquid look
         )
-        
-        // Subtle Noise/Grain Effect (Simulated)
-        Canvas(modifier = Modifier.fillMaxSize().alpha(0.05f)) {
-            // Draw random points or a pattern to simulate texture
-            // For now simple semi-transparent white
-        }
 
-        // Progress Fill - Full from left
+        // Progress Fill - Full from left with glass tint
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .fillMaxWidth(safeProgress)
                 .background(
                     if (dominantColor != Color.Transparent) 
-                        dominantColor.copy(alpha = 0.45f) 
+                        dominantColor.copy(alpha = if (isDarkTheme) 0.45f else 0.35f)
                     else 
-                        accentColor.copy(alpha = 0.35f)
+                        accentColor.copy(alpha = if (isDarkTheme) 0.4f else 0.3f)
                 )
         )
         
@@ -258,15 +294,15 @@ fun MiniPlayerAndroid15(
                     text = displayItem?.mediaMetadata?.title?.toString() ?: "Unknown",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color.White,
+                    color = glassTextPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = androidx.compose.ui.text.TextStyle(
-                        shadow = androidx.compose.ui.graphics.Shadow(
+                        shadow = if (isDarkTheme) androidx.compose.ui.graphics.Shadow(
                             color = Color.Black.copy(alpha = 0.3f),
                             offset = androidx.compose.ui.geometry.Offset(0f, 1f),
                             blurRadius = 2f
-                        )
+                        ) else null
                     )
                 )
                 
@@ -274,24 +310,24 @@ fun MiniPlayerAndroid15(
                     Text(
                         text = displayLyrics,
                         fontSize = 13.sp,
-                        color = lyricsColor,
+                        color = glassTextPrimary,
                         maxLines = 2,
                         lineHeight = 16.sp,
                         overflow = TextOverflow.Ellipsis,
-                        fontWeight = FontWeight.Bold, // Bolder for better visibility
+                        fontWeight = FontWeight.Bold,
                         style = androidx.compose.ui.text.TextStyle(
-                            shadow = androidx.compose.ui.graphics.Shadow(
+                            shadow = if (isDarkTheme) androidx.compose.ui.graphics.Shadow(
                                 color = Color.Black.copy(alpha = 0.5f),
                                 offset = androidx.compose.ui.geometry.Offset(0f, 2f),
                                 blurRadius = 4f
-                            )
+                            ) else null
                         )
                     )
                 } else {
                     Text(
                         text = displayItem?.mediaMetadata?.artist?.toString() ?: "Unknown Artist",
                         fontSize = 14.sp,
-                        color = secondaryTextColor,
+                        color = glassTextSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -309,7 +345,7 @@ fun MiniPlayerAndroid15(
                       Icon(
                           imageVector = Icons.Outlined.Lyrics,
                           contentDescription = "Edit Lyrics",
-                          tint = secondaryTextColor,
+                          tint = glassTextSecondary,
                           modifier = Modifier.size(22.dp)
                       )
                  }
@@ -318,14 +354,14 @@ fun MiniPlayerAndroid15(
                       Icon(
                           imageVector = if (state.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                           contentDescription = "Favorite",
-                          tint = if (state.isFavorite) Color.Red else secondaryTextColor,
+                          tint = if (state.isFavorite) Color.Red else glassTextSecondary,
                           modifier = Modifier.size(22.dp)
                       )
                  }
 
                  if (extraControls) {
                      IconButton(onClick = onPrevious, modifier = Modifier.size(36.dp)) {
-                          Icon(Icons.Default.SkipPrevious, null, modifier = Modifier.size(28.dp), tint = secondaryTextColor)
+                          Icon(Icons.Default.SkipPrevious, null, modifier = Modifier.size(28.dp), tint = glassTextSecondary)
                      }
                  }
 
@@ -343,14 +379,14 @@ fun MiniPlayerAndroid15(
                               imageVector = if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                               contentDescription = "Play/Pause",
                               modifier = Modifier.size(24.dp),
-                              tint = Color.White
+                              tint = glassTextPrimary
                           )
                       }
                  }
 
                  if (extraControls) {
                      IconButton(onClick = onNext, modifier = Modifier.size(36.dp)) {
-                          Icon(Icons.Default.SkipNext, null, modifier = Modifier.size(28.dp))
+                          Icon(Icons.Default.SkipNext, null, modifier = Modifier.size(28.dp), tint = glassTextSecondary)
                      }
                  }
             }

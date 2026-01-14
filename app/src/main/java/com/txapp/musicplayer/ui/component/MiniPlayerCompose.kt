@@ -2,10 +2,12 @@ package com.txapp.musicplayer.ui.component
 
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -25,7 +27,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
@@ -148,27 +152,85 @@ fun MiniPlayerContent(
     val onSurface = MaterialTheme.colorScheme.onSurface
     
     val safeProgress = if (state.duration > 0) state.position.toFloat() / state.duration else 0f
+    
+    // Dark/Light mode detection for Liquid Glass
+    val isDarkTheme = isSystemInDarkTheme()
+    
+    // Liquid Glass colors based on theme
+    val glassBackground = if (isDarkTheme) {
+        Color(0xFF1A1A2E).copy(alpha = 0.65f)
+    } else {
+        Color(0xFFF8F8FC).copy(alpha = 0.75f)
+    }
+    
+    val glassBorder = if (isDarkTheme) {
+        Color.White.copy(alpha = 0.12f)
+    } else {
+        Color.White.copy(alpha = 0.6f)
+    }
+    
+    val glassHighlight = if (isDarkTheme) {
+        Brush.verticalGradient(
+            listOf(
+                Color.White.copy(alpha = 0.08f),
+                Color.Transparent
+            )
+        )
+    } else {
+        Brush.verticalGradient(
+            listOf(
+                Color.White.copy(alpha = 0.5f),
+                Color.White.copy(alpha = 0.1f)
+            )
+        )
+    }
+    
+    // Text colors for glass effect
+    val glassTextPrimary = if (isDarkTheme) Color.White else Color(0xFF1A1A2E)
+    val glassTextSecondary = if (isDarkTheme) Color.White.copy(alpha = 0.7f) else Color(0xFF1A1A2E).copy(alpha = 0.7f)
+    
+    // Check if we can use advanced glass effects (Android 13+)
+    val supportsAdvancedGlass = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
     Box(
         modifier = Modifier
-            .fillMaxSize() // Fill ComposeView which fills layout
+            .fillMaxSize()
             .background(Color.Transparent)
             .clickable { onExpand() }
     ) {
-        // Liquid Glass Background
+        // Liquid Glass Background Container
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 12.dp, vertical = 8.dp) // Match XML margin
-                .clip(RoundedCornerShape(12.dp))
-                .background(surfaceVariant.copy(alpha = 0.5f))
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .clip(RoundedCornerShape(16.dp))
+                // Glass background with blur effect on Android 12+
+                .then(
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        Modifier.blur(if (supportsAdvancedGlass) 0.5.dp else 0.dp)
+                    } else Modifier
+                )
+                .background(glassBackground)
+                // Glass border for depth
+                .border(
+                    width = 1.dp,
+                    color = glassBorder,
+                    shape = RoundedCornerShape(16.dp)
+                )
         ) {
-             // Progress Fill
-             Box(
+            // Highlight overlay at top (glass reflection effect)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp)
+                    .background(glassHighlight)
+            )
+            
+            // Progress Fill with glass tint
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        val width = size.width * safeProgress
                         clip = true
                         shape = androidx.compose.ui.graphics.RectangleShape
                         this.scaleX = safeProgress
@@ -176,9 +238,9 @@ fun MiniPlayerContent(
                     }
                     .background(
                         if (backgroundColor != Color.Transparent) 
-                            backgroundColor.copy(alpha = 0.3f) 
+                            backgroundColor.copy(alpha = if (isDarkTheme) 0.35f else 0.25f)
                         else 
-                            accentColor.copy(alpha = 0.2f)
+                            accentColor.copy(alpha = if (isDarkTheme) 0.3f else 0.2f)
                     )
             )
             
@@ -239,7 +301,14 @@ fun MiniPlayerContent(
                     
                     Text(
                         text = displayItem?.mediaMetadata?.title?.toString() ?: "Unknown",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            shadow = if (isDarkTheme) androidx.compose.ui.graphics.Shadow(
+                                color = Color.Black.copy(alpha = 0.3f),
+                                offset = androidx.compose.ui.geometry.Offset(0f, 1f),
+                                blurRadius = 2f
+                            ) else null
+                        ),
+                        color = glassTextPrimary,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -266,20 +335,18 @@ fun MiniPlayerContent(
                         }
                     }
                     
-                    val lyricsColor = Color.White
-                    
                     Text(
                         text = displayLyrics ?: (displayItem?.mediaMetadata?.artist?.toString() ?: "Unknown Artist"),
                         style = MaterialTheme.typography.bodySmall.copy(
-                            shadow = androidx.compose.ui.graphics.Shadow(
+                            shadow = if (isDarkTheme) androidx.compose.ui.graphics.Shadow(
                                 color = Color.Black.copy(alpha = 0.5f),
                                 offset = androidx.compose.ui.geometry.Offset(0f, 2f),
                                 blurRadius = 4f
-                            )
+                            ) else null
                         ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = Color.White,
+                        color = if (displayLyrics != null) glassTextPrimary else glassTextSecondary,
                         fontWeight = if (displayLyrics != null) FontWeight.Bold else FontWeight.Normal
                     )
                 }
@@ -297,7 +364,7 @@ fun MiniPlayerContent(
                           Icon(
                               imageVector = androidx.compose.material.icons.Icons.Outlined.Lyrics,
                               contentDescription = "Edit Lyrics",
-                              tint = onSurfaceVariant,
+                              tint = glassTextSecondary,
                               modifier = Modifier.size(20.dp)
                           )
                      }
@@ -306,7 +373,7 @@ fun MiniPlayerContent(
                           Icon(
                               imageVector = if (state.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                               contentDescription = "Favorite",
-                              tint = if (state.isFavorite) Color.Red else onSurfaceVariant,
+                              tint = if (state.isFavorite) Color.Red else glassTextSecondary,
                               modifier = Modifier.size(20.dp)
                           )
                      }
@@ -314,7 +381,7 @@ fun MiniPlayerContent(
                      // Only show prev/next if extraControls is enabled
                      if (extraControls) {
                          IconButton(onClick = onPrevious, modifier = Modifier.size(32.dp)) {
-                              Icon(Icons.Default.SkipPrevious, null, modifier = Modifier.size(24.dp))
+                              Icon(Icons.Default.SkipPrevious, null, modifier = Modifier.size(24.dp), tint = glassTextSecondary)
                          }
                      }
 
@@ -331,14 +398,15 @@ fun MiniPlayerContent(
                               Icon(
                                   imageVector = if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                   contentDescription = "Play/Pause",
-                                  modifier = Modifier.size(16.dp) 
+                                  modifier = Modifier.size(16.dp),
+                                  tint = glassTextPrimary
                               )
                           }
                      }
 
                      if (extraControls) {
                          IconButton(onClick = onNext, modifier = Modifier.size(32.dp)) {
-                              Icon(Icons.Default.SkipNext, null, modifier = Modifier.size(24.dp))
+                              Icon(Icons.Default.SkipNext, null, modifier = Modifier.size(24.dp), tint = glassTextSecondary)
                          }
                      }
                 }

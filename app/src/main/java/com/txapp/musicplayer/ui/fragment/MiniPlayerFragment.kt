@@ -53,7 +53,8 @@ open class MiniPlayerFragment : Fragment(R.layout.fragment_mini_player) {
                     
                     // Simple Theme Wrapper
                     MaterialTheme {
-                        if (android.os.Build.VERSION.SDK_INT >= 35) {
+                        // Use Liquid Glass enhanced player on Android 13+ (API 33)
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                             com.txapp.musicplayer.ui.component.MiniPlayerAndroid15(
                                 state = state,
                                 itemCount = itemCount,
@@ -79,6 +80,7 @@ open class MiniPlayerFragment : Fragment(R.layout.fragment_mini_player) {
                                 }
                             )
                         } else {
+                            // Standard glass effect player for older Android versions
                             MiniPlayerContent(
                                 state = state,
                                 itemCount = itemCount,

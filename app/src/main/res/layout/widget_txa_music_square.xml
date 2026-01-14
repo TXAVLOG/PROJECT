@@ -37,8 +37,8 @@
 
             <ImageView
                 android:id="@+id/widget_album_art"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
+                android:layout_width="68dp"
+                android:layout_height="68dp"
                 android:layout_gravity="center"
                 android:scaleType="centerCrop"
                 android:background="@drawable/widget_album_art_bg"
