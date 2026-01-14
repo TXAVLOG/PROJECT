@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.txapp.musicplayer.ui.component.NumberRollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/number_roll"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:focusable="true"
+    android:focusableInTouchMode="true">
+
+    <TextView
+        android:id="@+id/up"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:singleLine="true"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/down"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:singleLine="true"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+        
+</com.txapp.musicplayer.ui.component.NumberRollView>

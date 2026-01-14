@@ -121,6 +121,9 @@ class LibraryFragment : Fragment() {
             musicRepository.allSongs.collectLatest { songs ->
                 allSongs = songs
                 filterSongs(binding.searchEditText.text.toString())
+                
+                // Update NumberRollView
+                binding.songCountRoll.root.setNumber(songs.size, true)
             }
         }
         viewLifecycleOwner.lifecycleScope.launch {

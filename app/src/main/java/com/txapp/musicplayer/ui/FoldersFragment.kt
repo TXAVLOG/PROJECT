@@ -1,7 +1,6 @@
 package com.txapp.musicplayer.ui
 
 import android.os.Bundle
-import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,11 +11,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,8 +42,9 @@ data class FolderInfo(
 class FoldersFragment : Fragment() {
 
     private lateinit var repository: MusicRepository
-    private var folders by mutableStateOf(emptyList<FolderInfo>())
+    private var allFolders by mutableStateOf(emptyList<FolderInfo>())
     private var allSongs by mutableStateOf(emptyList<Song>())
+    private var currentPath by mutableStateOf<String?>(null)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,9 +59,26 @@ class FoldersFragment : Fragment() {
                 MaterialTheme(
                     colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
                 ) {
+                    val foldersToShow = if (currentPath == null) {
+                        allFolders
+                    } else {
+                        emptyList()
+                    }
+                    
+                    val songsToShow = if (currentPath != null) {
+                        allSongs.filter { File(it.data).parent == currentPath }
+                    } else {
+                        emptyList()
+                    }
+
                     FoldersScreen(
-                        folders = folders,
-                        onFolderClick = { folder -> navigateToFolder(folder) }
+                        currentPath = currentPath,
+                        folders = foldersToShow,
+                        songs = songsToShow,
+                        onFolderClick = { folder -> currentPath = folder.path },
+                        onBackClick = { currentPath = null },
+                        onBreadcrumbClick = { path -> currentPath = path },
+                        onSongClick = { song, songs -> (activity as? MainActivity)?.playSongs(songs, songs.indexOf(song)) }
                     )
                 }
             }
@@ -76,7 +90,7 @@ class FoldersFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             repository.allSongs.collectLatest { songs ->
                 allSongs = songs
-                folders = songs.groupBy { song ->
+                allFolders = songs.groupBy { song ->
                     File(song.data).parent ?: ""
                 }.map { (path, songsInFolder) ->
                     FolderInfo(
@@ -88,31 +102,59 @@ class FoldersFragment : Fragment() {
             }
         }
     }
-
-    private fun navigateToFolder(folder: FolderInfo) {
-        val songsInFolder = allSongs.filter { File(it.data).parent == folder.path }
-        if (songsInFolder.isNotEmpty()) {
-            (activity as? MainActivity)?.playSongs(songsInFolder, 0)
-        }
-    }
 }
 
 @Composable
 fun FoldersScreen(
+    currentPath: String?,
     folders: List<FolderInfo>,
-    onFolderClick: (FolderInfo) -> Unit
+    songs: List<Song>,
+    onFolderClick: (FolderInfo) -> Unit,
+    onBackClick: () -> Unit,
+    onBreadcrumbClick: (String?) -> Unit,
+    onSongClick: (Song, List<Song>) -> Unit
 ) {
     val accentColor = Color(android.graphics.Color.parseColor(TXAPreferences.currentAccent))
     
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Text(
-            text = "txamusic_media_folders".txa(),
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(16.dp)
-        )
-        
-        if (folders.isEmpty()) {
+        // Breadcrumb
+        Box(modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp), contentAlignment = Alignment.CenterStart) {
+            androidx.compose.ui.viewinterop.AndroidView(
+                factory = { context ->
+                    com.txapp.musicplayer.ui.component.BreadCrumbLayout(context).apply {
+                        setCallback(object : com.txapp.musicplayer.ui.component.BreadCrumbLayout.SelectionCallback {
+                            override fun onCrumbSelection(crumb: com.txapp.musicplayer.ui.component.BreadCrumbLayout.Crumb, index: Int) {
+                                if (index == 0) onBreadcrumbClick(null)
+                                else onBreadcrumbClick(crumb.file.path)
+                            }
+                        })
+                    }
+                },
+                update = { view ->
+                    view.clearCrumbs()
+                    // Root crumb
+                    view.addCrumb(com.txapp.musicplayer.ui.component.BreadCrumbLayout.Crumb(File("Folders")), false)
+                    
+                    currentPath?.let { path ->
+                        val file = File(path)
+                        val components = mutableListOf<File>()
+                        var p: File? = file
+                        while (p != null && p.path != "/") {
+                            components.add(0, p)
+                            p = p.parentFile
+                        }
+                        
+                        components.forEach { comp ->
+                            view.addCrumb(com.txapp.musicplayer.ui.component.BreadCrumbLayout.Crumb(comp), false)
+                        }
+                    }
+                    view.invalidate()
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        if (currentPath == null && folders.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(text = "txamusic_home_no_songs".txa(), color = Color.Gray)
             }
@@ -121,10 +163,55 @@ fun FoldersScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
-                items(folders) { folder ->
-                    FolderItem(folder = folder, accentColor = accentColor, onClick = { onFolderClick(folder) })
+                if (currentPath == null) {
+                    items(folders) { folder ->
+                        FolderItem(folder = folder, accentColor = accentColor, onClick = { onFolderClick(folder) })
+                    }
+                } else {
+                    items(songs) { song ->
+                        SongItem(song = song, accentColor = accentColor, onClick = { onSongClick(song, songs) })
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SongItem(
+    song: Song,
+    accentColor: Color,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = androidx.compose.ui.res.painterResource(id = com.txapp.musicplayer.R.drawable.ic_music_note),
+            contentDescription = null,
+            tint = accentColor,
+            modifier = Modifier.size(28.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = song.title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = song.artist,
+                fontSize = 12.sp,
+                color = Color.Gray,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

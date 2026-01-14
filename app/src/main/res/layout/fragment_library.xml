@@ -19,14 +19,28 @@
             android:layout_height="?attr/actionBarSize"
             app:layout_scrollFlags="scroll|enterAlways">
 
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/appNameText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
-                android:textStyle="bold"
-                tools:text="TXA Music" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/appNameText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+                    android:textStyle="bold"
+                    tools:text="TXA Music" />
+
+                <include
+                    android:id="@+id/songCountRoll"
+                    layout="@layout/number_roll_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="16dp" />
+            </LinearLayout>
         </androidx.appcompat.widget.Toolbar>
 
         <com.google.android.material.card.MaterialCardView
