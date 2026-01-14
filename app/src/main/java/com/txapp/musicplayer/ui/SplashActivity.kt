@@ -319,10 +319,8 @@ class SplashActivity : AppCompatActivity() {
                 val langSuccess = TXATranslation.downloadAndApply(this@SplashActivity, targetLocale) { subPercent, subStatus ->
                     runOnUiThread {
                         if (subPercent == -1) {
-                            // Error state
-                            statusText.setTextColor(android.graphics.Color.RED)
-                            statusText.text = "Error: $subStatus"
-                            // Error is handled below to stop the flow
+                            // Temporary server error, will be handled by fallback logic below
+                            TXALogger.appW(TAG, "Sync progress error: $subStatus")
                         } else {
                             val overall = 10 + (subPercent * 20 / 100)
                             updateProgress(overall)
@@ -338,12 +336,12 @@ class SplashActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         statusText.setTextColor(android.graphics.Color.YELLOW)
                         
-                        // Show fallback message suggesting network issues but continuing
+                        // Wait for countdown to finish before proceeding
                         var countdown = 3
                         while (countdown > 0) {
                             val msg = "txamusic_splash_lang_fallback".txa(countdown)
                             statusText.text = if (msg == "txamusic_splash_lang_fallback") {
-                                // Fallback if the key itself is missing (should not happen as it is in fallbackMapEn)
+                                // Fallback if the key itself is missing
                                 "Network issue. Using offline fallback in $countdown s..."
                             } else {
                                 msg
@@ -351,6 +349,7 @@ class SplashActivity : AppCompatActivity() {
                             delay(1000)
                             countdown--
                         }
+                        // Reset color back to white for the next steps
                         statusText.setTextColor(android.graphics.Color.WHITE)
                     }
                 }
