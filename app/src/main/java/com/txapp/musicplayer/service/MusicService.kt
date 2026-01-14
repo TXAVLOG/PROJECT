@@ -582,8 +582,111 @@ class MusicService : MediaLibraryService() {
         }
         registerReceiver(connectionReceiver, filter)
 
+        // Register screen lock receiver for Lockscreen Player
+        registerLockScreenReceiver()
+        
+        // Register playback command receiver for LockScreen controls
+        registerPlaybackCommandReceiver()
+
         // Start fade check loop
         startFadeCheckLoop()
+    }
+    
+    private val lockScreenReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                Intent.ACTION_SCREEN_ON -> {
+                    if (player.isPlaying && com.txapp.musicplayer.util.TXAPreferences.isLockScreenPlayerEnabled) {
+                        showLockScreenPlayer()
+                    }
+                }
+            }
+        }
+    }
+    
+    private val playbackCommandReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                "com.txapp.musicplayer.action.TOGGLE_PLAYBACK" -> {
+                    if (player.isPlaying) {
+                        startFadeOut(isManualPause = true) { player.pause() }
+                    } else {
+                        if (player.volume > 0.9f && com.txapp.musicplayer.util.TXAPreferences.currentAudioFadeDuration > 0) {
+                            player.volume = 0f
+                        }
+                        player.play()
+                    }
+                    sendPlaybackBroadcast()
+                }
+                "com.txapp.musicplayer.action.SKIP_PREVIOUS" -> {
+                    startFadeOut(isManualPause = true) {
+                        isManualSkip = true
+                        player.seekToPreviousMediaItem()
+                    }
+                }
+                "com.txapp.musicplayer.action.SKIP_NEXT" -> {
+                    startFadeOut(isManualPause = true) {
+                        isManualSkip = true
+                        player.seekToNextMediaItem()
+                    }
+                }
+                "com.txapp.musicplayer.action.TOGGLE_SHUFFLE" -> {
+                    player.shuffleModeEnabled = !player.shuffleModeEnabled
+                }
+                "com.txapp.musicplayer.action.TOGGLE_REPEAT" -> {
+                    val newMode = when (player.repeatMode) {
+                        Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                        Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                        else -> Player.REPEAT_MODE_OFF
+                    }
+                    player.repeatMode = newMode
+                }
+                "com.txapp.musicplayer.action.SEEK_TO" -> {
+                    val position = intent.getLongExtra("position", 0)
+                    player.seekTo(position)
+                }
+            }
+        }
+    }
+    
+    private fun registerLockScreenReceiver() {
+        val filter = android.content.IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+        }
+        registerReceiver(lockScreenReceiver, filter)
+    }
+    
+    private fun registerPlaybackCommandReceiver() {
+        val filter = android.content.IntentFilter().apply {
+            addAction("com.txapp.musicplayer.action.TOGGLE_PLAYBACK")
+            addAction("com.txapp.musicplayer.action.SKIP_PREVIOUS")
+            addAction("com.txapp.musicplayer.action.SKIP_NEXT")
+            addAction("com.txapp.musicplayer.action.TOGGLE_SHUFFLE")
+            addAction("com.txapp.musicplayer.action.TOGGLE_REPEAT")
+            addAction("com.txapp.musicplayer.action.SEEK_TO")
+        }
+        androidx.core.content.ContextCompat.registerReceiver(
+            this,
+            playbackCommandReceiver,
+            filter,
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+    }
+    
+    private fun showLockScreenPlayer() {
+        try {
+            val intent = Intent(this, com.txapp.musicplayer.ui.LockScreenActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            startActivity(intent)
+        } catch (e: Exception) {
+            TXALogger.e("MusicService", "Error starting LockScreenActivity", e)
+        }
+    }
+    
+    private fun sendPlaybackBroadcast() {
+        val intent = Intent("com.txapp.musicplayer.action.PLAYBACK_STATE_CHANGED")
+        intent.putExtra("is_playing", player.isPlaying)
+        sendBroadcast(intent)
     }
 
     private fun startFadeCheckLoop() {
@@ -828,9 +931,14 @@ class MusicService : MediaLibraryService() {
             TXALogger.appE("MusicService", "Error unregistering receiver", e)
         }
         try {
+            unregisterReceiver(lockScreenReceiver)
+        } catch (e: Exception) {}
+        try {
+            unregisterReceiver(playbackCommandReceiver)
+        } catch (e: Exception) {}
+        try {
             androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).unregisterReceiver(metadataUpdateReceiver)
         } catch (e: Exception) {}
-        savePlaybackState()
         savePlaybackState()
         saveCurrentSongProgress(blocking = true)
         mediaLibrarySession.release()

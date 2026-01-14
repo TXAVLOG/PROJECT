@@ -21,4 +21,7 @@
     <color name="widget_text_secondary">#AAAAAA</color>
     <color name="widget_accent">#00D269</color>
     <color name="widget_background">#CC1A1A1A</color>
+    
+    <!-- Accent Color -->
+    <color name="accent_color">#FF1744</color>
 </resources>

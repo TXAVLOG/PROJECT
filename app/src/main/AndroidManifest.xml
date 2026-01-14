@@ -153,6 +153,17 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.TXMusicPlayer.NoActionBar" />
 
+        <!-- Lockscreen Player Activity -->
+        <activity
+            android:name=".ui.LockScreenActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:showOnLockScreen="true"
+            android:theme="@style/Theme.TXMusicPlayer.NoActionBar" />
+
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

@@ -527,4 +527,12 @@ object TXAPreferences {
             .putInt(KEY_FLOATING_LYRICS_POS_Y, y)
             .apply()
     }
+
+    // ============== LOCKSCREEN PLAYER ==============
+    private const val KEY_LOCKSCREEN_PLAYER = "setting_lockscreen_player"
+    private const val DEF_LOCKSCREEN_PLAYER = true
+
+    var isLockScreenPlayerEnabled: Boolean
+        get() = prefs.getBoolean(KEY_LOCKSCREEN_PLAYER, DEF_LOCKSCREEN_PLAYER)
+        set(value) = prefs.edit().putBoolean(KEY_LOCKSCREEN_PLAYER, value).apply()
 }

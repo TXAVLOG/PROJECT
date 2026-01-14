@@ -154,4 +154,10 @@
     <string name="widget_mini_desc">Art-focused square with circular progress</string>
     <string name="widget_square_name">Art: Square (2x2)</string>
     <string name="widget_square_desc">Balanced square with controls and details</string>
+    
+    <!-- Lockscreen Player -->
+    <string name="txamusic_lockscreen_swipe_hint">Swipe down to unlock</string>
+    <string name="txamusic_lockscreen_title">Lockscreen Controls</string>
+    <string name="txamusic_lockscreen_desc">Show music controls on lock screen when playing</string>
+    <string name="txamusic_lockscreen_enabled">Lockscreen controls enabled</string>
 </resources>
