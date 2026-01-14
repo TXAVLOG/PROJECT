@@ -326,21 +326,27 @@ class SplashActivity : AppCompatActivity() {
                 }
 
                 if (!langSuccess && !TXATranslation.hasCacheFor(this@SplashActivity, targetLocale)) {
-                    // Critical failure: No cache and download failed (Network Error)
-                    TXALogger.appE(TAG, "Language sync failed and no cache available. Launching Network Error screen.")
+                    // Not a critical failure anymore: Use embedded fallback instead of blocking the user
+                    TXALogger.appW(TAG, "Language sync failed (maybe API 522) and no cache available. Using embedded fallback.")
                     
-                    val androidVersion = TXADeviceInfo.getAndroidVersion()
-                    val errorCode = "TXAAPP_${androidVersion}_NWFA"
-                    
-                    val intent = Intent(this@SplashActivity, TXAErrorActivity::class.java).apply {
-                        putExtra(TXACrashHandler.INTENT_DATA_ERROR_LOG, "Fatal Translation Download Error\nFailed to sync language '$targetLocale' and no local cache available.\nPlease check your network connection.")
-                        putExtra(TXACrashHandler.INTENT_DATA_ERROR_CODE, errorCode)
-                        putExtra(TXACrashHandler.INTENT_DATA_SUGGESTION, "network")
+                    withContext(Dispatchers.Main) {
+                        statusText.setTextColor(android.graphics.Color.YELLOW)
+                        
+                        // Show fallback message suggesting network issues but continuing
+                        var countdown = 3
+                        while (countdown > 0) {
+                            val msg = "txamusic_splash_lang_fallback".txa(countdown)
+                            statusText.text = if (msg == "txamusic_splash_lang_fallback") {
+                                // Fallback if the key itself is missing (should not happen as it is in fallbackMapEn)
+                                "Network issue. Using offline fallback in $countdown s..."
+                            } else {
+                                msg
+                            }
+                            delay(1000)
+                            countdown--
+                        }
+                        statusText.setTextColor(android.graphics.Color.WHITE)
                     }
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
-                    startActivity(intent)
-                    finish()
-                    return@launch
                 }
                 updateProgress(30)
 

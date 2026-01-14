@@ -1547,12 +1547,17 @@ object TXATranslation {
                 _isDownloadingLanguage.value = true
             }
 
-            // Step 2: Check server for updates
+            // Step 2: Check server for updates with a shorter timeout for splash stability
             val url = "${BASE_URL}tXALocale/$locale"
             val request = Request.Builder().url(url).build()
             onProgress?.invoke(30, "Fetching metadata...")
 
-            val response = TXAHttp.client.newCall(request).execute()
+            val fastClient = TXAHttp.client.newBuilder()
+                .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                .build()
+
+            val response = fastClient.newCall(request).execute()
 
             if (response.isSuccessful) {
                 onProgress?.invoke(50, "Server responded, parsing...")

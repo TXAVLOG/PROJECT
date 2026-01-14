@@ -76,7 +76,12 @@ object TXAUpdateManager {
                 .post(jsonBody.toString().toRequestBody("application/json".toMediaType()))
                 .build()
 
-            val response = TXAHttp.client.newCall(request).execute()
+            val fastClient = TXAHttp.client.newBuilder()
+                .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                .build()
+
+            val response = fastClient.newCall(request).execute()
             if (response.isSuccessful) {
                 val body = response.body?.string() ?: return@withContext null
                 val json = JSONObject(body)
