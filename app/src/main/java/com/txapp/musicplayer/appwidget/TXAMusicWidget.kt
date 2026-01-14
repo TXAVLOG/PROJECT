@@ -87,6 +87,11 @@ open class TXAMusicWidget : AppWidgetProvider() {
         private var cachedDuration: Long = 0
         private var cachedPosition: Long = 0
         
+        // Memory cache for expensive assets
+        private var cachedBitmap: Bitmap? = null
+        private var cachedGradient: Bitmap? = null
+        private var lastProcessedUri: String = ""
+        
         private var mInstance: TXAMusicWidget? = null
         
         val instance: TXAMusicWidget
@@ -130,20 +135,53 @@ open class TXAMusicWidget : AppWidgetProvider() {
             position: Long? = null,
             duration: Long? = null
         ) {
+            // Load state if first time
+            if (cachedTitle.isEmpty()) loadPersistedState(context)
+
             title?.let { cachedTitle = it }
             artist?.let { cachedArtist = it }
             albumArtUri?.let { cachedAlbumArtUri = it }
-            isPlaying?.let { if (it) cachedIsPlaying = true else cachedIsPlaying = false; cachedIsPlaying = it }
+            isPlaying?.let { cachedIsPlaying = it }
             isShuffleOn?.let { cachedIsShuffleOn = it }
             repeatMode?.let { cachedRepeatMode = it }
             position?.let { cachedPosition = it }
             duration?.let { cachedDuration = it }
             
-            if (cachedDuration > 0 && cachedPosition > 0) {
-                cachedProgress = ((cachedPosition * 100) / cachedDuration).toInt()
+            if (cachedDuration > 0) { // Fix: Allow 0 position
+                cachedProgress = ((cachedPosition * 100) / cachedDuration).toInt().coerceIn(0, 100)
             }
             
+            savePersistedState(context)
             updateWidgets(context)
+        }
+
+        private fun savePersistedState(context: Context) {
+            val prefs = context.getSharedPreferences("txa_widget_prefs", Context.MODE_PRIVATE)
+            prefs.edit().apply {
+                putString("title", cachedTitle)
+                putString("artist", cachedArtist)
+                putString("albumArtUri", cachedAlbumArtUri)
+                putBoolean("isPlaying", cachedIsPlaying)
+                putBoolean("isShuffleOn", cachedIsShuffleOn)
+                putInt("repeatMode", cachedRepeatMode)
+                putLong("position", cachedPosition)
+                putLong("duration", cachedDuration)
+                putInt("progress", cachedProgress)
+                apply()
+            }
+        }
+
+        private fun loadPersistedState(context: Context) {
+            val prefs = context.getSharedPreferences("txa_widget_prefs", Context.MODE_PRIVATE)
+            cachedTitle = prefs.getString("title", "") ?: ""
+            cachedArtist = prefs.getString("artist", "") ?: ""
+            cachedAlbumArtUri = prefs.getString("albumArtUri", "") ?: ""
+            cachedIsPlaying = prefs.getBoolean("isPlaying", false)
+            cachedIsShuffleOn = prefs.getBoolean("isShuffleOn", false)
+            cachedRepeatMode = prefs.getInt("repeatMode", Player.REPEAT_MODE_OFF)
+            cachedPosition = prefs.getLong("position", 0L)
+            cachedDuration = prefs.getLong("duration", 0L)
+            cachedProgress = prefs.getInt("progress", 0)
         }
         
         /**
@@ -183,6 +221,14 @@ open class TXAMusicWidget : AppWidgetProvider() {
      * Initialize widgets to default state
      */
     private fun defaultAppWidget(context: Context, appWidgetIds: IntArray) {
+        // Ensure state is loaded
+        if (cachedTitle.isEmpty()) {
+            val prefs = context.getSharedPreferences("txa_widget_prefs", Context.MODE_PRIVATE)
+            if (prefs.contains("title")) {
+                loadPersistedState(context)
+            }
+        }
+
         val views = RemoteViews(context.packageName, getLayoutId())
         val settings = WidgetSettings.load(context)
         
@@ -443,8 +489,8 @@ open class TXAMusicWidget : AppWidgetProvider() {
         action: String,
         serviceName: ComponentName
     ): PendingIntent {
-        val intent = Intent(action).apply {
-            component = ComponentName(context, javaClass)
+        val intent = Intent(context, this.javaClass).apply {
+            this.action = action
         }
         return PendingIntent.getBroadcast(
             context, action.hashCode(), intent,
@@ -462,9 +508,23 @@ open class TXAMusicWidget : AppWidgetProvider() {
     ) {
         if (cachedAlbumArtUri.isEmpty()) {
             views.setImageViewResource(R.id.widget_album_art, R.drawable.ic_default_album_art)
-            // Apply rainbow gradient when no album art
-            val rainbowGradient = createRainbowGradientBitmap(400, 400)
-            views.setImageViewBitmap(R.id.widget_gradient_bg, rainbowGradient)
+            
+            // Re-use or create rainbow gradient
+            if (lastProcessedUri != "rainbow") {
+                cachedGradient = createRainbowGradientBitmap(100, 100)
+                lastProcessedUri = "rainbow"
+                cachedBitmap = null
+            }
+            
+            cachedGradient?.let { views.setImageViewBitmap(R.id.widget_gradient_bg, it) }
+            pushUpdate(context, appWidgetIds, views)
+            return
+        }
+        
+        // Check if we already have this art and gradient in cache
+        if (lastProcessedUri == cachedAlbumArtUri && cachedBitmap != null && cachedGradient != null) {
+            views.setImageViewBitmap(R.id.widget_album_art, cachedBitmap)
+            views.setImageViewBitmap(R.id.widget_gradient_bg, cachedGradient)
             pushUpdate(context, appWidgetIds, views)
             return
         }
@@ -476,16 +536,23 @@ open class TXAMusicWidget : AppWidgetProvider() {
                 
                 withContext(Dispatchers.Main) {
                     if (bitmap != null) {
+                        cachedBitmap = bitmap
                         views.setImageViewBitmap(R.id.widget_album_art, bitmap)
                         
                         // Extract colors and create gradient
                         val gradientBitmap = createGradientFromBitmap(bitmap)
+                        cachedGradient = gradientBitmap
                         views.setImageViewBitmap(R.id.widget_gradient_bg, gradientBitmap)
+                        
+                        lastProcessedUri = cachedAlbumArtUri
                     } else {
                         views.setImageViewResource(R.id.widget_album_art, R.drawable.ic_default_album_art)
-                        // Apply rainbow gradient when no album art
-                        val rainbowGradient = createRainbowGradientBitmap(400, 400)
-                        views.setImageViewBitmap(R.id.widget_gradient_bg, rainbowGradient)
+                        if (lastProcessedUri != "rainbow") {
+                            cachedGradient = createRainbowGradientBitmap(100, 100)
+                            lastProcessedUri = "rainbow"
+                            cachedBitmap = null
+                        }
+                        cachedGradient?.let { views.setImageViewBitmap(R.id.widget_gradient_bg, it) }
                     }
                     pushUpdate(context, appWidgetIds, views)
                 }
@@ -493,9 +560,12 @@ open class TXAMusicWidget : AppWidgetProvider() {
                 TXALogger.appE(TAG, "Error loading album art", e)
                 withContext(Dispatchers.Main) {
                     views.setImageViewResource(R.id.widget_album_art, R.drawable.ic_default_album_art)
-                    // Apply rainbow gradient on error
-                    val rainbowGradient = createRainbowGradientBitmap(400, 400)
-                    views.setImageViewBitmap(R.id.widget_gradient_bg, rainbowGradient)
+                    if (lastProcessedUri != "rainbow") {
+                        cachedGradient = createRainbowGradientBitmap(100, 100)
+                        lastProcessedUri = "rainbow"
+                        cachedBitmap = null
+                    }
+                    cachedGradient?.let { views.setImageViewBitmap(R.id.widget_gradient_bg, it) }
                     pushUpdate(context, appWidgetIds, views)
                 }
             }
@@ -523,10 +593,10 @@ open class TXAMusicWidget : AppWidgetProvider() {
                 darkenColor(mutedColor, 0.8f)
             )
             
-            createGradientBitmap(400, 400, gradientColors)
+            createGradientBitmap(100, 100, gradientColors)
         } catch (e: Exception) {
             TXALogger.appE(TAG, "Error creating gradient from bitmap", e)
-            createRainbowGradientBitmap(400, 400)
+            createRainbowGradientBitmap(100, 100)
         }
     }
     
