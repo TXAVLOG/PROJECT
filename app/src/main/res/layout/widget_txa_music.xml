@@ -30,8 +30,8 @@
             <ProgressBar
                 android:id="@+id/widget_circle_progress"
                 style="@android:style/Widget.ProgressBar.Horizontal"
-                android:layout_width="92sp"
-                android:layout_height="92sp"
+                android:layout_width="88dp"
+                android:layout_height="88dp"
                 android:layout_gravity="center"
                 android:max="100"
                 android:progress="0"
@@ -39,8 +39,8 @@
 
             <ImageView
                 android:id="@+id/widget_album_art"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
+                android:layout_width="76dp"
+                android:layout_height="76dp"
                 android:layout_gravity="center"
                 android:scaleType="centerCrop"
                 android:background="@drawable/widget_album_art_bg"
