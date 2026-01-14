@@ -285,6 +285,12 @@ class SplashActivity : AppCompatActivity() {
                              }
                         }
                     }
+                    TXANetworkHelper.NetworkStatus.NONE -> {
+                        TXAPreferences.setImageQuality("low")
+                        withContext(Dispatchers.Main) {
+                            TXAToast.warning(this@SplashActivity, "txamusic_splash_no_internet".txa())
+                        }
+                    }
                     else -> {
                         // NONE or other - Default behaviors
                         TXAPreferences.setImageQuality("low")

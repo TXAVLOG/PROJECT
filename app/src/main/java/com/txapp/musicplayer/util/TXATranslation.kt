@@ -271,6 +271,7 @@ object TXATranslation {
         "txamusic_unit_minute" to "m",
         "txamusic_unit_second" to "s",
         "txamusic_splash_lang_fallback" to "Using offline fallback, continuing in %d s...",
+        "txamusic_splash_no_internet" to "No internet connection detected. Continuing offline mode...",
         "txamusic_noti_channel_name" to "Playback Status",
         "txamusic_noti_channel_desc" to "Shows currently playing song and playback controls",
         "txamusic_home_no_songs" to "No songs found",
@@ -1122,6 +1123,7 @@ object TXATranslation {
         "txamusic_home_last_added" to "Mới thêm gần đây",
         "txamusic_home_top_played" to "Nghe nhiều nhất",
         "txamusic_error_friendly_location_api" to "Lỗi dịch vụ vị trí",
+        "txamusic_splash_no_internet" to "Không có kết nối mạng! Tiếp tục với chế độ ngoại tuyến.",
 
         // Settings & AOD
         "txamusic_status_active" to "Đang phát",
