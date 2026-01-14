@@ -544,6 +544,7 @@ class MusicService : MediaLibraryService() {
                              )
                          }
                      }
+                     delay(50)
                 } else {
                      // Even when paused, update widget occasionally (every 2 seconds)
                      val now = System.currentTimeMillis()
