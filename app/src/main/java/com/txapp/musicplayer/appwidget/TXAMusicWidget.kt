@@ -225,6 +225,27 @@ open class TXAMusicWidget : AppWidgetProvider() {
                 )
                 performUpdate(context, widgetIds)
             }
+            ACTION_TOGGLE_PLAYBACK, ACTION_NEXT, ACTION_PREVIOUS, ACTION_TOGGLE_SHUFFLE, ACTION_TOGGLE_REPEAT -> {
+                // Handle playback controls via Service directly but as a regular startService call
+                // to avoid the ForegroundServiceDidNotStartInTimeException.
+                // The service itself will manage its foreground state.
+                val serviceIntent = Intent(intent.action).apply {
+                    component = ComponentName(context, MusicService::class.java)
+                }
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        // We still try to start as foreground if it's a playback start action
+                        // but MusicService needs to handle it. Actually, startService is safer
+                        // if we want to avoid the strict timeout, but it might be blocked.
+                        // However, for media apps with an active session, it's often allowed.
+                        context.startService(serviceIntent)
+                    } else {
+                        context.startService(serviceIntent)
+                    }
+                } catch (e: Exception) {
+                    TXALogger.appE(TAG, "Failed to start service for action: ${intent.action}", e)
+                }
+            }
         }
     }
 
@@ -412,19 +433,12 @@ open class TXAMusicWidget : AppWidgetProvider() {
         serviceName: ComponentName
     ): PendingIntent {
         val intent = Intent(action).apply {
-            component = serviceName
+            component = ComponentName(context, javaClass)
         }
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            PendingIntent.getForegroundService(
-                context, action.hashCode(), intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        } else {
-            PendingIntent.getService(
-                context, action.hashCode(), intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        }
+        return PendingIntent.getBroadcast(
+            context, action.hashCode(), intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
     }
 
     /**
