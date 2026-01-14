@@ -1265,7 +1265,13 @@ object TXATranslation {
         "txamusic_clear_queue_confirm" to "Bạn có chắc muốn xóa toàn bộ danh sách chờ?",
         "txamusic_btn_clear" to "Xóa",
         "txamusic_no_lyrics" to "Không tìm thấy lời bài hát",
-        "txamusic_no_lyrics_hint" to "Thêm file .lrc cạnh file nhạc hoặc tìm kiếm trực tuyến"
+        "txamusic_no_lyrics_hint" to "Thêm file .lrc cạnh file nhạc hoặc tìm kiếm trực tuyến",
+        "txamusic_library" to "Thư viện",
+        "txamusic_folders" to "Thư mục",
+        "txamusic_genres" to "Thể loại",
+        "txamusic_albums" to "Album",
+        "txamusic_artists" to "Nghệ sĩ",
+        "txamusic_playlists" to "Danh sách phát"
     )
 
     suspend fun init(context: Context) = withContext(Dispatchers.IO) {

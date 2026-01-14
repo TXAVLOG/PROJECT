@@ -47,6 +47,7 @@ class HomeFragment : Fragment() {
 
         setupUI()
         setupQuickActions()
+        setupLibraryHub()
         setupTopTracks()
         setupSuggestions()
         setupRecentlyAdded()
@@ -172,6 +173,25 @@ class HomeFragment : Fragment() {
                     onHistoryClick = { navigateToDetailList(DetailListFragment.HISTORY_PLAYLIST) },
                     onLastAddedClick = { navigateToDetailList(DetailListFragment.LAST_ADDED_PLAYLIST) },
                     onTopPlayedClick = { navigateToDetailList(DetailListFragment.TOP_PLAYED_PLAYLIST) }
+                )
+            }
+        }
+    }
+
+    private fun setupLibraryHub() {
+        binding.libraryHubComposeView.setContent {
+            androidx.compose.material3.MaterialTheme(
+                colorScheme = if (androidx.compose.foundation.isSystemInDarkTheme())
+                    androidx.compose.material3.darkColorScheme()
+                else
+                    androidx.compose.material3.lightColorScheme()
+            ) {
+                com.txapp.musicplayer.ui.component.LibraryHubSection(
+                    onFolderClick = { findNavController().navigate(R.id.action_folder) },
+                    onGenreClick = { findNavController().navigate(R.id.action_genre) },
+                    onAlbumClick = { findNavController().navigate(R.id.action_album) },
+                    onArtistClick = { findNavController().navigate(R.id.action_artist) },
+                    onPlaylistClick = { findNavController().navigate(R.id.action_playlist) }
                 )
             }
         }
