@@ -644,7 +644,15 @@ object TXATranslation {
         "txamusic_widget_controls" to "Control Options",
         "txamusic_widget_show_shuffle" to "Show Shuffle Button",
         "txamusic_widget_show_repeat" to "Show Repeat Button",
-        "txamusic_widget_info" to "Changes will be applied immediately to all widget instances on your home screen."
+        "txamusic_widget_info" to "Changes will be applied immediately to all widget instances on your home screen.",
+        "txamusic_audio_route_speaker" to "Audio switched to speaker",
+        "txamusic_no_lyrics" to "No lyrics found",
+        "txamusic_no_lyrics_hint" to "Add a .lrc file next to the audio file or search online",
+        "txamusic_up_next" to "Up Next",
+        "txamusic_queue_empty" to "Queue is empty",
+        "txamusic_clear_queue" to "Clear Queue",
+        "txamusic_clear_queue_confirm" to "Are you sure you want to clear the current queue?",
+        "txamusic_btn_clear" to "Clear"
     )
 
     // Fallback dictionary (embedded) - Vietnamese
@@ -1271,7 +1279,15 @@ object TXATranslation {
         "txamusic_genres" to "Thể loại",
         "txamusic_albums" to "Album",
         "txamusic_artists" to "Nghệ sĩ",
-        "txamusic_playlists" to "Danh sách phát"
+        "txamusic_playlists" to "Danh sách phát",
+        "txamusic_audio_route_speaker" to "Âm thanh đã chuyển sang loa ngoài",
+        "txamusic_no_lyrics" to "Không tìm thấy lời bài hát",
+        "txamusic_no_lyrics_hint" to "Thêm file .lrc cạnh file nhạc hoặc tìm kiếm trực tuyến",
+        "txamusic_up_next" to "Tiếp theo",
+        "txamusic_queue_empty" to "Danh sách chờ trống",
+        "txamusic_clear_queue" to "Xóa danh sách chờ",
+        "txamusic_clear_queue_confirm" to "Bạn có chắc muốn xóa toàn bộ danh sách chờ?",
+        "txamusic_btn_clear" to "Xóa"
     )
 
     suspend fun init(context: Context) = withContext(Dispatchers.IO) {

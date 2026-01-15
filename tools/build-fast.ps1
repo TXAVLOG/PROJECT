@@ -11,6 +11,12 @@ $ErrorActionPreference = "Stop"
 $scriptDir = $PSScriptRoot
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..")
 
+# Force Gradle and Java to use D drive for cache and temp files
+$env:GRADLE_USER_HOME = "D:\gradle_cache"
+$env:JAVA_TOOL_OPTIONS = "-Djava.io.tmpdir=D:\gradle_temp"
+if (!(Test-Path "D:\gradle_cache")) { New-Item -ItemType Directory -Path "D:\gradle_cache" -ErrorAction SilentlyContinue }
+if (!(Test-Path "D:\gradle_temp")) { New-Item -ItemType Directory -Path "D:\gradle_temp" -ErrorAction SilentlyContinue }
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Helper Functions
 # ═══════════════════════════════════════════════════════════════════════════════

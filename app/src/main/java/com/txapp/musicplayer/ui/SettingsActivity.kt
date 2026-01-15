@@ -712,7 +712,14 @@ fun AudioSettings(
                 title = "txamusic_settings_headset_title".txa(),
                 checked = headsetPlay,
                 longPressDesc = "txamusic_settings_headset_desc".txa(),
-                onCheckedChange = { TXAPreferences.isHeadsetPlayEnabled = it }
+                onCheckedChange = { enabled ->
+                    TXAPreferences.isHeadsetPlayEnabled = enabled
+                    // Broadcast to MusicService to re-check audio routing
+                    val intent = Intent("com.txapp.musicplayer.action.AUDIO_ROUTE_SETTING_CHANGED")
+                    intent.putExtra("type", "headset")
+                    intent.putExtra("enabled", enabled)
+                    context.sendBroadcast(intent)
+                }
             )
         }
 
@@ -724,7 +731,14 @@ fun AudioSettings(
                     title = "txamusic_settings_bluetooth_title".txa(),
                     checked = bluetoothPlayback,
                     longPressDesc = "txamusic_settings_bluetooth_desc".txa(),
-                    onCheckedChange = { TXAPreferences.isBluetoothPlaybackEnabled = it }
+                    onCheckedChange = { enabled ->
+                        TXAPreferences.isBluetoothPlaybackEnabled = enabled
+                        // Broadcast to MusicService to re-check audio routing
+                        val intent = Intent("com.txapp.musicplayer.action.AUDIO_ROUTE_SETTING_CHANGED")
+                        intent.putExtra("type", "bluetooth")
+                        intent.putExtra("enabled", enabled)
+                        context.sendBroadcast(intent)
+                    }
                 )
             }
         }

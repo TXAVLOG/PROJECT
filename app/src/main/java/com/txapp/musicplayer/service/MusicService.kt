@@ -113,11 +113,11 @@ class MusicService : MediaLibraryService() {
                         } else {
                            // If disabled, ensure we don't play or route? 
                            // User wants to FORCE speaker.
-                           checkAudioRouting(context)
+                           forceAudioToSpeaker(context, "Headset connected but disabled")
                         }
                     } else {
-                        // Unplugged
-                        checkAudioRouting(context)
+                        // Unplugged - reset speaker mode
+                        resetSpeakerMode(context)
                     }
                 }
                 "android.bluetooth.device.action.ACL_CONNECTED" -> {
@@ -128,58 +128,120 @@ class MusicService : MediaLibraryService() {
                             player.play()
                         }
                     } else {
-                        // Force speaker if BT playback disabled?
-                        checkAudioRouting(context)
+                        // Force speaker if BT playback disabled
+                        serviceScope.launch {
+                            delay(500) // Wait for BT to stabilize
+                            forceAudioToSpeaker(context, "Bluetooth connected but disabled")
+                        }
                     }
                 }
                 "android.bluetooth.device.action.ACL_DISCONNECTED" -> {
-                     checkAudioRouting(context)
+                     resetSpeakerMode(context)
+                }
+                "com.txapp.musicplayer.action.AUDIO_ROUTE_SETTING_CHANGED" -> {
+                    val type = intent.getStringExtra("type")
+                    val enabled = intent.getBooleanExtra("enabled", true)
+                    TXALogger.playbackI("MusicService", "Audio route setting changed: $type = $enabled")
+                    
+                    if (!enabled) {
+                        // User disabled the setting - force speaker immediately
+                        when (type) {
+                            "bluetooth" -> {
+                                if (isBluetoothAudioConnected(context)) {
+                                    forceAudioToSpeaker(context, "Bluetooth disabled by user")
+                                }
+                            }
+                            "headset" -> {
+                                if (isHeadsetConnected(context)) {
+                                    forceAudioToSpeaker(context, "Headset disabled by user")
+                                }
+                            }
+                        }
+                    } else {
+                        // User enabled the setting - reset to default routing
+                        resetSpeakerMode(context)
+                    }
                 }
             }
         }
     }
     
+    private fun isBluetoothAudioConnected(context: Context): Boolean {
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+        val devices = audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS)
+        return devices.any { 
+            it.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || 
+            it.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO 
+        }
+    }
+    
+    private fun isHeadsetConnected(context: Context): Boolean {
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+        return audioManager.isWiredHeadsetOn
+    }
+    
     @Suppress("DEPRECATION")
-    private fun checkAudioRouting(context: Context) {
+    private fun forceAudioToSpeaker(context: Context, reason: String) {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
         
-        // Check Bluetooth using modern API
-        var isBluetoothConnected = false
-        val devices = audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS)
-        for (device in devices) {
-            if (device.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || 
-                device.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
-                isBluetoothConnected = true
-                break
+        try {
+            // Stop Bluetooth SCO if active
+            if (audioManager.isBluetoothScoOn) {
+                audioManager.stopBluetoothSco()
+                audioManager.isBluetoothScoOn = false
             }
+            
+            // Disable A2DP routing (deprecated but still works)
+            audioManager.isBluetoothA2dpOn = false
+            
+            // Force speaker mode
+            audioManager.mode = android.media.AudioManager.MODE_NORMAL
+            audioManager.isSpeakerphoneOn = true
+            
+            TXALogger.playbackI("MusicService", "Force Speaker: $reason")
+            
+            // Show toast to user
+            serviceScope.launch(Dispatchers.Main) {
+                com.txapp.musicplayer.util.TXAToast.info(
+                    context, 
+                    "txamusic_audio_route_speaker".txa()
+                )
+            }
+        } catch (e: Exception) {
+            TXALogger.playbackE("MusicService", "Error forcing speaker", e)
         }
-
-        if (isBluetoothConnected) {
-            if (!com.txapp.musicplayer.util.TXAPreferences.isBluetoothPlaybackEnabled) {
-                 // Force Speaker
-                 audioManager.mode = android.media.AudioManager.MODE_NORMAL
-                 audioManager.stopBluetoothSco()
-                 audioManager.isBluetoothScoOn = false
-                 audioManager.isSpeakerphoneOn = true
-                 TXALogger.playbackI("MusicService", "Forcing Speaker (BT disabled in settings)")
-                 return
+    }
+    
+    @Suppress("DEPRECATION")
+    private fun resetSpeakerMode(context: Context) {
+        try {
+            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+            if (audioManager.isSpeakerphoneOn) {
+                audioManager.isSpeakerphoneOn = false
+                audioManager.mode = android.media.AudioManager.MODE_NORMAL
+                TXALogger.playbackI("MusicService", "Reset speaker mode to default")
             }
+        } catch (e: Exception) {
+            TXALogger.playbackE("MusicService", "Error resetting speaker mode", e)
+        }
+    }
+    
+    @Suppress("DEPRECATION")
+    private fun checkAudioRouting(context: Context) {
+        // Legacy method - redirect to new methods
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+        
+        if (isBluetoothAudioConnected(context) && !com.txapp.musicplayer.util.TXAPreferences.isBluetoothPlaybackEnabled) {
+            forceAudioToSpeaker(context, "BT check: disabled in settings")
+            return
         }
         
-        // Check Headset
-        if (audioManager.isWiredHeadsetOn) {
-             if (!com.txapp.musicplayer.util.TXAPreferences.isHeadsetPlayEnabled) {
-                 // Force Speaker
-                 audioManager.mode = android.media.AudioManager.MODE_NORMAL
-                 audioManager.isSpeakerphoneOn = true
-                 TXALogger.playbackI("MusicService", "Forcing Speaker (Headset disabled in settings)")
-                 return
-             }
+        if (isHeadsetConnected(context) && !com.txapp.musicplayer.util.TXAPreferences.isHeadsetPlayEnabled) {
+            forceAudioToSpeaker(context, "Headset check: disabled in settings")
+            return
         }
         
-        if (audioManager.isSpeakerphoneOn) {
-             audioManager.isSpeakerphoneOn = false
-        }
+        resetSpeakerMode(context)
     }
 
 
@@ -603,6 +665,8 @@ class MusicService : MediaLibraryService() {
         val filter = android.content.IntentFilter().apply {
             addAction(Intent.ACTION_HEADSET_PLUG)
             addAction("android.bluetooth.device.action.ACL_CONNECTED")
+            addAction("android.bluetooth.device.action.ACL_DISCONNECTED")
+            addAction("com.txapp.musicplayer.action.AUDIO_ROUTE_SETTING_CHANGED")
         }
         registerReceiver(connectionReceiver, filter)
 
