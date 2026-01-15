@@ -1,117 +1,166 @@
-<style>
-    body {
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        background-color: #121212;
-        color: #E0E0E0;
-        margin: 0;
-        padding: 20px;
-        line-height: 1.6;
-    }
-
-    .container {
-        max-width: 600px;
-        margin: auto;
-        background: #1E1E1E;
-        padding: 25px;
-        border-radius: 16px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        border: 1px solid #333;
-    }
-
-    h2 {
-        color: #00F2FE;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-top: 0;
-    }
-
-    h3 {
-        color: #4FACFE;
-        border-bottom: 1px solid #333;
-        padding-bottom: 8px;
-        margin-top: 25px;
-    }
-
-    ul {
-        padding-left: 20px;
-        list-style: none;
-    }
-
-    li {
-        margin-bottom: 12px;
-        position: relative;
-    }
-
-    li::before {
-        content: "•";
-        color: #00F2FE;
-        font-weight: bold;
-        position: absolute;
-        left: -15px;
-    }
-
-    .badge {
-        background: linear-gradient(90deg, #00F2FE, #4FACFE);
-        color: #000;
-        padding: 2px 10px;
-        border-radius: 20px;
-        font-size: 0.8em;
-        font-weight: bold;
-        margin-left: 10px;
-    }
-
-    .footer {
-        text-align: center;
-        margin-top: 30px;
-        font-size: 0.9em;
-        color: #888;
-    }
-
-    .pulse {
-        animation: pulse-animation 2s infinite;
-    }
-
-    @keyframes pulse-animation {
-        0% {
-            transform: scale(1);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What's New in TXA Music</title>
+    <style>
+        :root {
+            --primary: #6C5CE7;
+            --secondary: #a29bfe;
+            --bg: #0f0f13;
+            --surface: #1e1e24;
+            --text: #ffffff;
+            --text-secondary: #b2bec3;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
         }
 
-        50% {
-            transform: scale(1.05);
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        100% {
-            transform: scale(1);
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.8s ease-out;
         }
-    }
-</style>
 
-<div class="container">
-    <h2>📱 Cập nhật phiên bản 2.9.0_txa <span class="badge pulse">MỚI</span></h2>
+        .version-badge {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+        }
 
-    <h3>✨ Có gì mới?</h3>
-    <ul>
-        <li><b>Màu sắc Widget sống động:</b> Nền widget giờ đây tự động thay đổi màu sắc rực rỡ dựa trên ảnh bìa bài hát
-            bạn đang nghe.</li>
-        <li><b>Hiệu ứng Cầu vồng:</b> Khi chưa có ảnh bìa, widget sẽ hiển thị hiệu ứng chuyển màu cầu vồng ngẫu nhiên
-            cực kỳ bắt mắt.</li>
-        <li><b>Ghi nhớ trạng thái:</b> Widget giờ đây luôn hiển thị đúng thông tin bài hát ngay cả khi bạn khởi động lại
-            máy hoặc thêm widget mới.</li>
-    </ul>
+        h1 {
+            font-size: 2rem;
+            margin: 0;
+            background: linear-gradient(to right, #fff, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-    <h3>🐛 Sửa lỗi</h3>
-    <ul>
-        <li>Khắc phục triệt để lỗi widget bị đơ hoặc không phản hồi sau một thời gian sử dụng.</li>
-        <li>Sửa lỗi tràn khung hình và vòng tiến trình trên một số kích thước widget đặc biệt.</li>
-    </ul>
+        .card {
+            background: rgba(30, 30, 36, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            animation: fadeInUp 0.8s ease-out;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
 
-    <h3>⚡ Cải thiện hiệu suất</h3>
-    <ul>
-        <li>Tối ưu hóa bộ nhớ đệm giúp widget hoạt động cực kỳ mượt mà, tiết kiệm pin và tài nguyên hệ thống.</li>
-    </ul>
+        .feature-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--secondary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
 
-    <div class="footer">
-        🎵 Cám ơn bạn đã sử dụng TXAMUSIC! Chúc bạn nghe nhạc vui vẻ. 🎧
+        .feature-icon {
+            margin-right: 10px;
+            font-size: 1.4rem;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            color: var(--text-secondary);
+        }
+
+        li::before {
+            content: "•";
+            color: var(--primary);
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="version-badge">v2.9.1_txa</div>
+            <h1>Update Ready!</h1>
+        </div>
+
+        <div class="card">
+            <div class="feature-title">
+                <span class="feature-icon">🚫</span>Blacklist Manager
+            </div>
+            <ul>
+                <li>Hide unwanted folders (like Audiobooks or WhatsApp Audio) from your music library.</li>
+                <li>Manage your filtered paths easily to keep your library clean.</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <div class="feature-title">
+                <span class="feature-icon">💾</span>Playlist Power
+            </div>
+            <ul>
+                <li><strong>Import/Export:</strong> Backup your playlists to M3U files or import existing ones.</li>
+                <li><strong>Rename:</strong> Easily rename your playlists.</li>
+                <li>Full standard M3U support for maximum compatibility.</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <div class="feature-title">
+                <span class="feature-icon">🔍</span>Advanced Search & UI
+            </div>
+            <ul>
+                <li>Smart search engine with Vietnamese accent support (e.g., "tình yêu" matches "tinh yeu").</li>
+                <li>Dynamic wallpaper-based theming engine updates.</li>
+                <li>New modern dialogs for file picking and management.</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            Designed by TXA Team • Enjoy the Music 🎵
+        </div>
     </div>
-</div>
+</body>
+</html>

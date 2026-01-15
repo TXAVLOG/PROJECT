@@ -103,6 +103,13 @@ interface PlaylistDao {
     """)
     fun getPlaylistsWithSongCount(): Flow<List<PlaylistWithCount>>
     
+    /**
+     * Rename playlist (convenience method)
+     */
+    suspend fun renamePlaylist(playlistId: Long, newName: String) {
+        updatePlaylistName(playlistId, newName, System.currentTimeMillis())
+    }
+    
     // ============= ANDROID AUTO SUPPORT =============
     
     @Query("""

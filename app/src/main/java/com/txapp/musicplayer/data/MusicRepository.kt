@@ -62,6 +62,10 @@ class MusicRepository(
 
     suspend fun loadSongsFromMediaStore(): List<Song> {
         val songs = mutableListOf<Song>()
+        
+        // Get blacklisted paths first
+        val blacklistedPaths = database.blackListDao().getBlacklistPathStrings()
+        
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.TITLE,
@@ -97,6 +101,11 @@ class MusicRepository(
 
             while (cursor.moveToNext()) {
                 val data = cursor.getString(dataColumn) ?: ""
+                
+                // Check if file is in blacklisted folder
+                if (isPathBlacklisted(data, blacklistedPaths)) {
+                    continue
+                }
                 
                 // Skip files that no longer exist (Only check on older Android versions)
                 // On Android 10+ (API 29+), direct file access is restricted and often returns false negative
@@ -135,6 +144,15 @@ class MusicRepository(
         // This removes duplicates where same song exists in multiple locations
         return songs.distinctBy { 
             "${it.title.lowercase().trim()}|${it.artist.lowercase().trim()}|${it.album.lowercase().trim()}|${it.duration}" 
+        }
+    }
+    
+    /**
+     * Check if a file path is in a blacklisted folder
+     */
+    private fun isPathBlacklisted(filePath: String, blacklistedPaths: List<String>): Boolean {
+        return blacklistedPaths.any { blacklistedPath ->
+            filePath.startsWith(blacklistedPath)
         }
     }
     
@@ -663,6 +681,138 @@ class MusicRepository(
         } catch (e: Exception) {
             TXALogger.appE("MusicRepository", "Failed to update artist artwork", e)
             com.txapp.musicplayer.util.TXATagWriter.WriteResult.Failure
+        }
+    }
+    
+    // ============= BLACKLIST MANAGEMENT =============
+    
+    /**
+     * Get all blacklisted folders
+     */
+    fun getBlacklistedFolders(): Flow<List<BlackListEntity>> {
+        return database.blackListDao().getAllBlacklistPaths()
+    }
+    
+    /**
+     * Add folder to blacklist
+     */
+    suspend fun addToBlacklist(path: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val entity = BlackListEntity(path = path)
+            database.blackListDao().addBlacklistPath(entity)
+            TXALogger.i("MusicRepository", "Added to blacklist: $path")
+            true
+        } catch (e: Exception) {
+            TXALogger.e("MusicRepository", "Failed to add blacklist", e)
+            false
+        }
+    }
+    
+    /**
+     * Remove folder from blacklist
+     */
+    suspend fun removeFromBlacklist(path: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            database.blackListDao().removeBlacklistByPath(path)
+            TXALogger.i("MusicRepository", "Removed from blacklist: $path")
+            true
+        } catch (e: Exception) {
+            TXALogger.e("MusicRepository", "Failed to remove blacklist", e)
+            false
+        }
+    }
+    
+    /**
+     * Check if path is blacklisted
+     */
+    suspend fun isBlacklisted(path: String): Boolean = withContext(Dispatchers.IO) {
+        database.blackListDao().isPathBlacklisted(path)
+    }
+    
+    // ============= M3U PLAYLIST IMPORT/EXPORT =============
+    
+    /**
+     * Export playlist to M3U file
+     */
+    suspend fun exportPlaylistToM3U(
+        context: Context,
+        playlistId: Long,
+        playlistName: String
+    ): java.io.File? = withContext(Dispatchers.IO) {
+        try {
+            val songs = getPlaylistSongsForAuto(playlistId)
+            if (songs.isEmpty()) {
+                TXALogger.w("MusicRepository", "Cannot export empty playlist")
+                return@withContext null
+            }
+            
+            com.txapp.musicplayer.util.M3UWriter.write(context, songs, playlistName)
+        } catch (e: Exception) {
+            TXALogger.e("MusicRepository", "Failed to export playlist", e)
+            null
+        }
+    }
+    
+    /**
+     * Import playlist from M3U file
+     */
+    suspend fun importPlaylistFromM3U(
+        context: Context,
+        filePath: String,
+        playlistName: String? = null
+    ): Int = withContext(Dispatchers.IO) {
+        try {
+            val file = java.io.File(filePath)
+            if (!file.exists()) {
+                TXALogger.w("MusicRepository", "M3U file not found: $filePath")
+                return@withContext 0
+            }
+            
+            // Read M3U file
+            val paths = com.txapp.musicplayer.util.M3UWriter.read(file)
+            if (paths.isEmpty()) {
+                TXALogger.w("MusicRepository", "No valid songs in M3U file")
+                return@withContext 0
+            }
+            
+            // Create playlist with name from file or provided name
+            val name = playlistName ?: file.nameWithoutExtension
+            val playlistId = createPlaylist(name)
+            
+            if (playlistId == -1L) {
+                TXALogger.e("MusicRepository", "Failed to create playlist for import")
+                return@withContext 0
+            }
+            
+            // Match paths to songs in database
+            var importedCount = 0
+            paths.forEach { path ->
+                val song = database.songDao().getSongByPath(path)
+                if (song != null) {
+                    addSongToPlaylist(playlistId, song.id)
+                    importedCount++
+                }
+            }
+            
+            TXALogger.i("MusicRepository", "Imported $importedCount songs from M3U")
+            importedCount
+        } catch (e: Exception) {
+            TXALogger.e("MusicRepository", "Failed to import playlist", e)
+            0
+        }
+    }
+    
+    /**
+     * Rename playlist
+     */
+    suspend fun renamePlaylist(playlistId: Long, newName: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            database.playlistDao().renamePlaylist(playlistId, newName)
+            TXALogger.i("MusicRepository", "Renamed playlist $playlistId to $newName")
+            true
+        } catch (e: Exception) {
+            TXALogger.e("MusicRepository", "Failed to rename playlist", e)
+            false
         }
     }
 
