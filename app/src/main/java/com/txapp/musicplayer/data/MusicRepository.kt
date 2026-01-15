@@ -3,7 +3,6 @@ package com.txapp.musicplayer.data
 import android.content.ContentResolver
 import android.content.Context
 import android.provider.MediaStore
-import com.txapp.musicplayer.model.Genre
 import com.txapp.musicplayer.model.Playlist
 import com.txapp.musicplayer.model.Song
 import kotlinx.coroutines.flow.Flow
@@ -17,30 +16,6 @@ class MusicRepository(
     private val database: MusicDatabase,
     private val contentResolver: ContentResolver
 ) {
-
-    val genres: Flow<List<Genre>> = flow {
-        val list = mutableListOf<Genre>()
-        val projection = arrayOf(
-            MediaStore.Audio.Genres._ID,
-            MediaStore.Audio.Genres.NAME
-        )
-        contentResolver.query(
-            MediaStore.Audio.Genres.EXTERNAL_CONTENT_URI,
-            projection,
-            null,
-            null,
-            MediaStore.Audio.Genres.NAME
-        )?.use { cursor ->
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Genres._ID)
-            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Genres.NAME)
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idColumn)
-                val name = cursor.getString(nameColumn) ?: "Unknown"
-                list.add(Genre(id, name))
-            }
-        }
-        emit(list)
-    }
 
     // Sử dụng Room Database thay vì MediaStore (đã deprecated trên Android 10+)
     val playlists: Flow<List<Playlist>> = database.playlistDao().getPlaylistsWithSongCount()

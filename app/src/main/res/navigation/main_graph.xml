@@ -4,14 +4,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     app:startDestination="@id/action_home">
 
-    <fragment
-        android:id="@+id/genreDetailsFragment"
-        android:name="com.txapp.musicplayer.ui.GenreDetailsFragment"
-        android:label="GenreDetailsFragment">
-        <argument
-            android:name="extra_genre"
-            app:argType="com.txapp.musicplayer.model.Genre" />
-    </fragment>
 
     <fragment
         android:id="@+id/playlistDetailsFragment"
@@ -85,17 +77,11 @@
         android:id="@+id/action_song"
         android:name="com.txapp.musicplayer.ui.SongsFragment" />
 
-    <fragment
-        android:id="@+id/action_genre"
-        android:name="com.txapp.musicplayer.ui.GenresFragment" />
 
     <fragment
         android:id="@+id/action_playlist"
         android:name="com.txapp.musicplayer.ui.PlaylistsFragment" />
 
-    <fragment
-        android:id="@+id/action_folder"
-        android:name="com.txapp.musicplayer.ui.FoldersFragment" />
 
     <fragment
         android:id="@+id/action_home"

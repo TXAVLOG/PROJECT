@@ -26,8 +26,6 @@ import com.txapp.musicplayer.util.txa
 
 @Composable
 fun LibraryHubSection(
-    onFolderClick: () -> Unit,
-    onGenreClick: () -> Unit,
     onAlbumClick: () -> Unit,
     onArtistClick: () -> Unit,
     onPlaylistClick: () -> Unit
@@ -35,8 +33,6 @@ fun LibraryHubSection(
     val accentColor = Color(android.graphics.Color.parseColor(TXAPreferences.currentAccent))
     
     val hubItems = listOf(
-        HubItemData("txamusic_folders".txa(), Icons.Default.Folder, onFolderClick),
-        HubItemData("txamusic_genres".txa(), Icons.Default.Category, onGenreClick),
         HubItemData("txamusic_albums".txa(), Icons.Default.Album, onAlbumClick),
         HubItemData("txamusic_artists".txa(), Icons.Default.Person, onArtistClick),
         HubItemData("txamusic_playlists".txa(), Icons.AutoMirrored.Filled.PlaylistPlay, onPlaylistClick)

@@ -187,8 +187,6 @@ class HomeFragment : Fragment() {
                     androidx.compose.material3.lightColorScheme()
             ) {
                 com.txapp.musicplayer.ui.component.LibraryHubSection(
-                    onFolderClick = { findNavController().navigate(R.id.action_folder) },
-                    onGenreClick = { findNavController().navigate(R.id.action_genre) },
                     onAlbumClick = { findNavController().navigate(R.id.action_album) },
                     onArtistClick = { findNavController().navigate(R.id.action_artist) },
                     onPlaylistClick = { findNavController().navigate(R.id.action_playlist) }
