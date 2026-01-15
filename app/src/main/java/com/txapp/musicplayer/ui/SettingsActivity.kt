@@ -1565,6 +1565,7 @@ fun getVisualizerStyleName(key: String): String {
         "circle" -> "txamusic_visualizer_circle".txa()
         "spectrum" -> "txamusic_visualizer_spectrum".txa()
         "glow" -> "txamusic_visualizer_glow".txa()
+        "fluid" -> "txamusic_visualizer_fluid".txa()
         else -> "txamusic_visualizer_bars".txa()
     }
 }
@@ -1583,7 +1584,8 @@ fun VisualizerStyleDialog(
         "wave" to "🌊 " + "txamusic_visualizer_wave".txa(),
         "circle" to "🔘 " + "txamusic_visualizer_circle".txa(),
         "spectrum" to "📈 " + "txamusic_visualizer_spectrum".txa(),
-        "glow" to "✨ " + "txamusic_visualizer_glow".txa()
+        "glow" to "✨ " + "txamusic_visualizer_glow".txa(),
+        "fluid" to "💦 " + "txamusic_visualizer_fluid".txa()
     )
     
     AlertDialog(

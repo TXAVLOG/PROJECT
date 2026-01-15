@@ -424,6 +424,7 @@ fun NowPlayingFullStyle(
                         "circle" -> VisualizerStyle.CIRCLE
                         "spectrum" -> VisualizerStyle.SPECTRUM
                         "glow" -> VisualizerStyle.GLOW_BARS
+                        "fluid" -> VisualizerStyle.FLUID
                         else -> VisualizerStyle.BARS
                     }
                 }

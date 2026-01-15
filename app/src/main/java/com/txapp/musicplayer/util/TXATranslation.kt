@@ -656,6 +656,7 @@ object TXATranslation {
         "txamusic_visualizer_circle" to "Circle",
         "txamusic_visualizer_spectrum" to "Spectrum",
         "txamusic_visualizer_glow" to "Glow Bars",
+        "txamusic_visualizer_fluid" to "Fluid (Namida)",
         "txamusic_permission_audio_denied" to "Audio recording permission is required to show the visualizer."
     )
 
@@ -1295,6 +1296,7 @@ object TXATranslation {
         "txamusic_visualizer_circle" to "Vòng tròn",
         "txamusic_visualizer_spectrum" to "Phổ tần",
         "txamusic_visualizer_glow" to "Thanh phát sáng",
+        "txamusic_visualizer_fluid" to "Chuyển động (Namida)",
         "txamusic_permission_audio_denied" to "Cần quyền ghi âm để hiển thị sóng nhạc."
     )
 

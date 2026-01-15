@@ -41,7 +41,8 @@ enum class VisualizerStyle {
     WAVE,           // Smooth waveform
     CIRCLE,         // Circular spectrum
     SPECTRUM,       // Mirrored spectrum bars
-    GLOW_BARS       // Bars with glow effect
+    GLOW_BARS,      // Bars with glow effect
+    FLUID           // Namida-like fluid symmetrical bars
 }
 
 @Composable
@@ -50,7 +51,7 @@ fun TXAVisualizer(
     style: VisualizerStyle = VisualizerStyle.BARS,
     accentColor: Color = Color(0xFFFF1744),
     isPlaying: Boolean = false,
-    barCount: Int = 32,
+    barCount: Int = 48,
     audioSessionId: Int = MusicService.audioSessionId
 ) {
     var fftData by remember { mutableStateOf(ByteArray(0)) }
@@ -160,6 +161,7 @@ fun TXAVisualizer(
                 VisualizerStyle.CIRCLE -> drawCircle(animatedBars, accentColor, isPlaying, idlePhase)
                 VisualizerStyle.SPECTRUM -> drawSpectrum(animatedBars, accentColor, isPlaying, idlePhase)
                 VisualizerStyle.GLOW_BARS -> drawGlowBars(animatedBars, accentColor, isPlaying, idlePhase)
+                VisualizerStyle.FLUID -> drawFluidBars(animatedBars, accentColor, isPlaying, idlePhase)
             }
         }
     }
@@ -395,6 +397,83 @@ private fun DrawScope.drawGlowBars(
             size = Size(barWidth, height),
             cornerRadius = CornerRadius(barWidth / 2, barWidth / 2)
         )
+    }
+}
+
+private fun DrawScope.drawFluidBars(
+    bars: List<Float>,
+    accentColor: Color,
+    isPlaying: Boolean,
+    idlePhase: Float
+) {
+    val barCount = bars.size
+    val barWidth = size.width / (barCount * 1.3f)
+    val spacing = barWidth * 0.3f
+    val maxHeight = size.height * 0.45f
+    val centerY = size.height / 2
+    
+    val totalWidth = barCount * (barWidth + spacing) - spacing
+    val startX = (size.width - totalWidth) / 2
+
+    bars.forEachIndexed { index, value ->
+        val height = if (isPlaying && value > 0.01f) {
+            value * maxHeight
+        } else {
+            val phase = (idlePhase + index * 10) % 360
+            (0.1f + 0.05f * sin(Math.toRadians(phase.toDouble())).toFloat()) * maxHeight
+        }
+
+        val x = startX + index * (barWidth + spacing)
+        
+        // Gradient for a fluid, premium look
+        val topBrush = Brush.verticalGradient(
+            colors = listOf(
+                accentColor.copy(alpha = 0f),
+                accentColor.copy(alpha = 0.7f),
+                accentColor
+            ),
+            startY = centerY - height,
+            endY = centerY
+        )
+        
+        val bottomBrush = Brush.verticalGradient(
+            colors = listOf(
+                accentColor,
+                accentColor.copy(alpha = 0.7f),
+                accentColor.copy(alpha = 0f)
+            ),
+            startY = centerY,
+            endY = centerY + height
+        )
+
+        // Symmetry is key for Namida aesthetic
+        drawRoundRect(
+            brush = topBrush,
+            topLeft = Offset(x, centerY - height),
+            size = Size(barWidth, height),
+            cornerRadius = CornerRadius(barWidth / 2, barWidth / 2)
+        )
+
+        drawRoundRect(
+            brush = bottomBrush,
+            topLeft = Offset(x, centerY),
+            size = Size(barWidth, height),
+            cornerRadius = CornerRadius(barWidth / 2, barWidth / 2)
+        )
+        
+        // Subtle glow at the peaks
+        if (isPlaying && value > 0.1f) {
+            drawCircle(
+                color = accentColor.copy(alpha = value * 0.5f),
+                radius = barWidth * 1.2f,
+                center = Offset(x + barWidth / 2, centerY - height)
+            )
+            drawCircle(
+                color = accentColor.copy(alpha = value * 0.5f),
+                radius = barWidth * 1.2f,
+                center = Offset(x + barWidth / 2, centerY + height)
+            )
+        }
     }
 }
 
