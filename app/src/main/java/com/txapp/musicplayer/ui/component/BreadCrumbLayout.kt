@@ -3,6 +3,7 @@ package com.txapp.musicplayer.ui.component
 import android.content.Context
 import android.graphics.Color
 import android.graphics.PorterDuff
+import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
 import android.util.AttributeSet
@@ -208,7 +209,12 @@ class BreadCrumbLayout @JvmOverloads constructor(
         }
 
         constructor(parcel: Parcel) {
-            file = parcel.readSerializable() as File
+            file = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                parcel.readSerializable(File::class.java.classLoader, File::class.java)!!
+            } else {
+                @Suppress("DEPRECATION")
+                parcel.readSerializable() as File
+            }
             scrollPos = parcel.readInt()
         }
 

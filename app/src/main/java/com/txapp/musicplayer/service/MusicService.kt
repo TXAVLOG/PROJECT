@@ -177,7 +177,17 @@ class MusicService : MediaLibraryService() {
     
     private fun isHeadsetConnected(context: Context): Boolean {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
-        return audioManager.isWiredHeadsetOn
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val devices = audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS)
+            devices.any {
+                it.type == android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET ||
+                        it.type == android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
+                        it.type == android.media.AudioDeviceInfo.TYPE_USB_HEADSET
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.isWiredHeadsetOn
+        }
     }
     
     @Suppress("DEPRECATION")
