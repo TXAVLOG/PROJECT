@@ -59,6 +59,7 @@ object TXABackupHelper {
     private const val SETTINGS_FILE = "settings.json"
     private const val PLAYLISTS_FILE = "playlists.json"
     private const val METADATA_FILE = "metadata.json"
+    private const val BLACKLIST_FILE = "blacklist.json"
     
     // State flows
     private val _isBackingUp = MutableStateFlow(false)
@@ -135,6 +136,7 @@ object TXABackupHelper {
             val app = context.applicationContext as MusicApplication
             val songDao = app.database.songDao()
             val playlistDao = app.database.playlistDao()
+            val blackListDao = app.database.blackListDao()
             
             // Read favorites from database
             _progress.value = 10
@@ -149,6 +151,13 @@ object TXABackupHelper {
                  playlistDao.getPlaylistsWithSongCountOnce()
             } else {
                  emptyList()
+            }
+            
+            // Read Blacklist (part of Settings)
+            val blacklist = if (contents.contains(BackupContent.SETTINGS)) {
+                blackListDao.getBlacklistPathStrings()
+            } else {
+                emptyList()
             }
             
             TXALogger.appI(TAG, "Found ${favorites.size} favorites, ${songsWithHistory.size} history items, and ${playlists.size} playlists")
@@ -179,10 +188,11 @@ object TXABackupHelper {
                     _progress.value = 70
                 }
                 
-                // Add settings
+                // Add settings (including blacklist)
                 if (contents.contains(BackupContent.SETTINGS)) {
                     _statusMessage.value = "txamusic_backup_settings".txa()
-                    addSettingsToZip(zipOut)
+                    val blacklistPaths = blackListDao.getBlacklistPathStrings()
+                    addSettingsToZip(zipOut, blacklistPaths)
                     _progress.value = 85
                 }
                 
@@ -373,7 +383,7 @@ object TXABackupHelper {
                     }
                     entry.name == SETTINGS_FILE && contents.contains(BackupContent.SETTINGS) -> {
                         _statusMessage.value = "txamusic_restore_settings".txa()
-                        settingsRestored = restoreSettings(zipIn)
+                        settingsRestored = restoreSettings(zipIn, blackListDao)
                         _progress.value = 90
                     }
                     entry.name == PLAYLISTS_FILE && contents.contains(BackupContent.PLAYLISTS) -> {
@@ -652,9 +662,10 @@ object TXABackupHelper {
         TXALogger.appI(TAG, "Added ${history.size} history items to backup")
     }
 
-    private fun addSettingsToZip(zipOut: ZipOutputStream) {
+    private fun addSettingsToZip(zipOut: ZipOutputStream, blacklistPaths: List<String>) {
         val settings = JSONObject().apply {
             put("theme", TXAPreferences.currentTheme)
+            put("blacklist", JSONArray(blacklistPaths))
             put("accent", TXAPreferences.currentAccent)
             put("gridSize", TXAPreferences.currentGridSize)
             put("crossfade", TXAPreferences.currentCrossfadeDuration)
@@ -836,7 +847,7 @@ object TXABackupHelper {
         }
     }
 
-    private fun restoreSettings(zipIn: ZipInputStream): Boolean {
+    private suspend fun restoreSettings(zipIn: ZipInputStream, blackListDao: com.txapp.musicplayer.data.BlackListDao): Boolean {
         return try {
             val content = zipIn.bufferedReader().readText()
             val json = JSONObject(content)
@@ -874,6 +885,17 @@ object TXABackupHelper {
             // Restore Music Visualizer settings
             TXAPreferences.isVisualizerEnabled = json.optBoolean("musicVisualizerEnabled", true)
             TXAPreferences.currentVisualizerStyle = json.optString("musicVisualizerStyle", "bars")
+            
+            // Restore blacklist
+            val blacklistArray = json.optJSONArray("blacklist")
+            if (blacklistArray != null) {
+                for (i in 0 until blacklistArray.length()) {
+                    val path = blacklistArray.getString(i)
+                    if (path.isNotEmpty() && !blackListDao.isPathBlacklisted(path)) {
+                        blackListDao.addBlacklistPath(com.txapp.musicplayer.data.BlackListEntity(path = path))
+                    }
+                }
+            }
             
             // Restore widget settings
             val widgetJson = json.optString("widgetSettings", "")

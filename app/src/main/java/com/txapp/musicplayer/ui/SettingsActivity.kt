@@ -155,16 +155,10 @@ fun SettingsScreenContent(
     var showBlacklistDialog by remember { mutableStateOf(false) }
     
     val app = context.applicationContext as MusicApplication
-    val repository = remember { MusicRepository(app.database, context.contentResolver) }
-    var blacklist by remember { mutableStateOf<List<BlackListEntity>>(emptyList()) }
+    val repository = MusicApplication.instance.repository
+    val blacklist by repository.getBlacklistedFolders().collectAsState(initial = emptyList())
     
-    LaunchedEffect(showBlacklistDialog) {
-        if(showBlacklistDialog) {
-             repository.getBlacklistedFolders().collect {
-                 blacklist = it
-             }
-        }
-    }
+
 
     LaunchedEffect(Unit, languageVersion) {
         scope.launch {
@@ -227,7 +221,8 @@ fun SettingsScreenContent(
                     onAlbumGridClick = { showAlbumGridDialog = true },
                     onArtistGridClick = { showArtistGridDialog = true },
                     onClearHistoryClick = { showClearHistoryDialog = true },
-                    onBlacklistClick = { showBlacklistDialog = true }
+                    onBlacklistClick = { showBlacklistDialog = true },
+                    blacklistedFolders = blacklist
                 )
                 is SettingsRoute.Images -> ImageSettings()
                 is SettingsRoute.Other -> OtherSettings()
@@ -1830,7 +1825,8 @@ fun PersonalizeSettings(
     onAlbumGridClick: () -> Unit,
     onArtistGridClick: () -> Unit,
     onClearHistoryClick: () -> Unit, // Callback to open dialog
-    onBlacklistClick: () -> Unit
+    onBlacklistClick: () -> Unit,
+    blacklistedFolders: List<com.txapp.musicplayer.data.BlackListEntity> = emptyList()
 ) {
 
     val gridSize by TXAPreferences.gridSize.collectAsState()
@@ -1906,10 +1902,50 @@ fun PersonalizeSettings(
         item {
             SettingsToggleCard(
                 icon = Icons.Outlined.FolderOff,
-                title = "Blacklist Folders",
-                subtitle = "Manage excluded folders",
+                title = "txamusic_blacklist_folders".txa(),
+                subtitle = "txamusic_blacklist_folder_desc".txa(),
                 onClick = onBlacklistClick
             )
+            
+            if (blacklistedFolders.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 56.dp, end = 16.dp, bottom = 12.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                        .padding(12.dp)
+                ) {
+                    Text(
+                        text = "txamusic_folder_blacklisted".txa().uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    blacklistedFolders.forEach { folder ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Folder,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = folder.path,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
         }
         
         // Remember Playback Position UI

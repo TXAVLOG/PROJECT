@@ -16,6 +16,10 @@ class MusicApplication : Application() {
     }
 
     lateinit var database: MusicDatabase
+    
+    val repository by lazy {
+        com.txapp.musicplayer.data.MusicRepository(database, contentResolver)
+    }
 
     override fun onCreate() {
         super.onCreate()

@@ -39,62 +39,86 @@ fun ImportPlaylistDialog(
         }
     }
     
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(),
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 8.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+    var showCustomPicker by remember { mutableStateOf(false) }
+    
+    if (showCustomPicker) {
+        TXACustomFilePickerDialog(
+            title = "txamusic_select_file".txa(),
+            onDismiss = { showCustomPicker = false },
+            onFileSelected = { path ->
+                onImport(path)
+                showCustomPicker = false
+                onDismiss()
+            },
+            allowedExtensions = setOf("m3u", "m3u8")
+        )
+    } else {
+        Dialog(onDismissRequest = onDismiss) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp
             ) {
-                // Icon
-                Icon(
-                    imageVector = Icons.Default.PlaylistAdd,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(48.dp)
-                )
-                
-                Spacer(Modifier.height(16.dp))
-                
-                // Title
-                Text(
-                    text = "txamusic_import_playlist".txa(),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Spacer(Modifier.height(8.dp))
-                
-                // Description
-                Text(
-                    text = "txamusic_import_playlist_desc".txa(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                Spacer(Modifier.height(24.dp))
-                
-                // Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
+                    // Icon
+                    Icon(
+                        imageVector = Icons.Default.PlaylistAdd,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    
+                    Spacer(Modifier.height(16.dp))
+                    
+                    // Title
+                    Text(
+                        text = "txamusic_import_playlist".txa(),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    
+                    Spacer(Modifier.height(8.dp))
+                    
+                    // Description
+                    Text(
+                        text = "txamusic_import_playlist_desc".txa(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Spacer(Modifier.height(24.dp))
+                    
+                    // Buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("txamusic_btn_cancel".txa())
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("txamusic_btn_cancel".txa())
+                        }
+                        
+                        Button(
+                            onClick = { filePicker.launch(arrayOf("audio/x-mpegurl", "application/vnd.apple.mpegurl", "*/*")) },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("System Picker")
+                        }
                     }
                     
-                    Button(
-                        onClick = { filePicker.launch(arrayOf("audio/x-mpegurl", "application/vnd.apple.mpegurl", "*/*")) },
-                        modifier = Modifier.weight(1f)
+                    Spacer(Modifier.height(12.dp))
+                    
+                    TextButton(
+                        onClick = { showCustomPicker = true },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(
                             imageVector = Icons.Default.FolderOpen,
@@ -102,7 +126,7 @@ fun ImportPlaylistDialog(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text("txamusic_select_file".txa())
+                        Text("Verify Storage")
                     }
                 }
             }

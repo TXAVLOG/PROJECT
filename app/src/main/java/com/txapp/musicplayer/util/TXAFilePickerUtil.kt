@@ -24,7 +24,7 @@ object TXAFilePickerUtil {
         val isAudio: Boolean = false
     )
 
-    suspend fun getFiles(path: String): List<FileInfo> = withContext(Dispatchers.IO) {
+    suspend fun getFiles(path: String, allowedExtensions: Set<String>? = null): List<FileInfo> = withContext(Dispatchers.IO) {
         val directory = File(path)
         val allFiles = directory.listFiles() ?: return@withContext emptyList()
 
@@ -33,12 +33,16 @@ object TXAFilePickerUtil {
                 // Keep only non-excluded directories
                 !TXAFileFilter.shouldExcludeDirectory(file.absolutePath) && !file.name.startsWith(".")
             } else {
-                // Keep only valid audio files
-                TXAFileFilter.isValidAudioFile(file)
+                if (allowedExtensions != null) {
+                    file.extension.lowercase(Locale.ROOT) in allowedExtensions
+                } else {
+                    // Keep only valid audio files
+                    TXAFileFilter.isValidAudioFile(file)
+                }
             }
         }.map { file ->
             val isDir = file.isDirectory
-            val isAudio = !isDir // Already filtered to be audio if not directory
+            val isAudio = !isDir && (allowedExtensions == null || TXAFileFilter.isValidAudioFile(file))
             
             val sizeStr = if (isDir) {
                 try {

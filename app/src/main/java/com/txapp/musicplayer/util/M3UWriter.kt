@@ -1,12 +1,17 @@
 package com.txapp.musicplayer.util
 
+import android.content.ContentValues
 import android.content.Context
+import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import com.txapp.musicplayer.model.Song
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
+import java.io.OutputStreamWriter
 
 /**
  * Utility for writing M3U playlist files
@@ -31,6 +36,61 @@ object M3UWriter {
             return null
         }
         
+        val fileName = sanitizeFileName(playlistName) + M3UConstants.EXTENSION
+
+        // Android 10+ (Q) uses MediaStore
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            return writeMediaStore(context, songs, fileName)
+        }
+        
+        // Legacy Storage
+        return writeLegacy(songs, fileName)
+    }
+
+    private fun writeMediaStore(context: Context, songs: List<Song>, fileName: String): File? {
+        val resolver = context.contentResolver
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, "audio/x-mpegurl") // or audio/mpegurl
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_MUSIC + "/Playlists")
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+
+        val collection = MediaStore.Files.getContentUri("external")
+        var uri: Uri? = null
+        
+        try {
+            uri = resolver.insert(collection, contentValues)
+            if (uri == null) {
+                TXALogger.e(TAG, "Failed to create MediaStore entry")
+                return null
+            }
+
+            resolver.openOutputStream(uri)?.use { outputStream ->
+                BufferedWriter(OutputStreamWriter(outputStream)).use { writer ->
+                    writePlaylistContent(writer, songs)
+                }
+            }
+
+            contentValues.clear()
+            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+            resolver.update(uri, contentValues, null, null)
+
+            TXALogger.i(TAG, "Playlist written to MediaStore: $uri")
+            
+            // Return best-effort File object
+            val path = TXAFilePickerUtil.getPath(context, uri)
+            return if (path != null) File(path) else File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "Playlists/$fileName")
+
+        } catch (e: Exception) {
+            TXALogger.e(TAG, "Error writing playlist to MediaStore", e)
+             // Try to cleanup
+            uri?.let { try { resolver.delete(it, null, null) } catch (ignored: Exception) {} }
+            return null
+        }
+    }
+
+    private fun writeLegacy(songs: List<Song>, fileName: String): File? {
         // Create playlists directory
         val playlistsDir = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
@@ -42,33 +102,31 @@ object M3UWriter {
             return null
         }
         
-        // Create M3U file
-        val fileName = sanitizeFileName(playlistName) + M3UConstants.EXTENSION
         val playlistFile = File(playlistsDir, fileName)
         
         return try {
-            writePlaylistFile(playlistFile, songs)
+            BufferedWriter(FileWriter(playlistFile)).use { writer ->
+                writePlaylistContent(writer, songs)
+            }
             TXALogger.i(TAG, "Playlist written to: ${playlistFile.absolutePath}")
             playlistFile
         } catch (e: IOException) {
-            TXALogger.e(TAG, "Error writing playlist", e)
+            TXALogger.e(TAG, "Error writing playlist (Legacy)", e)
             null
         }
     }
     
     /**
-     * Write songs to M3U file
+     * Write playlist content using a writer
      */
-    private fun writePlaylistFile(file: File, songs: List<Song>) {
-        BufferedWriter(FileWriter(file)).use { writer ->
-            // Write M3U header
-            writer.write(M3UConstants.HEADER)
-            writer.newLine()
-            
-            // Write each song entry
-            songs.forEach { song ->
-                writeEntry(writer, song)
-            }
+    private fun writePlaylistContent(writer: BufferedWriter, songs: List<Song>) {
+        // Write M3U header
+        writer.write(M3UConstants.HEADER)
+        writer.newLine()
+        
+        // Write each song entry
+        songs.forEach { song ->
+            writeEntry(writer, song)
         }
     }
     
@@ -80,7 +138,8 @@ object M3UWriter {
     private fun writeEntry(writer: BufferedWriter, song: Song) {
         // Write info line
         val durationSeconds = (song.duration / 1000).toInt()
-        writer.write("${M3UConstants.ENTRY}$durationSeconds,${song.artist} - ${song.title}")
+        val artist = if (song.artist.isBlank() || song.artist == "<unknown>") "Unknown Artist" else song.artist
+        writer.write("${M3UConstants.ENTRY}$durationSeconds,$artist - ${song.title}")
         writer.newLine()
         
         // Write file path
@@ -123,11 +182,9 @@ object M3UWriter {
                     }
                     .forEach { path ->
                         // Check if file exists
-                        if (File(path).exists()) {
-                            paths.add(path)
-                        } else {
-                            TXALogger.d(TAG, "File not found: $path")
-                        }
+                        // Note: On Android 11+, this check might fail even if file exists due to visibility
+                        // We add it anyway, and Repo will filter non-existing later
+                         paths.add(path)
                     }
             }
         } catch (e: IOException) {
