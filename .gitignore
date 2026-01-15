@@ -38,6 +38,8 @@ TXABUILD/
 *.txt
 *.png
 *.jpg
+*.py
+*.pyw
 
 # JSON files (translation exports)
 *.json
@@ -48,6 +50,9 @@ translation_keys_en.json
 
 # Android Studio captures folder
 captures/
+
+# FOLDER TEMP
+temp_transcription_chunks
 
 # IntelliJ
 *.iml
