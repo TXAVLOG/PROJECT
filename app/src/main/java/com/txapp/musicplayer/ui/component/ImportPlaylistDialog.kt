@@ -68,7 +68,7 @@ fun ImportPlaylistDialog(
                 ) {
                     // Icon
                     Icon(
-                        imageVector = Icons.Default.PlaylistAdd,
+                        imageVector = Icons.Filled.PlaylistAdd,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(48.dp)
