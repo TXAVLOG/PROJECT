@@ -646,13 +646,16 @@ object TXATranslation {
         "txamusic_widget_show_repeat" to "Show Repeat Button",
         "txamusic_widget_info" to "Changes will be applied immediately to all widget instances on your home screen.",
         "txamusic_audio_route_speaker" to "Audio switched to speaker",
-        "txamusic_no_lyrics" to "No lyrics found",
-        "txamusic_no_lyrics_hint" to "Add a .lrc file next to the audio file or search online",
-        "txamusic_up_next" to "Up Next",
-        "txamusic_queue_empty" to "Queue is empty",
-        "txamusic_clear_queue" to "Clear Queue",
-        "txamusic_clear_queue_confirm" to "Are you sure you want to clear the current queue?",
-        "txamusic_btn_clear" to "Clear"
+        
+        // Visualizer
+        "txamusic_settings_visualizer_title" to "Music Visualizer",
+        "txamusic_settings_visualizer_desc" to "Show animated audio visualization in Now Playing",
+        "txamusic_settings_visualizer_style" to "Visualizer Style",
+        "txamusic_visualizer_bars" to "Bars",
+        "txamusic_visualizer_wave" to "Wave",
+        "txamusic_visualizer_circle" to "Circle",
+        "txamusic_visualizer_spectrum" to "Spectrum",
+        "txamusic_visualizer_glow" to "Glow Bars"
     )
 
     // Fallback dictionary (embedded) - Vietnamese
@@ -1281,13 +1284,16 @@ object TXATranslation {
         "txamusic_artists" to "Nghệ sĩ",
         "txamusic_playlists" to "Danh sách phát",
         "txamusic_audio_route_speaker" to "Âm thanh đã chuyển sang loa ngoài",
-        "txamusic_no_lyrics" to "Không tìm thấy lời bài hát",
-        "txamusic_no_lyrics_hint" to "Thêm file .lrc cạnh file nhạc hoặc tìm kiếm trực tuyến",
-        "txamusic_up_next" to "Tiếp theo",
-        "txamusic_queue_empty" to "Danh sách chờ trống",
-        "txamusic_clear_queue" to "Xóa danh sách chờ",
-        "txamusic_clear_queue_confirm" to "Bạn có chắc muốn xóa toàn bộ danh sách chờ?",
-        "txamusic_btn_clear" to "Xóa"
+        
+        // Visualizer
+        "txamusic_settings_visualizer_title" to "Hiệu ứng sóng nhạc",
+        "txamusic_settings_visualizer_desc" to "Hiển thị sóng nhạc động trong màn hình đang phát",
+        "txamusic_settings_visualizer_style" to "Kiểu hiệu ứng",
+        "txamusic_visualizer_bars" to "Thanh",
+        "txamusic_visualizer_wave" to "Sóng",
+        "txamusic_visualizer_circle" to "Vòng tròn",
+        "txamusic_visualizer_spectrum" to "Phổ tần",
+        "txamusic_visualizer_glow" to "Thanh phát sáng"
     )
 
     suspend fun init(context: Context) = withContext(Dispatchers.IO) {

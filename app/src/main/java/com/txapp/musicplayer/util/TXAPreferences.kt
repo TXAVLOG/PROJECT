@@ -44,6 +44,8 @@ object TXAPreferences {
     private const val KEY_SHOW_LYRICS_IN_PLAYER = "setting_show_lyrics_in_player"
     private const val KEY_ALBUM_GRID_SIZE = "setting_album_grid_size"
     private const val KEY_ARTIST_GRID_SIZE = "setting_artist_grid_size"
+    private const val KEY_VISUALIZER_ENABLED = "setting_visualizer_enabled"
+    private const val KEY_VISUALIZER_STYLE = "setting_visualizer_style"
 
 
     // Default values
@@ -73,6 +75,8 @@ object TXAPreferences {
     private const val DEF_LYRICS_SCREEN_ON = false
     private const val DEF_SHOW_LYRICS_IN_PLAYER = false
     private const val DEF_ARTIST_GRID_SIZE = 3
+    private const val DEF_VISUALIZER_ENABLED = true
+    private const val DEF_VISUALIZER_STYLE = "bars"
 
 
     private lateinit var prefs: SharedPreferences
@@ -159,6 +163,12 @@ object TXAPreferences {
     private val _showLyricsInPlayer = MutableStateFlow(DEF_SHOW_LYRICS_IN_PLAYER)
     val showLyricsInPlayer: StateFlow<Boolean> = _showLyricsInPlayer.asStateFlow()
 
+    private val _visualizerEnabled = MutableStateFlow(DEF_VISUALIZER_ENABLED)
+    val visualizerEnabled: StateFlow<Boolean> = _visualizerEnabled.asStateFlow()
+
+    private val _visualizerStyle = MutableStateFlow(DEF_VISUALIZER_STYLE)
+    val visualizerStyle: StateFlow<String> = _visualizerStyle.asStateFlow()
+
 
 
     // Network Restricted Mode (Memory only, resets on app launch)
@@ -198,6 +208,8 @@ object TXAPreferences {
         _lyricsScreenOn.value = prefs.getBoolean(KEY_LYRICS_SCREEN_ON, DEF_LYRICS_SCREEN_ON)
         _showLyricsInPlayer.value = prefs.getBoolean(KEY_SHOW_LYRICS_IN_PLAYER, DEF_SHOW_LYRICS_IN_PLAYER)
         _rememberPlaybackPosition.value = prefs.getBoolean(KEY_REMEMBER_PLAYBACK_POSITION, DEF_REMEMBER_PLAYBACK_POSITION)
+        _visualizerEnabled.value = prefs.getBoolean(KEY_VISUALIZER_ENABLED, DEF_VISUALIZER_ENABLED)
+        _visualizerStyle.value = prefs.getString(KEY_VISUALIZER_STYLE, DEF_VISUALIZER_STYLE) ?: DEF_VISUALIZER_STYLE
 
     }
 
@@ -401,6 +413,19 @@ object TXAPreferences {
         prefs.edit().putBoolean(KEY_SHOW_LYRICS_IN_PLAYER, enabled).apply()
     }
 
+    var isVisualizerEnabled: Boolean
+        get() = _visualizerEnabled.value
+        set(value) {
+            _visualizerEnabled.value = value
+            prefs.edit().putBoolean(KEY_VISUALIZER_ENABLED, value).apply()
+        }
+
+    var currentVisualizerStyle: String
+        get() = _visualizerStyle.value
+        set(value) {
+            _visualizerStyle.value = value
+            prefs.edit().putString(KEY_VISUALIZER_STYLE, value).apply()
+        }
     
     /**
      * Check if allowed to download metadata/images based on network policy

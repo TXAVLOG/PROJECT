@@ -411,6 +411,35 @@ fun NowPlayingFullStyle(
                 }
             }
 
+            // ═══════════════════════════════════════════════════════════════
+            // MUSIC VISUALIZER
+            // ═══════════════════════════════════════════════════════════════
+            val visualizerEnabled by TXAPreferences.visualizerEnabled.collectAsState()
+            val visualizerStylePref by TXAPreferences.visualizerStyle.collectAsState()
+            
+            if (visualizerEnabled) {
+                val vizStyle = remember(visualizerStylePref) {
+                    when (visualizerStylePref) {
+                        "wave" -> VisualizerStyle.WAVE
+                        "circle" -> VisualizerStyle.CIRCLE
+                        "spectrum" -> VisualizerStyle.SPECTRUM
+                        "glow" -> VisualizerStyle.GLOW_BARS
+                        else -> VisualizerStyle.BARS
+                    }
+                }
+                
+                TXAVisualizer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .padding(horizontal = 16.dp),
+                    style = vizStyle,
+                    accentColor = accentColor,
+                    isPlaying = state.isPlaying,
+                    barCount = 32
+                )
+            }
+
             Spacer(modifier = Modifier.weight(0.06f))
 
             // ═══════════════════════════════════════════════════════════════

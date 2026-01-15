@@ -1513,6 +1513,102 @@ fun PlayerEffectTypeDialog(
     )
 }
 
+/**
+ * Get localized name for visualizer style
+ */
+@Composable
+fun getVisualizerStyleName(key: String): String {
+    return when (key) {
+        "bars" -> "txamusic_visualizer_bars".txa()
+        "wave" -> "txamusic_visualizer_wave".txa()
+        "circle" -> "txamusic_visualizer_circle".txa()
+        "spectrum" -> "txamusic_visualizer_spectrum".txa()
+        "glow" -> "txamusic_visualizer_glow".txa()
+        else -> "txamusic_visualizer_bars".txa()
+    }
+}
+
+/**
+ * Visualizer Style Selection Dialog
+ */
+@Composable
+fun VisualizerStyleDialog(
+    currentStyle: String,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val styles = listOf(
+        "bars" to "📊 " + "txamusic_visualizer_bars".txa(),
+        "wave" to "🌊 " + "txamusic_visualizer_wave".txa(),
+        "circle" to "🔘 " + "txamusic_visualizer_circle".txa(),
+        "spectrum" to "📈 " + "txamusic_visualizer_spectrum".txa(),
+        "glow" to "✨ " + "txamusic_visualizer_glow".txa()
+    )
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { 
+            Text(
+                "txamusic_settings_visualizer_style".txa(),
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(styles.size) { index ->
+                    val (key, label) = styles[index]
+                    val isSelected = key == currentStyle
+                    
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onSelect(key) },
+                        color = if (isSelected) 
+                            MaterialTheme.colorScheme.primaryContainer 
+                        else 
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = label,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                fontSize = 16.sp,
+                                color = if (isSelected)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            if (isSelected) {
+                                Icon(
+                                    Icons.Outlined.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("txamusic_btn_cancel".txa())
+            }
+        }
+    )
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SettingsSwitchItem(
@@ -2093,6 +2189,47 @@ fun BackupRestoreSettings() {
                 isLoading = isRestoring,
                 onClick = { showRestoreDialog = true }
             )
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // VISUALIZER SETTINGS
+        // ═══════════════════════════════════════════════════════════════
+        item {
+            val visualizerEnabled by TXAPreferences.visualizerEnabled.collectAsState()
+            SettingsSwitchItem(
+                icon = Icons.Outlined.Equalizer,
+                title = "txamusic_settings_visualizer_title".txa(),
+                checked = visualizerEnabled,
+                longPressDesc = "txamusic_settings_visualizer_desc".txa(),
+                onCheckedChange = { TXAPreferences.isVisualizerEnabled = it }
+            )
+        }
+        
+        // Visualizer Style Selector (only show if enabled)
+        item {
+            val visualizerEnabled by TXAPreferences.visualizerEnabled.collectAsState()
+            val visualizerStyle by TXAPreferences.visualizerStyle.collectAsState()
+            var showVisualizerStyleDialog by remember { mutableStateOf(false) }
+            
+            if (visualizerEnabled) {
+                SettingsToggleCard(
+                    icon = Icons.Outlined.Waves,
+                    title = "txamusic_settings_visualizer_style".txa(),
+                    subtitle = getVisualizerStyleName(visualizerStyle),
+                    onClick = { showVisualizerStyleDialog = true }
+                )
+                
+                if (showVisualizerStyleDialog) {
+                    VisualizerStyleDialog(
+                        currentStyle = visualizerStyle,
+                        onSelect = { style ->
+                            TXAPreferences.currentVisualizerStyle = style
+                            showVisualizerStyleDialog = false
+                        },
+                        onDismiss = { showVisualizerStyleDialog = false }
+                    )
+                }
+            }
         }
         
         // Show existing backups in scrollable container
