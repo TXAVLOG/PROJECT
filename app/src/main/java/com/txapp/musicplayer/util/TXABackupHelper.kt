@@ -686,6 +686,10 @@ object TXABackupHelper {
             put("albumGridSize", TXAPreferences.currentAlbumGridSize)
             put("artistGridSize", TXAPreferences.currentArtistGridSize)
             
+            // Music Visualizer settings
+            put("musicVisualizerEnabled", TXAPreferences.isVisualizerEnabled)
+            put("musicVisualizerStyle", TXAPreferences.currentVisualizerStyle)
+            
             // Widget settings (included in Settings backup)
             put("widgetSettings", com.txapp.musicplayer.appwidget.WidgetSettings.load(MusicApplication.instance).toJson())
         }
@@ -696,7 +700,7 @@ object TXABackupHelper {
         
         TXALogger.appI(TAG, "Added settings to backup")
     }
-    
+
     private fun addPlaylistsToZip(zipOut: ZipOutputStream, playlists: List<PlaylistData>) {
         val jsonArray = JSONArray()
         playlists.forEach { playlist ->
@@ -866,6 +870,10 @@ object TXABackupHelper {
             TXAPreferences.currentLastTab = json.optInt("lastTab", 0)
             TXAPreferences.currentAlbumGridSize = json.optInt("albumGridSize", 2)
             TXAPreferences.currentArtistGridSize = json.optInt("artistGridSize", 3)
+            
+            // Restore Music Visualizer settings
+            TXAPreferences.isVisualizerEnabled = json.optBoolean("musicVisualizerEnabled", true)
+            TXAPreferences.currentVisualizerStyle = json.optString("musicVisualizerStyle", "bars")
             
             // Restore widget settings
             val widgetJson = json.optString("widgetSettings", "")

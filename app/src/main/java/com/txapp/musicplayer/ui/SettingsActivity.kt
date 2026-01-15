@@ -1150,6 +1150,47 @@ fun NowPlayingSettings() {
             )
         }
         
+        // ═══════════════════════════════════════════════════════════════
+        // VISUALIZER SETTINGS
+        // ═══════════════════════════════════════════════════════════════
+        item {
+            val visualizerEnabled by TXAPreferences.visualizerEnabled.collectAsState()
+            SettingsSwitchItem(
+                icon = Icons.Outlined.Equalizer,
+                title = "txamusic_settings_visualizer_title".txa(),
+                checked = visualizerEnabled,
+                longPressDesc = "txamusic_settings_visualizer_desc".txa(),
+                onCheckedChange = { TXAPreferences.isVisualizerEnabled = it }
+            )
+        }
+        
+        // Visualizer Style Selector (only show if enabled)
+        item {
+            val visualizerEnabled by TXAPreferences.visualizerEnabled.collectAsState()
+            val visualizerStyle by TXAPreferences.visualizerStyle.collectAsState()
+            var showVisualizerStyleDialog by remember { mutableStateOf(false) }
+            
+            if (visualizerEnabled) {
+                SettingsToggleCard(
+                    icon = Icons.Outlined.Waves,
+                    title = "txamusic_settings_visualizer_style".txa(),
+                    subtitle = getVisualizerStyleName(visualizerStyle),
+                    onClick = { showVisualizerStyleDialog = true }
+                )
+                
+                if (showVisualizerStyleDialog) {
+                    VisualizerStyleDialog(
+                        currentStyle = visualizerStyle,
+                        onSelect = { style ->
+                            TXAPreferences.currentVisualizerStyle = style
+                            showVisualizerStyleDialog = false
+                        },
+                        onDismiss = { showVisualizerStyleDialog = false }
+                    )
+                }
+            }
+        }
+        
         // Floating Lyrics Overlay Toggle with Permission Check
         // Hide on emulator as overlay doesn't work properly
         if (!TXADeviceInfo.isEmulator()) {
@@ -2189,47 +2230,6 @@ fun BackupRestoreSettings() {
                 isLoading = isRestoring,
                 onClick = { showRestoreDialog = true }
             )
-        }
-        
-        // ═══════════════════════════════════════════════════════════════
-        // VISUALIZER SETTINGS
-        // ═══════════════════════════════════════════════════════════════
-        item {
-            val visualizerEnabled by TXAPreferences.visualizerEnabled.collectAsState()
-            SettingsSwitchItem(
-                icon = Icons.Outlined.Equalizer,
-                title = "txamusic_settings_visualizer_title".txa(),
-                checked = visualizerEnabled,
-                longPressDesc = "txamusic_settings_visualizer_desc".txa(),
-                onCheckedChange = { TXAPreferences.isVisualizerEnabled = it }
-            )
-        }
-        
-        // Visualizer Style Selector (only show if enabled)
-        item {
-            val visualizerEnabled by TXAPreferences.visualizerEnabled.collectAsState()
-            val visualizerStyle by TXAPreferences.visualizerStyle.collectAsState()
-            var showVisualizerStyleDialog by remember { mutableStateOf(false) }
-            
-            if (visualizerEnabled) {
-                SettingsToggleCard(
-                    icon = Icons.Outlined.Waves,
-                    title = "txamusic_settings_visualizer_style".txa(),
-                    subtitle = getVisualizerStyleName(visualizerStyle),
-                    onClick = { showVisualizerStyleDialog = true }
-                )
-                
-                if (showVisualizerStyleDialog) {
-                    VisualizerStyleDialog(
-                        currentStyle = visualizerStyle,
-                        onSelect = { style ->
-                            TXAPreferences.currentVisualizerStyle = style
-                            showVisualizerStyleDialog = false
-                        },
-                        onDismiss = { showVisualizerStyleDialog = false }
-                    )
-                }
-            }
         }
         
         // Show existing backups in scrollable container
