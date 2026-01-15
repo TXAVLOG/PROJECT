@@ -14,6 +14,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.platform.LocalContext
+import com.txapp.musicplayer.ui.MainActivity
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import com.txapp.musicplayer.util.txa
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -54,9 +60,22 @@ fun TXAVisualizer(
     // Animated values for smooth transitions
     val animatedBars = remember { mutableStateListOf<Float>().apply { repeat(barCount) { add(0f) } } }
     
+    val context = LocalContext.current
+    
     // Initialize Visualizer
     DisposableEffect(audioSessionId, isPlaying) {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+
         if (audioSessionId > 0 && isPlaying) {
+            if (!hasPermission) {
+                // Request permission if not granted
+                (context as? MainActivity)?.requestAudioPermissionLauncher?.launch(Manifest.permission.RECORD_AUDIO)
+                return@DisposableEffect onDispose {}
+            }
+
             try {
                 visualizer?.release()
                 visualizer = Visualizer(audioSessionId).apply {

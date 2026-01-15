@@ -234,6 +234,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Audio Permission Launcher for Visualizer
+    val requestAudioPermissionLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            TXALogger.appI("MainActivity", "Audio recording permission granted for Visualizer.")
+            updateNowPlayingState() // Refresh UI
+        } else {
+            TXAToast.warning(this, "txamusic_permission_audio_denied".txa())
+        }
+    }
+
     private var systemNavHeight = 0
 
     private lateinit var binding: SlidingMusicPanelLayoutBinding

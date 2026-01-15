@@ -655,7 +655,8 @@ object TXATranslation {
         "txamusic_visualizer_wave" to "Wave",
         "txamusic_visualizer_circle" to "Circle",
         "txamusic_visualizer_spectrum" to "Spectrum",
-        "txamusic_visualizer_glow" to "Glow Bars"
+        "txamusic_visualizer_glow" to "Glow Bars",
+        "txamusic_permission_audio_denied" to "Audio recording permission is required to show the visualizer."
     )
 
     // Fallback dictionary (embedded) - Vietnamese
@@ -1293,7 +1294,8 @@ object TXATranslation {
         "txamusic_visualizer_wave" to "Sóng",
         "txamusic_visualizer_circle" to "Vòng tròn",
         "txamusic_visualizer_spectrum" to "Phổ tần",
-        "txamusic_visualizer_glow" to "Thanh phát sáng"
+        "txamusic_visualizer_glow" to "Thanh phát sáng",
+        "txamusic_permission_audio_denied" to "Cần quyền ghi âm để hiển thị sóng nhạc."
     )
 
     suspend fun init(context: Context) = withContext(Dispatchers.IO) {
