@@ -674,7 +674,9 @@ object TXATranslation {
         "txamusic_save_location_hint" to "Saved to: Music/Playlists/",
         "txamusic_playlist_saved" to "Playlist saved successfully",
         "txamusic_playlist_save_failed" to "Failed to save playlist",
-        "txamusic_playlist_renamed" to "Playlist renamed"
+        "txamusic_playlist_renamed" to "Playlist renamed",
+        "txamusic_btn_rename_playlist" to "Rename Playlist",
+        "txamusic_export_playlist" to "Export M3U"
     )
 
     // Fallback dictionary (embedded) - Vietnamese
@@ -1331,7 +1333,9 @@ object TXATranslation {
         "txamusic_save_location_hint" to "Đã lưu tại: Music/Playlists/",
         "txamusic_playlist_saved" to "Đã lưu playlist thành công",
         "txamusic_playlist_save_failed" to "Lưu playlist thất bại",
-        "txamusic_playlist_renamed" to "Đã đổi tên playlist"
+        "txamusic_playlist_renamed" to "Đã đổi tên playlist",
+        "txamusic_btn_rename_playlist" to "Đổi tên Playlist",
+        "txamusic_export_playlist" to "Xuất file M3U"
     )
 
     suspend fun init(context: Context) = withContext(Dispatchers.IO) {
