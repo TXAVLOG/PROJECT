@@ -357,10 +357,10 @@ object TXABackupHelper {
         var settingsRestored = false
         
         // Get database
-        // Get database
         val app = context.applicationContext as MusicApplication
         val songDao = app.database.songDao()
         val playlistDao = app.database.playlistDao()
+        val blackListDao = app.database.blackListDao()
         
         // Extract and restore from zip
         ZipInputStream(ByteArrayInputStream(decryptedData)).use { zipIn ->
