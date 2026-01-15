@@ -43,7 +43,7 @@ fun ImportPlaylistDialog(
     
     if (showCustomPicker) {
         TXACustomFilePickerDialog(
-            title = "txamusic_select_file".txa(),
+            title = "txamusic_select_playlist_file".txa(),
             onDismiss = { showCustomPicker = false },
             onFileSelected = { path ->
                 onImport(path)
@@ -94,7 +94,6 @@ fun ImportPlaylistDialog(
                     
                     Spacer(Modifier.height(24.dp))
                     
-                    // Buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -107,26 +106,17 @@ fun ImportPlaylistDialog(
                         }
                         
                         Button(
-                            onClick = { filePicker.launch(arrayOf("audio/x-mpegurl", "application/vnd.apple.mpegurl", "*/*")) },
+                            onClick = { 
+                                try {
+                                    filePicker.launch(arrayOf("audio/x-mpegurl", "application/vnd.apple.mpegurl", "*/*")) 
+                                } catch (e: Exception) {
+                                    showCustomPicker = true
+                                }
+                            },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("System Picker")
+                            Text("txamusic_select_file".txa())
                         }
-                    }
-                    
-                    Spacer(Modifier.height(12.dp))
-                    
-                    TextButton(
-                        onClick = { showCustomPicker = true },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FolderOpen,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text("Verify Storage")
                     }
                 }
             }
