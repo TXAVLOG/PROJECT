@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.txapp.musicplayer.util.TXATranslation.txa
+import com.txapp.musicplayer.util.txa
 
 /**
  * Dialog for importing M3U playlist files
