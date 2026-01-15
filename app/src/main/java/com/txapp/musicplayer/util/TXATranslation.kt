@@ -657,7 +657,24 @@ object TXATranslation {
         "txamusic_visualizer_spectrum" to "Spectrum",
         "txamusic_visualizer_glow" to "Glow Bars",
         "txamusic_visualizer_fluid" to "Fluid (Namida)",
-        "txamusic_permission_audio_denied" to "Audio recording permission is required to show the visualizer."
+        "txamusic_permission_audio_denied" to "Audio recording permission is required to show the visualizer.",
+        "txamusic_blacklist_folders" to "Blacklist Folders",
+        "txamusic_blacklist_folder_desc" to "Hide folders from music library",
+        "txamusic_folder_blacklisted" to "Folder blacklisted",
+        "txamusic_folder_removed_from_blacklist" to "Removed from blacklist",
+        "txamusic_import_playlist" to "Import Playlist",
+        "txamusic_import_playlist_desc" to "Import songs from M3U playlist file",
+        "txamusic_select_file" to "Select File",
+        "txamusic_import_success" to "Imported %d songs from playlist",
+        "txamusic_import_failed" to "Failed to import playlist",
+        "txamusic_rename_playlist" to "Rename Playlist",
+        "txamusic_save_playlist" to "Save Playlist",
+        "txamusic_save_playlist_desc" to "Export %d songs to M3U file",
+        "txamusic_file_name" to "File Name",
+        "txamusic_save_location_hint" to "Saved to: Music/Playlists/",
+        "txamusic_playlist_saved" to "Playlist saved successfully",
+        "txamusic_playlist_save_failed" to "Failed to save playlist",
+        "txamusic_playlist_renamed" to "Playlist renamed"
     )
 
     // Fallback dictionary (embedded) - Vietnamese
@@ -1297,7 +1314,24 @@ object TXATranslation {
         "txamusic_visualizer_spectrum" to "Phổ tần",
         "txamusic_visualizer_glow" to "Thanh phát sáng",
         "txamusic_visualizer_fluid" to "Chuyển động (Namida)",
-        "txamusic_permission_audio_denied" to "Cần quyền ghi âm để hiển thị sóng nhạc."
+        "txamusic_permission_audio_denied" to "Cần quyền ghi âm để hiển thị sóng nhạc.",
+        "txamusic_blacklist_folders" to "Chặn thư mục",
+        "txamusic_blacklist_folder_desc" to "Ẩn các thư mục khỏi thư viện nhạc",
+        "txamusic_folder_blacklisted" to "Đã chặn thư mục",
+        "txamusic_folder_removed_from_blacklist" to "Đã bỏ chặn thư mục",
+        "txamusic_import_playlist" to "Nhập Danh sách phát",
+        "txamusic_import_playlist_desc" to "Nhập bài hát từ file playlist M3U",
+        "txamusic_select_file" to "Chọn File",
+        "txamusic_import_success" to "Đã nhập %d bài hát từ playlist",
+        "txamusic_import_failed" to "Nhập playlist thất bại",
+        "txamusic_rename_playlist" to "Đổi tên Playlist",
+        "txamusic_save_playlist" to "Lưu Playlist",
+        "txamusic_save_playlist_desc" to "Xuất %d bài hát ra file M3U",
+        "txamusic_file_name" to "Tên File",
+        "txamusic_save_location_hint" to "Đã lưu tại: Music/Playlists/",
+        "txamusic_playlist_saved" to "Đã lưu playlist thành công",
+        "txamusic_playlist_save_failed" to "Lưu playlist thất bại",
+        "txamusic_playlist_renamed" to "Đã đổi tên playlist"
     )
 
     suspend fun init(context: Context) = withContext(Dispatchers.IO) {
