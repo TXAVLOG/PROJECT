@@ -50,7 +50,10 @@ import kotlinx.coroutines.launch
 import com.txapp.musicplayer.ui.component.TXATagEditorSheet
 import com.txapp.musicplayer.ui.component.TagEditData
 import com.txapp.musicplayer.util.TXATagWriter
-import com.txapp.musicplayer.util.TXARingtoneManager
+import com.txapp.musicplayer.ui.component.RenamePlaylistDialog
+import com.txapp.musicplayer.ui.component.SavePlaylistDialog
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Save
 
 
 class PlaylistDetailsFragment : Fragment() {
@@ -143,6 +146,27 @@ class PlaylistDetailsFragment : Fragment() {
                                 Toast.makeText(context, "txamusic_ringtone_set_success".txa(), Toast.LENGTH_SHORT)
                                     .show()
                             }
+                        },
+                        onRenamePlaylist = { newName ->
+                            lifecycleScope.launch {
+                                val success = repository.renamePlaylist(playlistId, newName)
+                                if (success) {
+                                    Toast.makeText(context, "Renamed to $newName", Toast.LENGTH_SHORT).show()
+                                    loadPlaylistData() // Refresh
+                                } else {
+                                    Toast.makeText(context, "Failed to rename", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        onSavePlaylist = { fileName ->
+                             lifecycleScope.launch {
+                                 val file = repository.exportPlaylistToM3U(context, playlistId, fileName)
+                                 if (file != null) {
+                                     Toast.makeText(context, "Saved to ${file.name}", Toast.LENGTH_LONG).show()
+                                 } else {
+                                     Toast.makeText(context, "Failed to save playlist", Toast.LENGTH_SHORT).show()
+                                 }
+                             }
                         }
                     )
                 }
@@ -212,11 +236,15 @@ fun PlaylistDetailsScreen(
     onRemoveSong: (Song) -> Unit,
     onDeletePlaylist: () -> Unit,
     onEditSong: (Song) -> Unit = {},
-    onSetRingtone: (Song) -> Unit = {}
+    onSetRingtone: (Song) -> Unit = {},
+    onRenamePlaylist: (String) -> Unit,
+    onSavePlaylist: (String) -> Unit
 ) {
     val accentColor = Color(android.graphics.Color.parseColor(TXAPreferences.currentAccent))
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var showSaveDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -244,6 +272,33 @@ fun PlaylistDetailsScreen(
                                         Icons.Default.Delete,
                                         null,
                                         tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = { Text("txamusic_btn_rename_playlist".txa()) },
+                                onClick = {
+                                    showMenu = false
+                                    showRenameDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Edit,
+                                        null
+                                    )
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("txamusic_export_playlist".txa()) },
+                                onClick = {
+                                    showMenu = false
+                                    showSaveDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Save,
+                                        null
                                     )
                                 }
                             )
@@ -386,6 +441,23 @@ fun PlaylistDetailsScreen(
                     Text("txamusic_btn_cancel".txa())
                 }
             }
+        )
+    }
+
+    if (showRenameDialog) {
+        RenamePlaylistDialog(
+            currentName = playlist?.name ?: "",
+            onDismiss = { showRenameDialog = false },
+            onRename = onRenamePlaylist
+        )
+    }
+
+    if (showSaveDialog) {
+        SavePlaylistDialog(
+            playlistName = playlist?.name ?: "",
+            songCount = songs.size,
+            onDismiss = { showSaveDialog = false },
+            onSave = onSavePlaylist
         )
     }
 }

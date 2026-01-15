@@ -23,14 +23,18 @@ fun ImportPlaylistDialog(
     onDismiss: () -> Unit,
     onImport: (filePath: String) -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val filePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
-        uri?.path?.let { path ->
-            if (path.endsWith(".m3u", ignoreCase = true) || 
-                path.endsWith(".m3u8", ignoreCase = true)) {
+        uri?.let {
+            val path = com.txapp.musicplayer.util.TXAFilePickerUtil.getPath(context, it)
+            if (path != null && (path.endsWith(".m3u", ignoreCase = true) || 
+                path.endsWith(".m3u8", ignoreCase = true))) {
                 onImport(path)
                 onDismiss()
+            } else {
+                 com.txapp.musicplayer.util.TXAToast.error(context, "Invalid playlist file")
             }
         }
     }
@@ -89,7 +93,7 @@ fun ImportPlaylistDialog(
                     }
                     
                     Button(
-                        onClick = { filePicker.launch("*/*") },
+                        onClick = { filePicker.launch(arrayOf("audio/x-mpegurl", "application/vnd.apple.mpegurl", "*/*")) },
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(

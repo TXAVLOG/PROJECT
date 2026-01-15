@@ -57,6 +57,10 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.txapp.musicplayer.ui.component.BlacklistFolderChooserDialog
+import com.txapp.musicplayer.data.MusicRepository
+import com.txapp.musicplayer.MusicApplication
+import com.txapp.musicplayer.data.BlackListEntity
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.unit.max
@@ -148,6 +152,19 @@ fun SettingsScreenContent(
 
 
     var showClearHistoryDialog by remember { mutableStateOf(false) }
+    var showBlacklistDialog by remember { mutableStateOf(false) }
+    
+    val app = context.applicationContext as MusicApplication
+    val repository = remember { MusicRepository(app.database, context.contentResolver) }
+    var blacklist by remember { mutableStateOf<List<BlackListEntity>>(emptyList()) }
+    
+    LaunchedEffect(showBlacklistDialog) {
+        if(showBlacklistDialog) {
+             repository.getBlacklistedFolders().collect {
+                 blacklist = it
+             }
+        }
+    }
 
     LaunchedEffect(Unit, languageVersion) {
         scope.launch {
@@ -209,7 +226,8 @@ fun SettingsScreenContent(
                     onGridClick = { showGridDialog = true },
                     onAlbumGridClick = { showAlbumGridDialog = true },
                     onArtistGridClick = { showArtistGridDialog = true },
-                    onClearHistoryClick = { showClearHistoryDialog = true }
+                    onClearHistoryClick = { showClearHistoryDialog = true },
+                    onBlacklistClick = { showBlacklistDialog = true }
                 )
                 is SettingsRoute.Images -> ImageSettings()
                 is SettingsRoute.Other -> OtherSettings()
@@ -409,6 +427,22 @@ fun SettingsScreenContent(
             dismissButton = {
                 OutlinedButton(onClick = { showClearHistoryDialog = false }) {
                     Text("txamusic_btn_close".txa())
+                }
+            }
+        )
+    }
+    if (showBlacklistDialog) {
+        BlacklistFolderChooserDialog(
+            currentBlacklist = blacklist,
+            onDismiss = { showBlacklistDialog = false },
+            onAddBlacklist = { path ->
+                scope.launch {
+                    repository.addToBlacklist(path)
+                }
+            },
+            onRemoveBlacklist = { path ->
+                scope.launch {
+                    repository.removeFromBlacklist(path)
                 }
             }
         )
@@ -1795,8 +1829,10 @@ fun PersonalizeSettings(
     onGridClick: () -> Unit,
     onAlbumGridClick: () -> Unit,
     onArtistGridClick: () -> Unit,
-    onClearHistoryClick: () -> Unit // Callback to open dialog
+    onClearHistoryClick: () -> Unit, // Callback to open dialog
+    onBlacklistClick: () -> Unit
 ) {
+
     val gridSize by TXAPreferences.gridSize.collectAsState()
     val rememberLastTab by TXAPreferences.rememberLastTab.collectAsState()
     val albumGridSize by TXAPreferences.albumGridSize.collectAsState()
@@ -1865,6 +1901,14 @@ fun PersonalizeSettings(
                         TXAToast.info(context, "Rescan triggered")
                     }
                 }
+            )
+        }
+        item {
+            SettingsToggleCard(
+                icon = Icons.Outlined.FolderOff,
+                title = "Blacklist Folders",
+                subtitle = "Manage excluded folders",
+                onClick = onBlacklistClick
             )
         }
         

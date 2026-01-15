@@ -38,6 +38,9 @@ import com.txapp.musicplayer.util.txa
 import com.txapp.musicplayer.ui.component.TXAIcons
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import com.txapp.musicplayer.ui.component.ImportPlaylistDialog
+import androidx.compose.material.icons.filled.Input
+import androidx.compose.material.icons.filled.Download
 
 class PlaylistsFragment : Fragment() {
 
@@ -71,6 +74,17 @@ class PlaylistsFragment : Fragment() {
                                     com.txapp.musicplayer.util.TXAToast.error(context, "txamusic_error_unknown".txa())
                                 }
                             }
+                        },
+                        onImportPlaylist = { path ->
+                            lifecycleScope.launch {
+                                val count = repository.importPlaylistFromM3U(context, path)
+                                if (count > 0) {
+                                    com.txapp.musicplayer.util.TXAToast.success(context, "Imported $count songs")
+                                    repository.refreshPlaylists()
+                                } else {
+                                    com.txapp.musicplayer.util.TXAToast.error(context, "Import failed")
+                                }
+                            }
                         }
                     )
                 }
@@ -97,11 +111,13 @@ class PlaylistsFragment : Fragment() {
 fun PlaylistsScreen(
     playlists: List<Playlist>,
     onPlaylistClick: (Long) -> Unit,
-    onCreatePlaylist: (String) -> Unit
+    onCreatePlaylist: (String) -> Unit,
+    onImportPlaylist: (String) -> Unit
 ) {
     val gridSize by TXAPreferences.gridSize.collectAsState()
     val accentColor = Color(android.graphics.Color.parseColor(TXAPreferences.currentAccent))
     var showCreateDialog by remember { mutableStateOf(false) }
+    var showImportDialog by remember { mutableStateOf(false) }
     
     // Override onCreateClick to open our local dialog
     val onInternalCreateClick = { showCreateDialog = true }
@@ -125,6 +141,16 @@ fun PlaylistsScreen(
                 color = onSurfaceColor
             )
             
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { showImportDialog = true }) {
+                    Icon(
+                         Icons.Default.Download, // Import icon
+                         contentDescription = "Import Playlist",
+                         tint = MaterialTheme.colorScheme.primary 
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+            
             if (playlists.isNotEmpty()) {
                 IconButton(
                     onClick = onInternalCreateClick,
@@ -140,6 +166,9 @@ fun PlaylistsScreen(
                     )
                 }
             }
+
+
+            } // End of inner Row
         }
         
         if (playlists.isEmpty()) {
@@ -223,6 +252,13 @@ fun PlaylistsScreen(
                     Text("txamusic_btn_cancel".txa())
                 }
             }
+        )
+    }
+    
+    if (showImportDialog) {
+        ImportPlaylistDialog(
+            onDismiss = { showImportDialog = false },
+            onImport = onImportPlaylist
         )
     }
 }
