@@ -14,12 +14,14 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.delay
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -212,7 +214,7 @@ object TXAUpdateManager {
         _downloadState.value = null
     }
 
-    suspend fun downloadApk(context: Context, url: String): Flow<DownloadState> = flow {
+    suspend fun downloadApk(context: Context, url: String): Flow<DownloadState> = channelFlow {
         _downloadState.value = null
         try {
             isResolving.value = true
@@ -298,9 +300,9 @@ object TXAUpdateManager {
                             
                             val state = DownloadState.Progress(progress, current, contentLength, bps)
                             _downloadState.value = state
-                            emit(state)
+                            send(state)
                             
-                            kotlinx.coroutines.delay(500)
+                            delay(500)
                         }
                     }
                     
@@ -311,7 +313,7 @@ object TXAUpdateManager {
                 TXALogger.downloadI("UpdateManager", "Turbo Download Complete")
                 val success = DownloadState.Success(destination)
                 _downloadState.value = success
-                emit(success)
+                send(success)
 
             } else {
                 TXALogger.downloadI("UpdateManager", "Standard Download (No Turbo or Small File)")
@@ -355,7 +357,7 @@ object TXAUpdateManager {
                                 val progress = if (totalBytes > 0) ((downloadedBytes * 100) / totalBytes).toInt() else 0
                                 val state = DownloadState.Progress(progress, downloadedBytes, totalBytes, bps)
                                 _downloadState.value = state
-                                emit(state)
+                                send(state)
                                 lastUpdate = now
                             }
                         }
@@ -364,8 +366,9 @@ object TXAUpdateManager {
                 TXALogger.downloadI("UpdateManager", "Download success")
                 val success = DownloadState.Success(destination)
                 _downloadState.value = success
-                emit(success)
+                send(success)
             }
+
 
         } catch (e: Throwable) {
             isResolving.value = false
@@ -378,7 +381,7 @@ object TXAUpdateManager {
                 } else {
                     val error = DownloadState.Error(e.message ?: "Download failed")
                     _downloadState.value = error
-                    emit(error)
+                    send(error)
                 }
             }
         }
