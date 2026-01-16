@@ -678,7 +678,12 @@ class MusicService : MediaLibraryService() {
             addAction("android.bluetooth.device.action.ACL_DISCONNECTED")
             addAction("com.txapp.musicplayer.action.AUDIO_ROUTE_SETTING_CHANGED")
         }
-        registerReceiver(connectionReceiver, filter)
+        androidx.core.content.ContextCompat.registerReceiver(
+            this,
+            connectionReceiver,
+            filter,
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+        )
 
         // Register screen lock receiver for Lockscreen Player
         registerLockScreenReceiver()
@@ -751,7 +756,12 @@ class MusicService : MediaLibraryService() {
         val filter = android.content.IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_ON)
         }
-        registerReceiver(lockScreenReceiver, filter)
+        androidx.core.content.ContextCompat.registerReceiver(
+            this,
+            lockScreenReceiver,
+            filter,
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+        )
     }
     
     private fun registerPlaybackCommandReceiver() {
