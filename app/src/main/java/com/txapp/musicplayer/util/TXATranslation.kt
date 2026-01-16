@@ -641,6 +641,7 @@ object TXATranslation {
         "txamusic_shortcut_open_app" to "Open App",
         "txamusic_shortcut_update_channel_name" to "Update Check",
         "txamusic_shortcut_update_channel_desc" to "Notifications for update checks from app shortcut",
+        "txamusic_tag_emulator" to "Tag Emulator",
         
         // Widget Settings
         "txamusic_widget_settings" to "Widget Settings",
@@ -1293,6 +1294,7 @@ object TXATranslation {
         "txamusic_shortcut_open_app" to "Mở ứng dụng",
         "txamusic_shortcut_update_channel_name" to "Kiểm tra cập nhật",
         "txamusic_shortcut_update_channel_desc" to "Thông báo kiểm tra cập nhật từ lối tắt ứng dụng",
+        "txamusic_tag_emulator" to "Giả lập thẻ",
 
         // Widget Settings
         "txamusic_widget_settings" to "Cài đặt Widget",

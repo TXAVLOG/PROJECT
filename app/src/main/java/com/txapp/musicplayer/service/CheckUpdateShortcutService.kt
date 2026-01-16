@@ -74,7 +74,7 @@ class CheckUpdateShortcutService : Service() {
     
     private fun startForegroundWithCheckingNotification() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_noti)
+            .setSmallIcon(R.drawable.ic_app_shortcut_check_update)
             .setContentTitle(TXATranslation.txa("txamusic_app_name"))
             .setContentText(TXATranslation.txa("txamusic_shortcut_checking_update"))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -182,7 +182,7 @@ class CheckUpdateShortcutService : Service() {
         )
         
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_noti)
+            .setSmallIcon(R.drawable.ic_app_shortcut_check_update)
             .setContentTitle(TXATranslation.txa("txamusic_shortcut_update_found_title"))
             .setContentText(TXATranslation.txa("txamusic_shortcut_update_found", versionName))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -225,7 +225,7 @@ class CheckUpdateShortcutService : Service() {
         )
         
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_noti)
+            .setSmallIcon(R.drawable.ic_app_shortcut_check_update)
             .setContentTitle(TXATranslation.txa("txamusic_app_name"))
             .setContentText(TXATranslation.txa("txamusic_shortcut_no_update"))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -242,7 +242,7 @@ class CheckUpdateShortcutService : Service() {
     
     private fun showErrorNotification(errorDetail: String) {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_noti)
+            .setSmallIcon(R.drawable.ic_app_shortcut_check_update)
             .setContentTitle(TXATranslation.txa("txamusic_app_name"))
             .setContentText(TXATranslation.txa("txamusic_shortcut_update_error"))
             .setStyle(
