@@ -85,9 +85,27 @@ class TXADownloadService : Service() {
                 NotificationCompat.Builder(this, channelId)
                     .setSmallIcon(android.R.drawable.stat_sys_download)
                     .setContentTitle("txamusic_noti_downloading_title".txa())
-                    .setContentText("txamusic_noti_downloading_desc".txa(state.percentage, TXAFormat.formatSpeed(state.bps)))
+                    .setContentText(run {
+                        val downloaded = TXAFormat.formatSize(state.downloaded)
+                        val total = TXAFormat.formatSize(state.total)
+                        val speed = TXAFormat.formatSpeed(state.bps)
+                        val remaining = state.total - state.downloaded
+                        val eta = TXAFormat.formatETA(remaining, state.bps)
+                        
+                        "txamusic_noti_downloading_desc".txa("$downloaded/$total • $speed • $eta")
+                    })
+                    .setStyle(NotificationCompat.BigTextStyle().bigText(run {
+                        val downloaded = TXAFormat.formatSize(state.downloaded)
+                        val total = TXAFormat.formatSize(state.total)
+                        val speed = TXAFormat.formatSpeed(state.bps)
+                        val remaining = state.total - state.downloaded
+                        val eta = TXAFormat.formatETA(remaining, state.bps)
+                        
+                        "txamusic_noti_downloading_desc".txa("$downloaded/$total • $speed • $eta")
+                    }))
                     .setProgress(100, state.percentage, false)
                     .setOngoing(true)
+                    .setOnlyAlertOnce(true)
                     .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                     .addAction(android.R.drawable.ic_menu_close_clear_cancel, "txamusic_btn_cancel_download".txa(), pendingCancel)
                     .build()
