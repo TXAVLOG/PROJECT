@@ -72,6 +72,7 @@ import com.txapp.musicplayer.databinding.SlidingMusicPanelLayoutBinding
 import com.txapp.musicplayer.util.TXALocationHelper
 import com.txapp.musicplayer.util.TXALogger
 import com.txapp.musicplayer.util.TXAUpdateManager
+import com.txapp.musicplayer.util.DownloadState
 import com.txapp.musicplayer.util.TXACrashHandler
 import com.txapp.musicplayer.util.TXAHolidayManager
 import com.txapp.musicplayer.util.TXAPreferences
@@ -390,15 +391,26 @@ class MainActivity : AppCompatActivity() {
             binding.root.post {
                 lifecycleScope.launch {
                     try {
+                        // Monitor existing download/resolving state to show dialog on app re-entry
+                        launch {
+                            kotlinx.coroutines.flow.combine(
+                                TXAUpdateManager.downloadState,
+                                TXAUpdateManager.isResolving
+                            ) { state, resolving -> 
+                                (state != null && state !is DownloadState.Error) || resolving
+                            }.collect { active ->
+                                if (active && TXAUpdateManager.updateInfo.value != null && !showUpdateDialog) {
+                                    showUpdateDialog = true
+                                }
+                            }
+                        }
+
                         kotlinx.coroutines.delay(1500)
                         
                         val netStatus = TXANetworkHelper.getNetworkStatus(this@MainActivity)
                         if (netStatus == TXANetworkHelper.NetworkStatus.WIFI_NO_INTERNET) {
                              // WiFi Connected but No Internet - Show Error
                              TXAToast.error(this@MainActivity, "txamusic_network_wifi_no_internet".txa())
-                             // Requirement: Show Modal "lỗi modal lên lun". 
-                             // Using Toast for non-intrusive startup, but if manual check requested this would be modal.
-                             // For now, this suffices to warn user.
                         } else {
                             val info = TXAUpdateManager.checkForUpdate()
                             if (info != null && info.updateAvailable) {
@@ -409,7 +421,6 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                     } catch (e: Exception) {
-                        // Silent fail or log
                         TXACrashHandler.handleError(this@MainActivity, e, "MainActivity")
                     }
                 }

@@ -145,9 +145,11 @@ class TXADownloadService : Service() {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.notify(notificationId, notification)
         
-        if (state !is DownloadState.Progress) {
-            TXALogger.downloadI("DownloadService", "Đã gửi thông báo kết quả tải xuống: ${state::class.simpleName}")
-            androidx.core.app.ServiceCompat.stopForeground(this, androidx.core.app.ServiceCompat.STOP_FOREGROUND_DETACH)
+        // Chỉ dừng foreground khi đã xong hẳn (Success/Error)
+        // Lưu ý: Progress và Merging vẫn phải giữ foreground
+        if (state is DownloadState.Success || state is DownloadState.Error) {
+            TXALogger.downloadI("DownloadService", "Download result: ${state::class.simpleName}")
+            androidx.core.app.ServiceCompat.stopForeground(this, androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE)
             if (state is DownloadState.Success) {
                 stopSelf()
             }

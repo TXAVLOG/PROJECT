@@ -50,6 +50,13 @@ fun UpdateDialog(
 ) {
     val context = LocalContext.current
     
+    // Auto-report error via Toast
+    LaunchedEffect(downloadState) {
+        if (downloadState is DownloadState.Error) {
+            com.txapp.musicplayer.util.TXAToast.error(context, "txamusic_update_failed".txa())
+        }
+    }
+
     // Animation state for smooth entrance
     var showContent by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
@@ -173,6 +180,12 @@ fun UpdateDialog(
                                 DownloadProgressUI(downloadState)
                             }
 
+                            // 3.5 Trạng thái Đang ghép tệp
+                            if (downloadState is DownloadState.Merging) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                MergingProgressUI(downloadState)
+                            }
+
                             // 4. Trạng thái Lỗi
                             if (downloadState is DownloadState.Error) {
                                 ErrorAndCopyUI(url = updateInfo.downloadUrl, errorMessage = downloadState.message)
@@ -199,8 +212,8 @@ fun UpdateDialog(
                                 TextButton(onClick = onDismiss) { Text("txamusic_btn_later".txa()) }
                             }
 
-                            // Nút "Hủy tải" (Chỉ hiện khi đang tải)
-                            if (downloadState is DownloadState.Progress || resolving) {
+                            // Nút "Hủy tải" (Chỉ hiện khi đang tải/ghép)
+                            if (downloadState is DownloadState.Progress || downloadState is DownloadState.Merging || resolving) {
                                 TextButton(
                                     onClick = { TXAUpdateManager.stopDownload(context) },
                                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
@@ -267,6 +280,28 @@ fun DownloadProgressUI(state: DownloadState.Progress) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("${TXAFormat.formatBytes(state.downloaded)} / ${TXAFormat.formatBytes(state.total)}", style = MaterialTheme.typography.labelSmall)
             Text("ETA: ${TXAFormat.formatETA(state.total - state.downloaded, state.bps)}", style = MaterialTheme.typography.labelSmall)
+            Text("${state.percentage}%", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+        }
+    }
+}
+
+@Composable
+fun MergingProgressUI(state: DownloadState.Merging) {
+    Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(12.dp)).padding(12.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("txamusic_update_merging".txa().format(state.percentage), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        LinearProgressIndicator(
+            progress = { state.percentage / 100f },
+            modifier = Modifier.fillMaxWidth().height(10.dp),
+            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
+            color = MaterialTheme.colorScheme.secondary,
+            trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Text("${state.percentage}%", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
         }
     }
