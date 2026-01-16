@@ -91,8 +91,7 @@ class TXADownloadService : Service() {
                         val speed = TXAFormat.formatSpeed(state.bps)
                         val remaining = state.total - state.downloaded
                         val eta = TXAFormat.formatETA(remaining, state.bps)
-                        
-                        "txamusic_noti_downloading_desc".txa("$downloaded/$total • $speed • $eta")
+                        "$downloaded / $total • $speed • $eta"
                     })
                     .setStyle(NotificationCompat.BigTextStyle().bigText(run {
                         val downloaded = TXAFormat.formatSize(state.downloaded)
@@ -100,8 +99,7 @@ class TXADownloadService : Service() {
                         val speed = TXAFormat.formatSpeed(state.bps)
                         val remaining = state.total - state.downloaded
                         val eta = TXAFormat.formatETA(remaining, state.bps)
-                        
-                        "txamusic_noti_downloading_desc".txa("$downloaded/$total • $speed • $eta")
+                        "$downloaded / $total • $speed • $eta"
                     }))
                     .setProgress(100, state.percentage, false)
                     .setOngoing(true)
