@@ -192,6 +192,7 @@ class CheckUpdateShortcutService : Service() {
             .setContentIntent(pendingIntent)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setVibrate(longArrayOf(0, 250, 250, 250))
+            .setNumber(1) // Show badge count on app icon
             .addAction(
                 R.drawable.ic_play,
                 TXATranslation.txa("txamusic_shortcut_open_app"),
@@ -232,6 +233,7 @@ class CheckUpdateShortcutService : Service() {
             .setGroup(NOTIFICATION_GROUP_ID)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
+            .setNumber(1)
             .build()
         
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -251,6 +253,7 @@ class CheckUpdateShortcutService : Service() {
             .setCategory(NotificationCompat.CATEGORY_ERROR)
             .setGroup(NOTIFICATION_GROUP_ID)
             .setAutoCancel(true)
+            .setNumber(1)
             .build()
         
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
