@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
+import com.txapp.musicplayer.util.TXAToast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -60,7 +60,7 @@ class PlaylistDetailsFragment : Fragment() {
     private val intentSenderLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                Toast.makeText(requireContext(), "txamusic_btn_save".txa(), Toast.LENGTH_SHORT).show()
+                TXAToast.success(requireContext(), "txamusic_btn_save".txa())
             }
         }
 
@@ -111,7 +111,7 @@ class PlaylistDetailsFragment : Fragment() {
                                 )
                                 when (result) {
                                     is TXATagWriter.WriteResult.Success -> {
-                                        Toast.makeText(context, "txamusic_tag_saved".txa(), Toast.LENGTH_SHORT).show()
+                                        TXAToast.success(context, "txamusic_tag_saved".txa())
                                         true
                                     }
                                     is TXATagWriter.WriteResult.PermissionRequired -> {
@@ -121,7 +121,7 @@ class PlaylistDetailsFragment : Fragment() {
                                         false
                                     }
                                     else -> {
-                                        Toast.makeText(context, "txamusic_tag_save_failed".txa(), Toast.LENGTH_SHORT).show()
+                                        TXAToast.error(context, "txamusic_tag_save_failed".txa())
                                         false
                                     }
                                 }
@@ -143,18 +143,17 @@ class PlaylistDetailsFragment : Fragment() {
                         onEditSong = { selectedSongForEdit = it },
                         onSetRingtone = { song ->
                             if (com.txapp.musicplayer.util.TXARingtoneManager.setRingtone(context, song)) {
-                                Toast.makeText(context, "txamusic_ringtone_set_success".txa(), Toast.LENGTH_SHORT)
-                                    .show()
+                                TXAToast.success(context, "txamusic_ringtone_set_success".txa())
                             }
                         },
                         onRenamePlaylist = { newName ->
                             lifecycleScope.launch {
                                 val success = repository.renamePlaylist(playlistId, newName)
                                 if (success) {
-                                    Toast.makeText(context, "Renamed to $newName", Toast.LENGTH_SHORT).show()
+                                    TXAToast.success(context, "Renamed to $newName")
                                     loadPlaylistData() // Refresh
                                 } else {
-                                    Toast.makeText(context, "Failed to rename", Toast.LENGTH_SHORT).show()
+                                    TXAToast.error(context, "Failed to rename")
                                 }
                             }
                         },
@@ -162,9 +161,9 @@ class PlaylistDetailsFragment : Fragment() {
                              lifecycleScope.launch {
                                  val file = repository.exportPlaylistToM3U(context, playlistId, fileName)
                                  if (file != null) {
-                                     Toast.makeText(context, "Saved to ${file.name}", Toast.LENGTH_LONG).show()
+                                     TXAToast.success(context, "Saved to ${file.name}", com.txapp.musicplayer.util.ToastDuration.LONG)
                                  } else {
-                                     Toast.makeText(context, "Failed to save playlist", Toast.LENGTH_SHORT).show()
+                                     TXAToast.error(context, "Failed to save playlist")
                                  }
                              }
                         }

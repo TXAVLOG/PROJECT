@@ -740,15 +740,29 @@ class MusicRepository(
         playlistName: String
     ): java.io.File? = withContext(Dispatchers.IO) {
         try {
+            logPlaylistError(context, "Exporting playlist ID: $playlistId, Name: $playlistName")
+            
             val songs = getPlaylistSongsForAuto(playlistId)
             if (songs.isEmpty()) {
-                TXALogger.w("MusicRepository", "Cannot export empty playlist")
+                val msg = "Cannot export empty playlist (ID: $playlistId)"
+                TXALogger.w("MusicRepository", msg)
+                logPlaylistError(context, msg)
                 return@withContext null
             }
             
-            com.txapp.musicplayer.util.M3UWriter.write(context, songs, playlistName)
+            logPlaylistError(context, "Found ${songs.size} songs. Writing to file...")
+            val file = com.txapp.musicplayer.util.M3UWriter.write(context, songs, playlistName)
+            
+            if (file != null) {
+                logPlaylistError(context, "Success export to: ${file.absolutePath}")
+            } else {
+                logPlaylistError(context, "M3UWriter returned null file")
+            }
+            
+            file
         } catch (e: Exception) {
             TXALogger.e("MusicRepository", "Failed to export playlist", e)
+            logPlaylistError(context, "Exception exporting playlist: ${e.message}\nStack: ${android.util.Log.getStackTraceString(e)}")
             null
         }
     }
@@ -816,4 +830,13 @@ class MusicRepository(
         }
     }
 
+    private fun logPlaylistError(context: Context, message: String) {
+        try {
+            val logFile = java.io.File(context.getExternalFilesDir(null), "playlist_debug_log.txt")
+            val timestamp = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())
+            logFile.appendText("[$timestamp] $message\n")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }

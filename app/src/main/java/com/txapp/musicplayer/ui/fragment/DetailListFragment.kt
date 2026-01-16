@@ -48,13 +48,14 @@ import com.txapp.musicplayer.util.TXAActiveMP3
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import com.txapp.musicplayer.ui.component.TXATagEditorSheet
-import android.widget.Toast
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.ui.platform.LocalContext
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.IntentSenderRequest
+import com.txapp.musicplayer.util.TXAToast
 
 /**
  * DetailListFragment - Hiển thị danh sách chi tiết cho History, Last Added, Top Played
@@ -68,7 +69,7 @@ class DetailListFragment : Fragment() {
     private val intentSenderLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                Toast.makeText(requireContext(), "txamusic_btn_save".txa(), Toast.LENGTH_SHORT).show()
+                TXAToast.success(requireContext(), "txamusic_btn_save".txa())
             }
         }
 
@@ -120,7 +121,7 @@ class DetailListFragment : Fragment() {
                                 )
                                 when (result) {
                                     is TXATagWriter.WriteResult.Success -> {
-                                        Toast.makeText(context, "txamusic_tag_saved".txa(), Toast.LENGTH_SHORT).show()
+                                        TXAToast.success(context, "txamusic_tag_saved".txa())
                                         true
                                     }
                                     is TXATagWriter.WriteResult.PermissionRequired -> {
@@ -130,7 +131,7 @@ class DetailListFragment : Fragment() {
                                         false
                                     }
                                     else -> {
-                                        Toast.makeText(context, "txamusic_tag_save_failed".txa(), Toast.LENGTH_SHORT).show()
+                                        TXAToast.error(context, "txamusic_tag_save_failed".txa())
                                         false
                                     }
                                 }
@@ -149,8 +150,7 @@ class DetailListFragment : Fragment() {
                         onEditClick = { selectedSongForEdit = it },
                         onSetAsRingtone = { song ->
                             if (com.txapp.musicplayer.util.TXARingtoneManager.setRingtone(requireContext(), song)) {
-                                Toast.makeText(context, "txamusic_ringtone_set_success".txa(), Toast.LENGTH_SHORT)
-                                    .show()
+                                TXAToast.success(context, "txamusic_ringtone_set_success".txa())
                             }
                         }
                     )

@@ -248,7 +248,7 @@ private fun startDreamPreview(context: Context) {
     } catch (e: Exception) {
         TXALogger.appE("ScreenSaverSettings", "Failed to launch Somnambulator", e)
         // Fallback or Toast? 
-        android.widget.Toast.makeText(context, "Could not start preview automatically", android.widget.Toast.LENGTH_SHORT).show()
+        com.txapp.musicplayer.util.TXAToast.error(context, "Could not start preview automatically")
     }
 }
 
