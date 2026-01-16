@@ -314,11 +314,13 @@ fun NowPlayingFullStyle(
                                         // Synced Lyrics Display
                                         SyncedLyricsView(
                                             lyrics = parsedLyrics,
-                                            currentPosition = state.position,
+                                            basePosition = state.position,
+                                            isPlaying = state.isPlaying,
                                             accentColor = accentColor,
                                             onLyricClick = { timestamp ->
                                                 // Seek to clicked lyric position
-                                                // We need a way to seek here, but for now just display
+                                                val progressFloat = if (state.duration > 0) (timestamp.toFloat() / state.duration * 1000f) else 0f
+                                                onSeek(progressFloat)
                                             }
                                         )
                                     } else {
@@ -2017,11 +2019,27 @@ fun MoreOptionsDropdown(
 @Composable
 fun SyncedLyricsView(
     lyrics: List<LyricLine>,
-    currentPosition: Long,
+    basePosition: Long,
+    isPlaying: Boolean,
     accentColor: Color,
     onLyricClick: (Long) -> Unit = {}
 ) {
     val listState = rememberLazyListState()
+    
+    // Smooth position interpolation - Giúp hiệu ứng karaoke mượt mà 60fps
+    val currentPosition by produceState(initialValue = basePosition, basePosition, isPlaying) {
+        if (!isPlaying) {
+            value = basePosition
+            return@produceState
+        }
+        val startWallTime = System.currentTimeMillis()
+        val startPos = basePosition
+        while (true) {
+            val elapsed = System.currentTimeMillis() - startWallTime
+            value = startPos + elapsed
+            withFrameMillis { } 
+        }
+    }
     
     // Calculates the active index based on current position + offset
     val activeIndex = remember(lyrics, currentPosition) {

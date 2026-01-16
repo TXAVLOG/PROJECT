@@ -121,10 +121,25 @@ fun LyricsDialog(
         }
     }
 
+    // Smooth position interpolation - Giúp hiệu ứng karaoke mượt mà 60fps
+    val livePosition by produceState(initialValue = currentPosition, currentPosition, isPlaying) {
+        if (!isPlaying) {
+            value = currentPosition
+            return@produceState
+        }
+        val startWallTime = System.currentTimeMillis()
+        val startPos = currentPosition
+        while (true) {
+            val elapsed = System.currentTimeMillis() - startWallTime
+            value = startPos + elapsed
+            withFrameMillis { } 
+        }
+    }
+
     // Find current lyric index
-    val activeIndex = remember(lyrics, currentPosition) {
-        // Add 500ms offset to currentPosition to highlight upcoming line slightly early (like Retro Music)
-        val adjustedPos = currentPosition + 500
+    val activeIndex = remember(lyrics, livePosition) {
+        // Add 500ms offset to livePosition to highlight upcoming line slightly early (like Retro Music)
+        val adjustedPos = livePosition + 500
         lyrics.indexOfLast { it.timestamp <= adjustedPos }.coerceAtLeast(0)
     }
     
@@ -446,7 +461,7 @@ fun LyricsDialog(
                                 
                                 val duration = line.endTimestamp - line.timestamp
                                 val progress = if (isCurrent && duration > 0) {
-                                    ((currentPosition - line.timestamp).toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+                                    ((livePosition - line.timestamp).toFloat() / duration.toFloat()).coerceIn(0f, 1f)
                                 } else {
                                     0f
                                 }

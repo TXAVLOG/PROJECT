@@ -1701,7 +1701,7 @@ class MainActivity : AppCompatActivity() {
             if (controller == null) {
                 // Controller not ready, try again shortly
                 if (isProgressPollingActive) {
-                    progressHandler.postDelayed(this, 500)
+                    progressHandler.postDelayed(this, 50)
                 }
                 return
             }
@@ -1730,7 +1730,7 @@ class MainActivity : AppCompatActivity() {
             
             // Continue polling while active
             if (isProgressPollingActive) {
-                progressHandler.postDelayed(this, 500)
+                progressHandler.postDelayed(this, 50)
             }
         }
     }
