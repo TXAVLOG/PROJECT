@@ -60,7 +60,24 @@ object TXAUpdateManager {
     const val ACTION_PAUSE = "com.txapp.musicplayer.action.PAUSE_DOWNLOAD"
     const val EXTRA_UPDATE_INFO = "extra_update_info"
 
+    // TEST MODE
+    private const val IS_TEST_MODE = true
+    private const val TEST_URL = "https://www.mediafire.com/file/5zzvr5xcs6edjym/TXAMUSIC_v2.9.2_txa.apk/file"
+
     suspend fun checkForUpdate(): UpdateInfo? = withContext(Dispatchers.IO) {
+        if (IS_TEST_MODE) {
+            val info = UpdateInfo(
+                updateAvailable = true,
+                forceUpdate = false,
+                latestVersionCode = 999999,
+                latestVersionName = "Test Ver",
+                downloadUrl = TEST_URL,
+                changelog = "Testing Download System...",
+                releaseDate = "2026-01-16"
+            )
+            updateInfo.value = info
+            return@withContext info
+        }
         try {
             val jsonBody = JSONObject().apply {
                 put("packageId", "com.txapp.musicplayer")
