@@ -128,6 +128,12 @@
                 android:value="floating_lyrics_overlay" />
         </service>
 
+        <!-- Check Update from App Shortcut Service -->
+        <service
+            android:name=".service.CheckUpdateShortcutService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
         <activity
             android:name=".ui.TXAErrorActivity"
             android:exported="false"

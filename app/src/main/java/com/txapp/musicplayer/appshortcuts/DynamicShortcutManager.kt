@@ -45,6 +45,13 @@ object DynamicShortcutManager {
                 TXATranslation.txa("txamusic_shortcuts_last_added"),
                 R.drawable.ic_app_shortcut_last_added,
                 AppShortcutLauncherActivity.SHORTCUT_TYPE_LAST_ADDED
+            ),
+            createShortcut(
+                context,
+                ID_PREFIX + "check_update",
+                TXATranslation.txa("txamusic_shortcuts_check_update"),
+                R.drawable.ic_app_shortcut_check_update,
+                AppShortcutLauncherActivity.SHORTCUT_TYPE_CHECK_UPDATE
             )
         )
 

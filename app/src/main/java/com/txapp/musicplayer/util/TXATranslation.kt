@@ -630,6 +630,17 @@ object TXATranslation {
         "txamusic_shortcuts_shuffle_all" to "Shuffle All",
         "txamusic_shortcuts_top_tracks" to "Top Tracks",
         "txamusic_shortcuts_last_added" to "Last Added",
+        "txamusic_shortcuts_check_update" to "Check Update",
+        
+        // Shortcut Check Update Service
+        "txamusic_shortcut_checking_update" to "Checking for updates...",
+        "txamusic_shortcut_update_found" to "New version %s available!",
+        "txamusic_shortcut_update_found_title" to "Update Available",
+        "txamusic_shortcut_no_update" to "You're up to date!",
+        "txamusic_shortcut_update_error" to "Failed to check for updates",
+        "txamusic_shortcut_open_app" to "Open App",
+        "txamusic_shortcut_update_channel_name" to "Update Check",
+        "txamusic_shortcut_update_channel_desc" to "Notifications for update checks from app shortcut",
         
         // Widget Settings
         "txamusic_widget_settings" to "Widget Settings",
@@ -1271,6 +1282,17 @@ object TXATranslation {
         "txamusic_shortcuts_shuffle_all" to "Phát ngẫu nhiên tất cả",
         "txamusic_shortcuts_top_tracks" to "Bài hát nghe nhiều nhất",
         "txamusic_shortcuts_last_added" to "Vừa mới thêm",
+        "txamusic_shortcuts_check_update" to "Kiểm tra cập nhật",
+        
+        // Shortcut Check Update Service
+        "txamusic_shortcut_checking_update" to "Đang kiểm tra cập nhật...",
+        "txamusic_shortcut_update_found" to "Có phiên bản mới %s!",
+        "txamusic_shortcut_update_found_title" to "Có bản cập nhật",
+        "txamusic_shortcut_no_update" to "Bạn đang dùng phiên bản mới nhất!",
+        "txamusic_shortcut_update_error" to "Không thể kiểm tra cập nhật",
+        "txamusic_shortcut_open_app" to "Mở ứng dụng",
+        "txamusic_shortcut_update_channel_name" to "Kiểm tra cập nhật",
+        "txamusic_shortcut_update_channel_desc" to "Thông báo kiểm tra cập nhật từ lối tắt ứng dụng",
 
         // Widget Settings
         "txamusic_widget_settings" to "Cài đặt Widget",
