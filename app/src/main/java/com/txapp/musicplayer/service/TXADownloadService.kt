@@ -108,6 +108,17 @@ class TXADownloadService : Service() {
                     .addAction(android.R.drawable.ic_menu_close_clear_cancel, "txamusic_btn_cancel_download".txa(), pendingCancel)
                     .build()
             }
+            is DownloadState.Merging -> {
+                NotificationCompat.Builder(this, channelId)
+                    .setSmallIcon(android.R.drawable.stat_sys_download)
+                    .setContentTitle("txamusic_noti_downloading_title".txa())
+                    .setContentText("txamusic_noti_merging".txa(state.percentage))
+                    .setProgress(100, state.percentage, false)
+                    .setOngoing(true)
+                    .setOnlyAlertOnce(true)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .build()
+            }
             is DownloadState.Success -> {
                 NotificationCompat.Builder(this, channelId)
                     .setSmallIcon(android.R.drawable.stat_sys_download_done)

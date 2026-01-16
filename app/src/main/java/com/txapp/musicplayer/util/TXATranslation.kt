@@ -230,6 +230,7 @@ object TXATranslation {
         "txamusic_noti_success_desc" to "Tap to install update",
         "txamusic_noti_error_title" to "Download Failed",
         "txamusic_noti_error_desc" to "Error: %s",
+        "txamusic_noti_merging" to "Merging update files... %d%%",
         // Device compatibility
         "txamusic_device_not_supported_desc" to "This app requires Android %s or higher. Your device is running Android %s.",
         "txamusic_android9_warning_title" to "Android 9 Stability Notice",
@@ -876,6 +877,7 @@ object TXATranslation {
         "txamusic_noti_success_desc" to "Chạm để cài đặt cập nhật",
         "txamusic_noti_error_title" to "Tải thất bại",
         "txamusic_noti_error_desc" to "Lỗi: %s",
+        "txamusic_noti_merging" to "Đang ghép các tệp cập nhật... %d%%",
         // Device compatibility
         "txamusic_device_not_supported_desc" to "Ứng dụng yêu cầu Android %s mà cái máy rác của bạn mới chạy Android %s. Vứt máy đi mua cái mới đi cho rảnh nợ!",
         "txamusic_tag_emulator" to "Giả lập",

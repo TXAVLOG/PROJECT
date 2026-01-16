@@ -45,6 +45,7 @@ data class UpdateInfo(
 
 sealed class DownloadState {
     data class Progress(val percentage: Int, val downloaded: Long, val total: Long, val bps: Long) : DownloadState()
+    data class Merging(val percentage: Int) : DownloadState()
     data class Success(val file: File) : DownloadState()
     data class Error(val message: String) : DownloadState()
 }
@@ -244,7 +245,7 @@ object TXAUpdateManager {
             if (shouldUseTurbo) {
                 TXALogger.downloadI("UpdateManager", "Turbo Download Activated! Size: ${TXAFormat.formatSize(contentLength)}")
                 
-                java.io.RandomAccessFile(destination, "rw").use { it.setLength(contentLength) }
+                val tempDir = File(baseDir, "temp").apply { if (!exists()) mkdirs() }
                 
                 val threadCount = 4
                 val chunkSize = contentLength / threadCount
@@ -256,6 +257,7 @@ object TXAUpdateManager {
                     for (i in 0 until threadCount) {
                         val start = i * chunkSize
                         val end = if (i == threadCount - 1) contentLength - 1 else (start + chunkSize - 1)
+                        val chunkFile = File(tempDir, "chunk_$i.txa.bin")
                         
                         chunks.add(launch(Dispatchers.IO) {
                             val rangeHeader = "bytes=$start-$end"
@@ -268,23 +270,18 @@ object TXAUpdateManager {
                             if (!response.isSuccessful) throw Exception("Chunk $i failed: ${response.code}")
                             
                             val body = response.body ?: throw Exception("Chunk $i body null")
-                            val inputStream = body.byteStream()
-                            val raf = java.io.RandomAccessFile(destination, "rw")
-                            raf.seek(start)
-                            
-                            val buffer = ByteArray(8192)
-                            var read: Int
-                            
-                            try {
-                                while (inputStream.read(buffer).also { read = it } != -1) {
-                                    if (!isActive) throw CancellationException()
-                                    raf.write(buffer, 0, read)
-                                    downloadedBytes.addAndGet(read.toLong())
+                            body.byteStream().use { input ->
+                                chunkFile.outputStream().use { output ->
+                                    val buffer = ByteArray(8192)
+                                    var read: Int
+                                    while (input.read(buffer).also { read = it } != -1) {
+                                        if (!isActive) throw CancellationException()
+                                        output.write(buffer, 0, read)
+                                        downloadedBytes.addAndGet(read.toLong())
+                                    }
                                 }
-                            } finally {
-                                raf.close()
-                                response.close()
                             }
+                            response.close()
                         })
                     }
                     
@@ -310,7 +307,35 @@ object TXAUpdateManager {
                     reporter.cancel()
                 }
                 
-                TXALogger.downloadI("UpdateManager", "Turbo Download Complete")
+                // =============== MERGING STEP ===============
+                TXALogger.downloadI("UpdateManager", "Merging chunks...")
+                _downloadState.value = DownloadState.Merging(0)
+                send(DownloadState.Merging(0))
+
+                FileOutputStream(destination).use { output ->
+                    for (i in 0 until threadCount) {
+                        val chunkFile = File(tempDir, "chunk_$i.txa.bin")
+                        if (!chunkFile.exists()) throw Exception("Chunk file $i missing during merge")
+                        
+                        chunkFile.inputStream().use { input ->
+                            val buffer = ByteArray(65536) // Larger buffer for faster merge
+                            var read: Int
+                            while (input.read(buffer).also { read = it } != -1) {
+                                output.write(buffer, 0, read)
+                            }
+                        }
+                        
+                        val mergeProgress = ((i + 1) * 100 / threadCount)
+                        _downloadState.value = DownloadState.Merging(mergeProgress)
+                        send(DownloadState.Merging(mergeProgress))
+                        
+                        chunkFile.delete() // Clean up as we go
+                    }
+                }
+                
+                tempDir.delete() // Final cleanup
+                
+                TXALogger.downloadI("UpdateManager", "Turbo Download & Merge Complete")
                 val success = DownloadState.Success(destination)
                 _downloadState.value = success
                 send(success)
