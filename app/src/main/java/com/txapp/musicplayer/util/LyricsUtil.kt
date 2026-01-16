@@ -112,16 +112,51 @@ object LyricsUtil {
         }
         
         // Sort and auto-calculate end timestamps
+        // Handle multiple lines with same timestamp by distributing time evenly
         val sorted = result.sortedBy { it.timestamp }.toMutableList()
-        for (i in sorted.indices) {
-            if (sorted[i].endTimestamp == -1L) {
-                val endTime = if (i < sorted.size - 1) {
-                    sorted[i + 1].timestamp // Next line's start time
-                } else {
-                    sorted[i].timestamp + 10000 // Last line: 10 seconds duration
-                }
-                sorted[i] = sorted[i].copy(endTimestamp = endTime)
+        
+        var i = 0
+        while (i < sorted.size) {
+            // Skip if already has end timestamp
+            if (sorted[i].endTimestamp != -1L) {
+                i++
+                continue
             }
+            
+            // Find the group of consecutive lines with same timestamp
+            val groupStart = i
+            val groupTimestamp = sorted[i].timestamp
+            var groupEnd = i
+            while (groupEnd < sorted.size && sorted[groupEnd].timestamp == groupTimestamp && sorted[groupEnd].endTimestamp == -1L) {
+                groupEnd++
+            }
+            
+            val groupSize = groupEnd - groupStart
+            
+            // Find the next different timestamp (this will be the end time for the whole group)
+            val nextDifferentTimestamp = if (groupEnd < sorted.size) {
+                sorted[groupEnd].timestamp
+            } else {
+                groupTimestamp + 10000 // Last group: 10 seconds default duration
+            }
+            
+            // Calculate total duration for this group
+            val totalGroupDuration = nextDifferentTimestamp - groupTimestamp
+            
+            // Distribute time evenly among lines in the group
+            for (j in groupStart until groupEnd) {
+                val lineIndex = j - groupStart
+                val lineStart = groupTimestamp + (totalGroupDuration * lineIndex / groupSize)
+                val lineEnd = groupTimestamp + (totalGroupDuration * (lineIndex + 1) / groupSize)
+                
+                // Update timestamp and endTimestamp for this line
+                sorted[j] = sorted[j].copy(
+                    timestamp = lineStart,
+                    endTimestamp = lineEnd
+                )
+            }
+            
+            i = groupEnd
         }
 
         // --- GAP FILLING LOGIC (3s Rule) ---
