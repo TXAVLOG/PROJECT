@@ -101,7 +101,7 @@ lint-results.xml
 
 # IDE folders to exclude
 .windsurf/
-# .agent/
+.agent/
 .vscode/
 
 # Build folders
