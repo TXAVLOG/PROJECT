@@ -20,5 +20,8 @@ trigger: always_on
 4. **TXADownloader Usage (CRITICAL)**:
    - All file downloads MUST use TXADownloader.kt.
    - **Strategy**: Dynamic chunking (max 10MB/chunk), max 7 parallel threads via Semaphore.
+   - **Calculation**: 
+     - If ContentLength / 7 > 10MB -> totalChunks = ContentLength / 10MB.
+     - Else -> totalChunks = 7.
    - **Progress**: Handle Merging(percentage) state in UI to show file combining progress.
    - **Cleanup**: Temp chunks must be cleaned up (handled by class).
