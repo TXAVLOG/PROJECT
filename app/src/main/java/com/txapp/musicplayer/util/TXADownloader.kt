@@ -70,6 +70,13 @@ object TXADownloader {
                 val downloadedBytes = AtomicLong(0)
                 val startTime = System.currentTimeMillis()
                 
+                // Store expected sizes for each chunk for verification
+                val expectedChunkSizes = (0 until totalChunks).map { i ->
+                    val start = i * actualChunkSize
+                    val end = if (i == totalChunks - 1) contentLength - 1 else (start + actualChunkSize - 1)
+                    end - start + 1
+                }
+                
                 coroutineScope {
                     val jobs = (0 until totalChunks).map { i ->
                         val start = i * actualChunkSize
@@ -89,7 +96,7 @@ object TXADownloader {
                                 
                                 val body = response.body ?: throw Exception("Chunk $i body null")
                                 body.byteStream().use { input ->
-                                    chunkFile.outputStream().use { output ->
+                                    java.io.BufferedOutputStream(FileOutputStream(chunkFile)).use { output ->
                                         val buffer = ByteArray(8192)
                                         var read: Int
                                         while (input.read(buffer).also { read = it } != -1) {
@@ -97,6 +104,7 @@ object TXADownloader {
                                             output.write(buffer, 0, read)
                                             downloadedBytes.addAndGet(read.toLong())
                                         }
+                                        output.flush() // Đảm bảo tất cả bytes được ghi trước khi close
                                     }
                                 }
                                 response.close()
@@ -123,11 +131,22 @@ object TXADownloader {
                     reporter.cancel()
                 }
                 
+                // Verify all chunks before merging
+                for (i in 0 until totalChunks) {
+                    val chunkFile = File(tempDir, "chunk_$i.txa.bin")
+                    val expectedSize = expectedChunkSizes[i]
+                    if (!chunkFile.exists() || chunkFile.length() != expectedSize) {
+                        tempDir.listFiles()?.forEach { it.delete() }
+                        tempDir.delete()
+                        throw Exception("Chunk $i corrupted: expected=$expectedSize, actual=${chunkFile.length()}")
+                    }
+                }
+                
                 // 2. Merge Step
                 TXALogger.downloadI("TXADownloader", "Merging $totalChunks chunks...")
                 send(DownloadState.Merging(0))
 
-                FileOutputStream(destination).use { output ->
+                java.io.BufferedOutputStream(FileOutputStream(destination)).use { output ->
                     for (i in 0 until totalChunks) {
                         val chunkFile = File(tempDir, "chunk_$i.txa.bin")
                         chunkFile.inputStream().use { input ->
@@ -137,11 +156,22 @@ object TXADownloader {
                                 output.write(buffer, 0, read)
                             }
                         }
+                        output.flush() // Flush sau mỗi chunk
                         send(DownloadState.Merging(((i + 1) * 100 / totalChunks)))
                         chunkFile.delete()
                     }
+                    output.flush() // Final flush
                 }
                 tempDir.delete()
+                
+                // Final file verification
+                val finalSize = destination.length()
+                if (finalSize != contentLength) {
+                    destination.delete()
+                    throw Exception("Merged APK size mismatch: expected=$contentLength, got=$finalSize")
+                }
+                
+                TXALogger.downloadI("TXADownloader", "Download verified: ${TXAFormat.formatSize(finalSize)}")
                 send(DownloadState.Success(destination))
 
             } else {
