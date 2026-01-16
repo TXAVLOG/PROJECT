@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.joinAll
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -226,70 +229,150 @@ object TXAUpdateManager {
             if (!baseDir.exists()) TXASuHelper.mkdirs(baseDir)
             val destination = File(baseDir, "update.apk")
             if (destination.exists()) destination.delete()
-            
-            TXALogger.downloadI("UpdateManager", "Downloading from: $directUrl")
-            
-            val request = Request.Builder()
-                .url(directUrl)
-                .header("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36")
-                .build()
-            
-            val response = TXAHttp.client.newCall(request).execute()
-            
-            if (!response.isSuccessful) {
-                val errorMsg = "HTTP Error: ${response.code} ${response.message}"
-                TXALogger.apiE("UpdateManager", errorMsg)
-                throw Exception(errorMsg)
-            }
-            
-            val body = response.body ?: throw Exception("Response body null")
-            val totalBytes = body.contentLength()
-            
-            body.byteStream().use { inputStream ->
-                FileOutputStream(destination).use { outputStream ->
-                    TXALogger.downloadI("UpdateManager", "Download started. Size: $totalBytes bytes")
 
-                    val buffer = ByteArray(8192)
-                    var downloadedBytes = 0L
-                    var bytesRead: Int
-                    var lastUpdate = 0L
-                    val startTime = System.currentTimeMillis()
-                    
-                    while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                        if (!currentCoroutineContext().isActive) {
-                            TXALogger.downloadI("UpdateManager", "Download cancelled via context")
-                            throw CancellationException("User cancelled")
-                        }
+            val headRequest = Request.Builder().url(directUrl).head().build()
+            val headResponse = TXAHttp.client.newCall(headRequest).execute()
+            val acceptRanges = headResponse.header("Accept-Ranges")
+            val contentLength = headResponse.header("Content-Length")?.toLongOrNull() ?: -1L
+            headResponse.close()
 
-                        outputStream.write(buffer, 0, bytesRead)
-                        downloadedBytes += bytesRead
+            val isTurboSupported = acceptRanges == "bytes" && contentLength > 0
+            val shouldUseTurbo = isTurboSupported && contentLength > 10 * 1024 * 1024
+
+            if (shouldUseTurbo) {
+                TXALogger.downloadI("UpdateManager", "Turbo Download Activated! Size: ${TXAFormat.formatSize(contentLength)}")
+                
+                java.io.RandomAccessFile(destination, "rw").use { it.setLength(contentLength) }
+                
+                val threadCount = 4
+                val chunkSize = contentLength / threadCount
+                val chunks = ArrayList<Job>()
+                val downloadedBytes = java.util.concurrent.atomic.AtomicLong(0)
+                val startTime = System.currentTimeMillis()
+                
+                coroutineScope {
+                    for (i in 0 until threadCount) {
+                        val start = i * chunkSize
+                        val end = if (i == threadCount - 1) contentLength - 1 else (start + chunkSize - 1)
                         
-                        val now = System.currentTimeMillis()
-                        if (now - lastUpdate > 500) {
+                        chunks.add(launch(Dispatchers.IO) {
+                            val rangeHeader = "bytes=$start-$end"
+                            val request = Request.Builder()
+                                .url(directUrl)
+                                .header("Range", rangeHeader)
+                                .build()
+                            
+                            val response = TXAHttp.client.newCall(request).execute()
+                            if (!response.isSuccessful) throw Exception("Chunk $i failed: ${response.code}")
+                            
+                            val body = response.body ?: throw Exception("Chunk $i body null")
+                            val inputStream = body.byteStream()
+                            val raf = java.io.RandomAccessFile(destination, "rw")
+                            raf.seek(start)
+                            
+                            val buffer = ByteArray(8192)
+                            var read: Int
+                            
+                            try {
+                                while (inputStream.read(buffer).also { read = it } != -1) {
+                                    if (!isActive) throw CancellationException()
+                                    raf.write(buffer, 0, read)
+                                    downloadedBytes.addAndGet(read.toLong())
+                                }
+                            } finally {
+                                raf.close()
+                                response.close()
+                            }
+                        })
+                    }
+                    
+                    val reporter = launch(Dispatchers.IO) {
+                        while (isActive) {
+                            val current = downloadedBytes.get()
+                            if (current >= contentLength) break
+                            
+                            val now = System.currentTimeMillis()
                             val timePassed = (now - startTime + 1) / 1000f
-                            val bps = (downloadedBytes / timePassed).toLong()
-                            val progress = if (totalBytes > 0) ((downloadedBytes * 100) / totalBytes).toInt() else 0
-                            val state = DownloadState.Progress(progress, downloadedBytes, totalBytes, bps)
+                            val bps = (current / timePassed).toLong()
+                            val progress = ((current * 100) / contentLength).toInt()
+                            
+                            val state = DownloadState.Progress(progress, current, contentLength, bps)
                             _downloadState.value = state
                             emit(state)
-                            lastUpdate = now
+                            
+                            kotlinx.coroutines.delay(500)
+                        }
+                    }
+                    
+                    chunks.joinAll()
+                    reporter.cancel()
+                }
+                
+                TXALogger.downloadI("UpdateManager", "Turbo Download Complete")
+                val success = DownloadState.Success(destination)
+                _downloadState.value = success
+                emit(success)
+
+            } else {
+                TXALogger.downloadI("UpdateManager", "Standard Download (No Turbo or Small File)")
+                
+                val request = Request.Builder()
+                    .url(directUrl)
+                    .header("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36")
+                    .build()
+                
+                val response = TXAHttp.client.newCall(request).execute()
+                
+                if (!response.isSuccessful) {
+                    val errorMsg = "HTTP Error: ${response.code} ${response.message}"
+                    TXALogger.apiE("UpdateManager", errorMsg)
+                    throw Exception(errorMsg)
+                }
+                
+                val body = response.body ?: throw Exception("Response body null")
+                val totalBytes = body.contentLength()
+                
+                body.byteStream().use { inputStream ->
+                    FileOutputStream(destination).use { outputStream ->
+                        val buffer = ByteArray(8192)
+                        var downloadedBytes = 0L
+                        var bytesRead: Int
+                        var lastUpdate = 0L
+                        val startTime = System.currentTimeMillis()
+                        
+                        while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                            if (!currentCoroutineContext().isActive) {
+                                throw CancellationException("User cancelled")
+                            }
+
+                            outputStream.write(buffer, 0, bytesRead)
+                            downloadedBytes += bytesRead
+                            
+                            val now = System.currentTimeMillis()
+                            if (now - lastUpdate > 500) {
+                                val timePassed = (now - startTime + 1) / 1000f
+                                val bps = (downloadedBytes / timePassed).toLong()
+                                val progress = if (totalBytes > 0) ((downloadedBytes * 100) / totalBytes).toInt() else 0
+                                val state = DownloadState.Progress(progress, downloadedBytes, totalBytes, bps)
+                                _downloadState.value = state
+                                emit(state)
+                                lastUpdate = now
+                            }
                         }
                     }
                 }
+                TXALogger.downloadI("UpdateManager", "Download success")
+                val success = DownloadState.Success(destination)
+                _downloadState.value = success
+                emit(success)
             }
-            TXALogger.downloadI("UpdateManager", "Download success. File saved to update.apk")
-            val success = DownloadState.Success(destination)
-            _downloadState.value = success
-            emit(success)
+
         } catch (e: Throwable) {
             isResolving.value = false
             if (e is CancellationException) {
                 _downloadState.value = null
             } else {
                 TXALogger.downloadE("UpdateManager", "Download failed", e)
-                
-                // If it's a fatal error (like disk full, permission denied halfway, etc.)
-                // we report it to crash handler to show the custom error page
                 if (TXACrashHandler.isFatalError(e)) {
                     TXACrashHandler.reportFatalError(context, e, "UpdateManagerDownload")
                 } else {
