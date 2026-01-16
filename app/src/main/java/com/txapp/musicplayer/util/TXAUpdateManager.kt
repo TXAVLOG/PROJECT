@@ -22,6 +22,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -247,41 +249,53 @@ object TXAUpdateManager {
                 
                 val tempDir = File(baseDir, "temp").apply { if (!exists()) mkdirs() }
                 
-                val threadCount = 4
-                val chunkSize = contentLength / threadCount
-                val chunks = ArrayList<Job>()
+                // Config: Dynamic chunking, max 7 parallel
+                val maxParallel = 7
+                val idealChunkSize = 5 * 1024 * 1024L // 5MB per chunk
+                val totalChunks = ((contentLength + idealChunkSize - 1) / idealChunkSize).toInt()
+                val semaphore = Semaphore(maxParallel)
+                
+                val jobs = ArrayList<Job>()
                 val downloadedBytes = java.util.concurrent.atomic.AtomicLong(0)
                 val startTime = System.currentTimeMillis()
                 
                 coroutineScope {
-                    for (i in 0 until threadCount) {
-                        val start = i * chunkSize
-                        val end = if (i == threadCount - 1) contentLength - 1 else (start + chunkSize - 1)
+                    for (i in 0 until totalChunks) {
+                        val start = i * idealChunkSize
+                        val end = if (i == totalChunks - 1) contentLength - 1 else (start + idealChunkSize - 1)
                         val chunkFile = File(tempDir, "chunk_$i.txa.bin")
                         
-                        chunks.add(launch(Dispatchers.IO) {
-                            val rangeHeader = "bytes=$start-$end"
-                            val request = Request.Builder()
-                                .url(directUrl)
-                                .header("Range", rangeHeader)
-                                .build()
-                            
-                            val response = TXAHttp.client.newCall(request).execute()
-                            if (!response.isSuccessful) throw Exception("Chunk $i failed: ${response.code}")
-                            
-                            val body = response.body ?: throw Exception("Chunk $i body null")
-                            body.byteStream().use { input ->
-                                chunkFile.outputStream().use { output ->
-                                    val buffer = ByteArray(8192)
-                                    var read: Int
-                                    while (input.read(buffer).also { read = it } != -1) {
-                                        if (!isActive) throw CancellationException()
-                                        output.write(buffer, 0, read)
-                                        downloadedBytes.addAndGet(read.toLong())
+                        jobs.add(launch(Dispatchers.IO) {
+                            semaphore.withPermit {
+                                try {
+                                    val rangeHeader = "bytes=$start-$end"
+                                    val request = Request.Builder()
+                                        .url(directUrl)
+                                        .header("Range", rangeHeader)
+                                        .header("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36")
+                                        .build()
+                                    
+                                    val response = TXAHttp.client.newCall(request).execute()
+                                    if (!response.isSuccessful) throw Exception("Chunk $i failed: ${response.code}")
+                                    
+                                    val body = response.body ?: throw Exception("Chunk $i body null")
+                                    body.byteStream().use { input ->
+                                        chunkFile.outputStream().use { output ->
+                                            val buffer = ByteArray(8192)
+                                            var read: Int
+                                            while (input.read(buffer).also { read = it } != -1) {
+                                                if (!isActive) throw CancellationException()
+                                                output.write(buffer, 0, read)
+                                                downloadedBytes.addAndGet(read.toLong())
+                                            }
+                                        }
                                     }
+                                    response.close()
+                                } catch (e: Exception) {
+                                    TXALogger.downloadE("UpdateManager", "Chunk $i error: ${e.message}")
+                                    throw e
                                 }
                             }
-                            response.close()
                         })
                     }
                     
@@ -303,42 +317,43 @@ object TXAUpdateManager {
                         }
                     }
                     
-                    chunks.joinAll()
+                    jobs.joinAll()
                     reporter.cancel()
                 }
                 
                 // =============== MERGING STEP ===============
-                TXALogger.downloadI("UpdateManager", "Merging chunks...")
+                TXALogger.downloadI("UpdateManager", "Merging $totalChunks chunks...")
                 _downloadState.value = DownloadState.Merging(0)
                 send(DownloadState.Merging(0))
 
                 FileOutputStream(destination).use { output ->
-                    for (i in 0 until threadCount) {
+                    for (i in 0 until totalChunks) {
                         val chunkFile = File(tempDir, "chunk_$i.txa.bin")
                         if (!chunkFile.exists()) throw Exception("Chunk file $i missing during merge")
                         
                         chunkFile.inputStream().use { input ->
-                            val buffer = ByteArray(65536) // Larger buffer for faster merge
+                            val buffer = ByteArray(128 * 1024)
                             var read: Int
                             while (input.read(buffer).also { read = it } != -1) {
                                 output.write(buffer, 0, read)
                             }
                         }
                         
-                        val mergeProgress = ((i + 1) * 100 / threadCount)
+                        val mergeProgress = ((i + 1) * 100 / totalChunks)
                         _downloadState.value = DownloadState.Merging(mergeProgress)
                         send(DownloadState.Merging(mergeProgress))
                         
-                        chunkFile.delete() // Clean up as we go
+                        chunkFile.delete()
                     }
                 }
                 
-                tempDir.delete() // Final cleanup
+                tempDir.delete()
                 
-                TXALogger.downloadI("UpdateManager", "Turbo Download & Merge Complete")
+                TXALogger.downloadI("UpdateManager", "Turbo Download & Merge Complete ($totalChunks chunks)")
                 val success = DownloadState.Success(destination)
                 _downloadState.value = success
                 send(success)
+
 
             } else {
                 TXALogger.downloadI("UpdateManager", "Standard Download (No Turbo or Small File)")
