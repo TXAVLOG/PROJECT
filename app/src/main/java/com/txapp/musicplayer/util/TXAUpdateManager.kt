@@ -22,14 +22,11 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.File
-import java.io.FileOutputStream
 import java.util.concurrent.CancellationException
 
 data class UpdateInfo(
@@ -45,12 +42,7 @@ data class UpdateInfo(
     val checksumValue: String = ""
 )
 
-sealed class DownloadState {
-    data class Progress(val percentage: Int, val downloaded: Long, val total: Long, val bps: Long) : DownloadState()
-    data class Merging(val percentage: Int) : DownloadState()
-    data class Success(val file: File) : DownloadState()
-    data class Error(val message: String) : DownloadState()
-}
+// DownloadState is now in TXADownloader.kt
 
 object TXAUpdateManager {
     private const val API_URL = "https://soft.nrotxa.online/txamusic/api/update/check"
@@ -132,10 +124,7 @@ object TXAUpdateManager {
                         checksumValue = checksum?.optString("value") ?: ""
                     )
 
-                    // Safety check: local version must be lower than latest version to show update
-                    // BUT if we just want to fetch info (e.g. for changelog display), we might want it anyway.
-                    // The standard checkForUpdate() returns null if no update needed.
-                    if (latestVersionCode <= currentVersionCode) {
+                     if (latestVersionCode <= currentVersionCode) {
                         TXALogger.apiI("UpdateManager", "Server returned older or same version ($latestVersionCode <= $currentVersionCode)")
                         // Logic changed: return null for checkForUpdate usage, but we need a way to get changelog.
                         // We will keep existing behavior for checkForUpdate() but add fetchChangelog() separately.
@@ -231,192 +220,12 @@ object TXAUpdateManager {
             TXALogger.resolveI("UpdateManager", "Resolved to Direct: $directUrl")
 
             val baseDir = context.getExternalFilesDir(null) ?: context.filesDir
-            if (!baseDir.exists()) TXASuHelper.mkdirs(baseDir)
             val destination = File(baseDir, "update.apk")
-            if (destination.exists()) destination.delete()
 
-            val headRequest = Request.Builder().url(directUrl).head().build()
-            val headResponse = TXAHttp.client.newCall(headRequest).execute()
-            val acceptRanges = headResponse.header("Accept-Ranges")
-            val contentLength = headResponse.header("Content-Length")?.toLongOrNull() ?: -1L
-            headResponse.close()
-
-            val isTurboSupported = acceptRanges == "bytes" && contentLength > 0
-            val shouldUseTurbo = isTurboSupported && contentLength > 10 * 1024 * 1024
-
-            if (shouldUseTurbo) {
-                TXALogger.downloadI("UpdateManager", "Turbo Download Activated! Size: ${TXAFormat.formatSize(contentLength)}")
-                
-                val tempDir = File(baseDir, "temp").apply { if (!exists()) mkdirs() }
-                
-                val maxParallel = 7
-                val maxChunkSizeLimit = 10 * 1024 * 1024L 
-                
-                // Determine number of chunks: try to use all 7 parallel slots, 
-                // but increase chunk count if needed to keep chunks <= 10MB
-                val totalChunks = if (contentLength / maxParallel > maxChunkSizeLimit) {
-                    ((contentLength + maxChunkSizeLimit - 1) / maxChunkSizeLimit).toInt()
-                } else {
-                    maxParallel
-                }
-                
-                val actualChunkSize = contentLength / totalChunks
-                val semaphore = Semaphore(maxParallel)
-                
-                val jobs = ArrayList<Job>()
-                val downloadedBytes = java.util.concurrent.atomic.AtomicLong(0)
-                val startTime = System.currentTimeMillis()
-                
-                coroutineScope {
-                    for (i in 0 until totalChunks) {
-                        val start = i * actualChunkSize
-                        val end = if (i == totalChunks - 1) contentLength - 1 else (start + actualChunkSize - 1)
-                        val chunkFile = File(tempDir, "chunk_$i.txa.bin")
-                        
-                        jobs.add(launch(Dispatchers.IO) {
-                            semaphore.withPermit {
-                                try {
-                                    val rangeHeader = "bytes=$start-$end"
-                                    val request = Request.Builder()
-                                        .url(directUrl)
-                                        .header("Range", rangeHeader)
-                                        .header("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36")
-                                        .build()
-                                    
-                                    val response = TXAHttp.client.newCall(request).execute()
-                                    if (!response.isSuccessful) throw Exception("Chunk $i failed: ${response.code}")
-                                    
-                                    val body = response.body ?: throw Exception("Chunk $i body null")
-                                    body.byteStream().use { input ->
-                                        chunkFile.outputStream().use { output ->
-                                            val buffer = ByteArray(8192)
-                                            var read: Int
-                                            while (input.read(buffer).also { read = it } != -1) {
-                                                if (!isActive) throw CancellationException()
-                                                output.write(buffer, 0, read)
-                                                downloadedBytes.addAndGet(read.toLong())
-                                            }
-                                        }
-                                    }
-                                    response.close()
-                                } catch (e: Exception) {
-                                    TXALogger.downloadE("UpdateManager", "Chunk $i error: ${e.message}")
-                                    throw e
-                                }
-                            }
-                        })
-                    }
-                    
-                    val reporter = launch(Dispatchers.IO) {
-                        while (isActive) {
-                            val current = downloadedBytes.get()
-                            if (current >= contentLength) break
-                            
-                            val now = System.currentTimeMillis()
-                            val timePassed = (now - startTime + 1) / 1000f
-                            val bps = (current / timePassed).toLong()
-                            val progress = ((current * 100) / contentLength).toInt()
-                            
-                            val state = DownloadState.Progress(progress, current, contentLength, bps)
-                            _downloadState.value = state
-                            send(state)
-                            
-                            delay(500)
-                        }
-                    }
-                    
-                    jobs.joinAll()
-                    reporter.cancel()
-                }
-                
-                // =============== MERGING STEP ===============
-                TXALogger.downloadI("UpdateManager", "Merging $totalChunks chunks...")
-                _downloadState.value = DownloadState.Merging(0)
-                send(DownloadState.Merging(0))
-
-                FileOutputStream(destination).use { output ->
-                    for (i in 0 until totalChunks) {
-                        val chunkFile = File(tempDir, "chunk_$i.txa.bin")
-                        if (!chunkFile.exists()) throw Exception("Chunk file $i missing during merge")
-                        
-                        chunkFile.inputStream().use { input ->
-                            val buffer = ByteArray(128 * 1024)
-                            var read: Int
-                            while (input.read(buffer).also { read = it } != -1) {
-                                output.write(buffer, 0, read)
-                            }
-                        }
-                        
-                        val mergeProgress = ((i + 1) * 100 / totalChunks)
-                        _downloadState.value = DownloadState.Merging(mergeProgress)
-                        send(DownloadState.Merging(mergeProgress))
-                        
-                        chunkFile.delete()
-                    }
-                }
-                
-                tempDir.delete()
-                
-                TXALogger.downloadI("UpdateManager", "Turbo Download & Merge Complete ($totalChunks chunks)")
-                val success = DownloadState.Success(destination)
-                _downloadState.value = success
-                send(success)
-
-
-            } else {
-                TXALogger.downloadI("UpdateManager", "Standard Download (No Turbo or Small File)")
-                
-                val request = Request.Builder()
-                    .url(directUrl)
-                    .header("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36")
-                    .build()
-                
-                val response = TXAHttp.client.newCall(request).execute()
-                
-                if (!response.isSuccessful) {
-                    val errorMsg = "HTTP Error: ${response.code} ${response.message}"
-                    TXALogger.apiE("UpdateManager", errorMsg)
-                    throw Exception(errorMsg)
-                }
-                
-                val body = response.body ?: throw Exception("Response body null")
-                val totalBytes = body.contentLength()
-                
-                body.byteStream().use { inputStream ->
-                    FileOutputStream(destination).use { outputStream ->
-                        val buffer = ByteArray(8192)
-                        var downloadedBytes = 0L
-                        var bytesRead: Int
-                        var lastUpdate = 0L
-                        val startTime = System.currentTimeMillis()
-                        
-                        while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                            if (!currentCoroutineContext().isActive) {
-                                throw CancellationException("User cancelled")
-                            }
-
-                            outputStream.write(buffer, 0, bytesRead)
-                            downloadedBytes += bytesRead
-                            
-                            val now = System.currentTimeMillis()
-                            if (now - lastUpdate > 500) {
-                                val timePassed = (now - startTime + 1) / 1000f
-                                val bps = (downloadedBytes / timePassed).toLong()
-                                val progress = if (totalBytes > 0) ((downloadedBytes * 100) / totalBytes).toInt() else 0
-                                val state = DownloadState.Progress(progress, downloadedBytes, totalBytes, bps)
-                                _downloadState.value = state
-                                send(state)
-                                lastUpdate = now
-                            }
-                        }
-                    }
-                }
-                TXALogger.downloadI("UpdateManager", "Download success")
-                val success = DownloadState.Success(destination)
-                _downloadState.value = success
-                send(success)
+            TXADownloader.download(context, directUrl, destination).collect { state ->
+                _downloadState.value = state
+                send(state)
             }
-
 
         } catch (e: Throwable) {
             isResolving.value = false
