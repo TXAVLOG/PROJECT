@@ -249,10 +249,18 @@ object TXAUpdateManager {
                 
                 val tempDir = File(baseDir, "temp").apply { if (!exists()) mkdirs() }
                 
-                // Config: Dynamic chunking, max 7 parallel
                 val maxParallel = 7
-                val idealChunkSize = 5 * 1024 * 1024L // 5MB per chunk
-                val totalChunks = ((contentLength + idealChunkSize - 1) / idealChunkSize).toInt()
+                val maxChunkSizeLimit = 10 * 1024 * 1024L 
+                
+                // Determine number of chunks: try to use all 7 parallel slots, 
+                // but increase chunk count if needed to keep chunks <= 10MB
+                val totalChunks = if (contentLength / maxParallel > maxChunkSizeLimit) {
+                    ((contentLength + maxChunkSizeLimit - 1) / maxChunkSizeLimit).toInt()
+                } else {
+                    maxParallel
+                }
+                
+                val actualChunkSize = contentLength / totalChunks
                 val semaphore = Semaphore(maxParallel)
                 
                 val jobs = ArrayList<Job>()
@@ -261,8 +269,8 @@ object TXAUpdateManager {
                 
                 coroutineScope {
                     for (i in 0 until totalChunks) {
-                        val start = i * idealChunkSize
-                        val end = if (i == totalChunks - 1) contentLength - 1 else (start + idealChunkSize - 1)
+                        val start = i * actualChunkSize
+                        val end = if (i == totalChunks - 1) contentLength - 1 else (start + actualChunkSize - 1)
                         val chunkFile = File(tempDir, "chunk_$i.txa.bin")
                         
                         jobs.add(launch(Dispatchers.IO) {
